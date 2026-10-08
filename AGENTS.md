@@ -2,21 +2,17 @@
 
 ## Product Overview
 
-**What it is.** CheckInn is a simple hotel-booking web application: a guest searches for a hotel, views it, and books a stay. It is the demo application for DVT's AI-SDLC workshop at AI Africa (see `docs/workshop/README.md`).
+**What it is.** CheckInn is a simple hotel-booking web application: a guest searches for a hotel, views it, and books a stay.
 
-**Why it exists.** The workshop shows a live audience how one enhancement moves through an AI-assisted software lifecycle: requirements, UX, architecture, build and deploy. CheckInn is the "existing system" that gets enhanced. The planned enhancement is intelligent search: a guest describes what they want in plain language and results are ranked by how well they match (RAG over the hotel data).
+**Why it exists.** Finding the right hotel should not take a dozen filters. CheckInn gives guests a short path from "I need somewhere to stay" to a confirmed booking. The planned enhancement is intelligent search: a guest describes what they want in plain language and results are ranked by how well they match (RAG over the hotel data).
 
-**Who it is for.**
-
-- *Guests* (the product's users): people looking for and booking a hotel stay.
-- *Workshop audience*: around 200 people, many non-technical. They judge the result by what they see on screen.
-- *Attendees afterwards*: the repo is shared publicly so they can clone it and run it themselves.
+**Who it is for.** *Guests*: people looking for and booking a hotel stay, on desktop or mobile.
 
 **What that means for technical decisions.**
 
-- Visible outcomes beat internal sophistication. Prefer changes a non-technical person can see working.
+- Guest-facing behaviour comes first. A change is judged by what a guest can do and see.
 - It must run from a fresh clone with `npm install && npm run dev` and no external services.
-- Keep it small and readable. This is a teaching codebase, not a production booking platform.
+- Keep it small and readable. Prefer the simple solution over the clever one.
 - The repo is public. No secrets, client names or internal material.
 
 **Current state.** Project shell only: a placeholder home page. No booking features, no database, no search.
@@ -61,7 +57,6 @@ Agreed but **not installed yet**:
 | `src/app/` | Routes, layouts and pages (App Router) |
 | `e2e/` | Playwright end-to-end tests, configured in `playwright.config.ts` |
 | `DESIGN.md` | Visual identity: design tokens and usage rules, in the [DESIGN.md format](https://github.com/google-labs-code/design.md) |
-| `docs/workshop/` | Workshop agenda, roles and the checkpoint tag convention |
 | `infra/` | Infrastructure as code. Placeholder, no code yet |
 | `.github/workflows/` | CI |
 | `.vscode/` | Shared VS Code debug configurations, tasks and extension recommendations |
@@ -176,12 +171,12 @@ it("renders the CheckInn heading", () => {
 ```
 feat(search): rank hotels by natural-language query
 fix(booking): reject check-out dates before check-in
-docs(workshop): add checkpoint tags for the UX step
+docs(readme): document the end-to-end test setup
 ```
 
 - Before opening a PR, all four checks pass locally: lint, typecheck, test, build.
 - Keep a PR to one change. Say what changed and how it was verified.
-- Workshop checkpoints are git tags named `checkpoint/NN-short-name`. Do not move or delete an existing checkpoint tag.
+- Git tags named `checkpoint/NN-short-name` mark fixed points in history. Do not move or delete an existing one.
 
 ## BMAD
 
