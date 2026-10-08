@@ -33,6 +33,7 @@
 | Unit and component tests | Vitest, Testing Library, jsdom | 5.0.3 / 16.3.3 / 30.1.2 |
 | Linting | ESLint with `eslint-config-next` | 9.39.5 / 16.4.0 |
 | Package manager | npm | lockfile committed |
+| Design tokens | `@google/design.md` CLI | 0.4.0 |
 | CI | GitHub Actions | `.github/workflows/ci.yml` |
 
 Agreed but **not installed yet**:
@@ -57,6 +58,7 @@ Agreed but **not installed yet**:
 | Path | Contents |
 |---|---|
 | `src/app/` | Routes, layouts and pages (App Router) |
+| `DESIGN.md` | Visual identity: design tokens and usage rules, in the [DESIGN.md format](https://github.com/google-labs-code/design.md) |
 | `docs/workshop/` | Workshop agenda, roles and the checkpoint tag convention |
 | `infra/` | Infrastructure as code. Placeholder, no code yet |
 | `.github/workflows/` | CI |
@@ -89,6 +91,7 @@ import { formatPrice } from "../../../lib/format"; // no
 | Run tests once | `npm test` |
 | Run tests in watch mode | `npm run test:watch` |
 | Run one test file | `npx vitest run src/app/page.test.tsx` |
+| Validate `DESIGN.md` | `npm run design:lint` |
 | Production build | `npm run build` |
 | Serve the production build | `npm start` |
 
