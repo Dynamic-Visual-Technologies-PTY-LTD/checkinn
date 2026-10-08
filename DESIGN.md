@@ -166,10 +166,24 @@ The audience is a live room of around 200 people, many non-technical, looking
 at a projector. That favours large type, high contrast and few elements per
 screen over dense layouts.
 
-**Name and logo.** The product is called CheckInn. Its logo is supplied
-separately. Do not draw, reuse or imitate the DVT mark, and do not put "DVT"
-in the product chrome. Until the logo arrives, set the name as plain text in
-`headline-sm` and leave a 40px-high slot to the left of it in the header.
+**Name and logo.** The product is called CheckInn. Its logo is a wordmark:
+"Check" in a heavy sans-serif, then a check mark standing in for the "I" and
+"nn" in a blue-to-cyan gradient. Three files, all with transparent
+backgrounds:
+
+- `public/logo/checkinn-logo-on-dark.webp`: white "Check". Use this one on
+  Midnight, which is everywhere in the app.
+- `public/logo/checkinn-logo-on-light.webp`: near-black "Check". For light
+  backgrounds such as documents and slides.
+- `public/logo/checkinn-icon.png`: the icon, a square mark of the check
+  and one arch of the "n" in the same gradient. It works on dark and light.
+  Use it where the wordmark does not fit: favicon, app icon, avatar, or a
+  header narrower than 480px.
+
+Show the logo 40px high in the header, with its accessible name set to
+"CheckInn". Do not redraw, recolour or stretch it, and do not set the name in
+text beside it. Do not draw, reuse or imitate the DVT mark, and do not put
+"DVT" in the product chrome.
 
 **Where the values come from.** Every token was measured on the live
 dvtsoftware.com home page at a 1440px viewport on 2026-10-08. Three things are
@@ -284,8 +298,7 @@ Do not mix a pill button and a 4px button in the same view.
 - **Link.** Brand Blue, no underline, Gold on hover. Small links inside body
   text are white with an underline instead, because of the contrast limit
   noted under Colors.
-- **Header.** Fixed, 100px, translucent Midnight. Logo slot and product name
-  on the left, navigation in `body-sm` on the right.
+- **Header.** Fixed, 100px, translucent Midnight. Logo on the left, navigation in `body-sm` on the right.
 - **Divider and accent rule.** A 1px Outline line between list rows; a 2px
   Cyan rule as an occasional accent under a heading.
 

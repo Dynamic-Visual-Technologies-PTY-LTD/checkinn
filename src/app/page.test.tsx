@@ -9,4 +9,11 @@ describe("Home", () => {
       screen.getByRole("heading", { level: 1, name: "CheckInn" }),
     ).toBeInTheDocument();
   });
+
+  it("tells the guest what CheckInn is", () => {
+    render(<Home />);
+    expect(
+      screen.getByText(/A simple hotel booking system\./),
+    ).toBeInTheDocument();
+  });
 });

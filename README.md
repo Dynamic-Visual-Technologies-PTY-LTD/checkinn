@@ -24,8 +24,12 @@ Then open http://localhost:3000.
 | `npm run dev` | Start the dev server |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript check |
-| `npm test` | Unit tests (Vitest) |
+| `npm test` | Unit and component tests (Vitest) |
+| `npm run test:e2e` | End-to-end tests in a real browser (Playwright) |
+| `npm run test:e2e:ui` | The same tests in Playwright's interactive UI |
 | `npm run build` | Production build |
+
+The end-to-end tests need a browser, downloaded once with `npx playwright install chromium`. They start the dev server themselves, or reuse one that is already running.
 
 In VS Code, the same commands are available under **Tasks: Run Task** (`verify` runs all four checks), and the Run and Debug panel has configurations for debugging the server, the browser, both together, and the current test file.
 
@@ -37,7 +41,8 @@ Next.js, React, TypeScript and Tailwind CSS, with SQLite planned for data. CI ru
 
 | Path | Contents |
 |---|---|
-| `src/app/` | The Next.js application |
+| `src/app/` | The Next.js application, with unit tests beside the code |
+| `e2e/` | End-to-end tests (Playwright) |
 | `docs/workshop/` | Workshop agenda, roles and checkpoints |
 | `infra/` | Infrastructure as code (placeholder) |
 | `_bmad/`, `.claude/skills/`, `.agents/skills/` | [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) configuration and skills |

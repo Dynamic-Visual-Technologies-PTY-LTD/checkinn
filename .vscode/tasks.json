@@ -51,6 +51,20 @@
       "presentation": { "group": "dev", "reveal": "always" }
     },
     {
+      "label": "test: e2e",
+      "type": "npm",
+      "script": "test:e2e",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: e2e (ui)",
+      "type": "npm",
+      "script": "test:e2e:ui",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "group": "dev", "reveal": "always" }
+    },
+    {
       "label": "build",
       "type": "npm",
       "script": "build",
