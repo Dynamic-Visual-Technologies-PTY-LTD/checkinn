@@ -2,8 +2,7 @@ import { expect, it, vi } from "vitest";
 import { metadata } from "./layout";
 
 vi.mock("next/font/google", () => ({
-  Geist: () => ({ variable: "font-geist-sans" }),
-  Geist_Mono: () => ({ variable: "font-geist-mono" }),
+  Poppins: () => ({ variable: "font-poppins" }),
 }));
 
 it("describes the site as CheckInn", () => {

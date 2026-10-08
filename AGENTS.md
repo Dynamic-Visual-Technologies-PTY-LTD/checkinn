@@ -128,7 +128,7 @@ The same commands are available as VS Code tasks in `.vscode/tasks.json`. The `v
 
 - Commit secrets, API keys, `.env` files or a local `*.db` file.
 - Delete, skip or weaken a failing test to get a green run.
-- Add client names, real personal data or internal DVT material. The repo is public.
+- Add client names, real personal data or internal company material. The repo is public.
 - Hand-edit the generated and tool-managed paths listed under Project Structure.
 - Introduce a separate backend service or a database server.
 

@@ -2,9 +2,8 @@
 version: alpha
 name: CheckInn
 description: >-
-  Visual identity for CheckInn, a hotel-booking demo. Colour, type, shape and
-  spacing tokens are taken from dvtsoftware.com. The product name and logo are
-  CheckInn's own and are not part of this token set.
+  Visual identity for CheckInn, a hotel-booking demo: colour, type, shape and
+  spacing tokens. The product name and logo are not part of this token set.
 colors:
   primary: "#007FBA"
   primary-strong: "#005A9E"
@@ -157,8 +156,8 @@ components:
 
 ## Overview
 
-CheckInn is a hotel-booking demo. It borrows the look of dvtsoftware.com:
-a near-black page, white text, one strong blue, and a lot of open space.
+CheckInn is a hotel-booking demo. The look is a near-black page, white
+text, one strong blue, and a lot of open space.
 The feel is confident and technical rather than cosy. Photography carries
 the warmth; the interface stays out of its way.
 
@@ -188,14 +187,7 @@ changes.
 
 Show the logo 40px high in the header, with its accessible name set to
 "CheckInn". Do not redraw, recolour or stretch it, and do not set the name in
-text beside it. Do not draw, reuse or imitate the DVT mark, and do not put
-"DVT" in the product chrome.
-
-**Where the values come from.** Every token was measured on the live
-dvtsoftware.com home page at a 1440px viewport on 2026-10-08. Three things are
-adaptations, because the source site is a marketing site and has no booking
-UI: the filled `button-primary`, the `input` radius, and the `chip`. Each is
-called out below.
+text beside it.
 
 ## Colors
 
@@ -206,9 +198,8 @@ brand blue. Cyan and gold are accents and appear rarely.
   border on buttons, cards and inputs. It reads at 4.4:1 on the page, so use
   it for text only at 20px and above, or as a border.
 - **Primary strong, Deep Blue (#005A9E):** the fill for `button-primary`.
-  White text on it reads at 7.1:1. The source site uses this value on its
-  consent buttons only; here it is promoted to the main call to action
-  because white on Brand Blue falls just short of WCAG AA.
+  White text on it reads at 7.1:1. It is used instead of Brand Blue because
+  white on Brand Blue falls just short of WCAG AA.
 - **Secondary, Cyan (#00D2D6):** the end stop of the headline gradient
   (`linear-gradient(to right, #007FBA, #00D2D6)`), clipped to text. Use it for
   one emphasised phrase per screen and for thin accent rules.
@@ -221,9 +212,9 @@ brand blue. Cyan and gold are accents and appear rarely.
 - **Outline (#CED4DA):** hairline dividers and the border of light-surface
   inputs.
 
-The source site defines no error, warning or success colour. None is defined
-here. Add them deliberately when booking validation is designed, and check
-them against Midnight for contrast.
+No error, warning or success colour is defined yet. Add them deliberately
+when booking validation is designed, and check them against Midnight for
+contrast.
 
 ## Typography
 
@@ -235,8 +226,8 @@ with no external request at runtime.
   may take the blue-to-cyan gradient.
 - **Headlines (36px / 600, 24px / 500, 20px / 600):** section titles, card
   group titles and card titles, in that order.
-- **Lead (`body-lg`, 24px / 300):** the light weight is the signature of the
-  source site. Use it for the sentence under a headline and for quotes.
+- **Lead (`body-lg`, 24px / 300):** the light weight is a signature of the
+  look. Use it for the sentence under a headline and for quotes.
 - **Body (15px / 400, line height 1.56):** everything else. `body-sm` at 14px
   is for navigation and metadata.
 - **Labels:** `label-lg` is button text and is always uppercase with 1.5px
@@ -244,8 +235,7 @@ with no external request at runtime.
   title, such as a category or a hotel's city.
 
 Sizes are the desktop values. Below 768px drop `headline-display` to 26px
-with a 1.2 line height and `body-md` to 13px, which is what the source site
-does.
+with a 1.2 line height and `body-md` to 13px.
 
 ## Layout
 
@@ -255,8 +245,8 @@ each side. Below that width the column is fluid.
 Sections are separated by generous vertical space: **100px** above a section
 and 25px to 50px below it. Inside a section, 25px separates a heading from
 its content and 15px separates sibling items. The scale is not a strict 8px
-grid; it follows the source site's 15 / 25 / 50 / 100 rhythm, with 4px and
-8px for fine adjustment inside components.
+grid; it follows a 15 / 25 / 50 / 100 rhythm, with 4px and 8px for fine
+adjustment inside components.
 
 The header is 100px tall and stays fixed over the page.
 
@@ -284,23 +274,19 @@ Do not mix a pill button and a 4px button in the same view.
 
 - **Primary button.** Deep Blue fill, white uppercase `label-lg` text, 56px
   tall, 25px horizontal padding, 32px radius. One per screen: Search, Book,
-  Confirm. On hover the fill turns Gold with Midnight text. This filled
-  variant does not exist on the source site.
-- **Secondary button.** This is the source site's standard button:
-  transparent, a 2px Brand Blue border, white uppercase text, same size and
-  radius as the primary. On hover it fills with Deep Blue.
+  Confirm. On hover the fill turns Gold with Midnight text.
+- **Secondary button.** Transparent, a 2px Brand Blue border, white uppercase
+  text, same size and radius as the primary. On hover it fills with Deep
+  Blue.
 - **Card.** Transparent on the page, 1px Brand Blue border, 12px radius, 25px
   padding. An image at the top takes the full card width and keeps the top
   radius. Title in `headline-sm`; metadata in `body-sm`, muted.
 - **Input.** Transparent, 1px Brand Blue border, white text, 38px tall. The
-  source site's inputs are square-cornered; a 4px radius is used here so
-  they sit comfortably beside pill buttons. `input-light` is the white
-  variant with Midnight text and an Outline border, for use on imagery.
+  4px radius lets them sit comfortably beside pill buttons. `input-light` is
+  the white variant with Midnight text and an Outline border, for use on imagery.
 - **Chip.** A pill with a 1px Brand Blue border and an uppercase `label-md`
-  label, for filters and amenities. Derived from the source site's uppercase
-  category labels; it has no direct equivalent there.
-- **Accent headline.** The display headline in Brand Blue, as on the source
-  site's hero.
+  label, for filters and amenities.
+- **Accent headline.** The display headline in Brand Blue, for a page hero.
 - **Link.** Brand Blue, no underline, Gold on hover. Small links inside body
   text are white with an underline instead, because of the contrast limit
   noted under Colors.
@@ -317,5 +303,3 @@ Do not mix a pill button and a 4px button in the same view.
 - Don't use Brand Blue for text smaller than 20px on Midnight.
 - Don't use Gold or Cyan as a fill for large areas.
 - Don't add drop shadows to cards.
-- Don't use the DVT name or logo anywhere in the product. CheckInn has its
-  own.

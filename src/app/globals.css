@@ -1,26 +1,83 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Design tokens from DESIGN.md. The theme is dark only. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-primary: #007fba;
+  --color-primary-strong: #005a9e;
+  --color-secondary: #00d2d6;
+  --color-tertiary: #ffc300;
+  --color-neutral: #070c14;
+  --color-surface: #070c14;
+  --color-on-surface: #ffffff;
+  --color-on-surface-muted: #e5e7e8;
+  --color-on-primary: #ffffff;
+  --color-on-tertiary: #070c14;
+  --color-outline: #ced4da;
+
+  --text-headline-display: 48px;
+  --text-headline-display--line-height: 1.2;
+  --text-headline-display--font-weight: 500;
+  --text-headline-lg: 36px;
+  --text-headline-lg--line-height: 42px;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 30px;
+  --text-headline-md--font-weight: 500;
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 26px;
+  --text-headline-sm--font-weight: 600;
+  --text-body-lg: 24px;
+  --text-body-lg--line-height: 32px;
+  --text-body-lg--font-weight: 300;
+  --text-body-md: 15px;
+  --text-body-md--line-height: 1.56;
+  --text-body-md--font-weight: 400;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.56;
+  --text-body-sm--font-weight: 400;
+  --text-label-lg: 16px;
+  --text-label-lg--line-height: 30px;
+  --text-label-lg--font-weight: 500;
+  --text-label-lg--letter-spacing: 1.5px;
+  --text-label-md: 14px;
+  --text-label-md--line-height: 1.56;
+  --text-label-md--font-weight: 600;
+  --text-label-sm: 14px;
+  --text-label-sm--line-height: 1.56;
+  --text-label-sm--font-weight: 400;
+
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 12px;
+  --radius-lg: 32px;
+  --radius-full: 9999px;
+
+  /* Prefixed: a bare --spacing-md would also change max-w-md and w-md. */
+  --spacing-space-xs: 4px;
+  --spacing-space-sm: 8px;
+  --spacing-space-md: 15px;
+  --spacing-space-lg: 25px;
+  --spacing-space-xl: 50px;
+  --spacing-section: 100px;
+  --spacing-gutter: 15px;
+  --container-page: 1320px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background: var(--color-neutral);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: var(--text-body-md--font-weight);
+  line-height: var(--text-body-md--line-height);
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: var(--text-body-md);
+  }
 }
