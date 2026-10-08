@@ -71,4 +71,3 @@ None of these tags exist yet. They are created as each stage is rehearsed.
 - A script per presenter, cross-checked so the handovers are coherent.
 - Slides.
 - Network: the build depends on a reliable connection, so a dedicated presenter network needs confirming with the venue.
-- A licence for the repo before it is made public.

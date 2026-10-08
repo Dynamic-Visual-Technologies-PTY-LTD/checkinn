@@ -2,6 +2,16 @@
   "name": "checkinn",
   "version": "0.1.0",
   "private": true,
+  "description": "A simple hotel-booking web application, and the demo for DVT's AI-SDLC workshop at AI Africa.",
+  "license": "MIT",
+  "homepage": "https://github.com/Dynamic-Visual-Technologies-PTY-LTD/checkinn#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dynamic-Visual-Technologies-PTY-LTD/checkinn.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Dynamic-Visual-Technologies-PTY-LTD/checkinn/issues"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
