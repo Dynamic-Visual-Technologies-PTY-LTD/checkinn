@@ -180,6 +180,12 @@ backgrounds:
   Use it where the wordmark does not fit: favicon, app icon, avatar, or a
   header narrower than 480px.
 
+The browser and home-screen icons are generated from the icon and are already
+wired up: `src/app/favicon.ico`, `src/app/apple-icon.png`, and the two
+`android-chrome-*.png` files in `public/logo/` listed in
+`src/app/manifest.webmanifest`. Regenerate all of them together if the icon
+changes.
+
 Show the logo 40px high in the header, with its accessible name set to
 "CheckInn". Do not redraw, recolour or stretch it, and do not set the name in
 text beside it. Do not draw, reuse or imitate the DVT mark, and do not put
