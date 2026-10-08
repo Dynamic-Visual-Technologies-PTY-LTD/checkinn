@@ -157,7 +157,7 @@ The repo is set up for [Claude Code](https://claude.com/claude-code) with the BM
 
 ## Contributing
 
-Branch from `main`, keep a pull request to one change, and make sure lint, typecheck, tests and build pass. The details are in [CONTRIBUTING.md](CONTRIBUTING.md).
+Branch from `main`, keep a pull request to one change, and make sure lint, typecheck, tests and build pass. The details are in [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## License
 

@@ -1,0 +1,15 @@
+{
+  "files.exclude": {
+    ".next": true,
+    "test-results": true,
+    "playwright-report": true,
+    "next-env.d.ts": true,
+    "tsconfig.tsbuildinfo": true
+  },
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, skills-lock.json, .nvmrc, .editorconfig, .gitattributes, .gitignore, .env.example, eslint.config.*, next.config.*, tsconfig.json, playwright.config.*, vitest.config.*",
+    "README.md": "AGENTS.md, CLAUDE.md, DESIGN.md, LICENSE"
+  }
+}
