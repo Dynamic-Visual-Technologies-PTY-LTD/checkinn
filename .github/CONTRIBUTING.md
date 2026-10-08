@@ -1,10 +1,10 @@
 # Contributing to CheckInn
 
-Thanks for helping out. This page is the short version. [`AGENTS.md`](AGENTS.md) is the full reference for the stack, the code style and what needs asking first, and it applies to people as much as to AI agents.
+Thanks for helping out. This page is the short version. [`AGENTS.md`](../AGENTS.md) is the full reference for the stack, the code style and what needs asking first, and it applies to people as much as to AI agents.
 
 ## Set up
 
-You need Node.js 24 (see [`.nvmrc`](.nvmrc)).
+You need Node.js 24 (see [`.nvmrc`](../.nvmrc)).
 
 ```bash
 npm install
@@ -58,4 +58,4 @@ The repo is public. Do not commit secrets, API keys, `.env` files, a local `*.db
 
 ## Licence
 
-By contributing, you agree that your contribution is released under the [MIT License](LICENSE).
+By contributing, you agree that your contribution is released under the [MIT License](../LICENSE).
