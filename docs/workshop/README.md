@@ -1,8 +1,8 @@
-# AI Africa: AI-SDLC workshop
+# AI Expo Africa 2026: AI-DLC workshop
 
 A 90-minute, presenter-driven session for roughly 200 attendees. The presenters drive the build on one laptop; the audience watches and makes choices, they do not type along.
 
-The session takes an existing hotel-booking system (this repo), shows what its users are unhappy about, and then runs one enhancement through the full AI-assisted lifecycle: requirements, UX, architecture, build, deploy.
+The session takes an existing hotel-booking system (this repo), shows what its users are unhappy about, and then runs one enhancement through the full AI-DLC: requirements, UX, architecture, build, deploy. AI-DLC brings spec-driven development (SDD) and AI-native ways of working together; it is not an AI-assisted SDLC.
 
 ## Roles
 
@@ -17,7 +17,7 @@ Each role hands over to the next, relay style, so the audience sees the separati
 
 ## Agenda
 
-1. Present the workflow and the AI-SDLC we follow.
+1. Present the workflow and the AI-DLC we follow.
 2. Show the existing hotel-booking system and establish the problem statement.
 3. Present user-feedback bubbles highlighting what users say is not working.
 4. Show how the solution specification is developed across the PRD, UX and architecture.
