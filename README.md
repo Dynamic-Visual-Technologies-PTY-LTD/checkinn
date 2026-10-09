@@ -31,7 +31,7 @@ CheckInn is a simple hotel-booking web application: a guest searches for a hotel
 
 The planned enhancement is **intelligent search**. A guest describes what they want in plain language and the results are ranked by how well they match.
 
-CheckInn is also the demo application for DVT's AI-SDLC workshop at AI Africa, where that enhancement is built live. See [The workshop](#the-workshop).
+CheckInn is also the demo application for DVT's AI-DLC workshop at AI Expo Africa 2026, where that enhancement is built live. See [The workshop](#the-workshop).
 
 ## Quick start
 
@@ -118,7 +118,7 @@ It is one full-stack Next.js app. There is no separate API service.
 
 ## The workshop
 
-The AI Africa session takes this system and runs one enhancement, intelligent search, through an AI-assisted software lifecycle. Each stage is handed from one role to the next, and each ends with a git tag so the presenters can jump to a known-good state.
+The AI Expo Africa 2026 session takes this system and runs one enhancement, intelligent search, through the AI-DLC, which brings spec-driven development (SDD) and AI-native ways of working together. Each stage is handed from one role to the next, and each ends with a git tag so the presenters can jump to a known-good state.
 
 ```mermaid
 flowchart LR
@@ -168,5 +168,5 @@ Released under the [MIT License](LICENSE).
 <div align="center">
   <img src="public/logo/checkinn-icon.png" alt="" width="48">
   <br>
-  <sub>Built by DVT for AI Africa.</sub>
+  <sub>Built by DVT for AI Expo Africa 2026.</sub>
 </div>
