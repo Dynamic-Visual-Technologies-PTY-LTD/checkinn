@@ -1,0 +1,168 @@
+# epic-checkinn-mvp — planned entries in build order. Table order is the build order; ids are never reused.
+
+[[entry]]
+id = 1
+type = "story"
+title = "App shell, design tokens and error pages"
+description = "Builds the layout shell. Header (logo, Manage booking) and footer (fictional and illustrative-photos notice, Photo credits link) with skip link and landmarks; Poppins via next/font/local (AD-17); DESIGN.md tokens as the Tailwind theme; the inline SVG icon set; Stay and Party base types in src/domain/types.ts; error.tsx, not-found.tsx and the '%s · CheckInn' title template. Updates layout.test.tsx and e2e/home.spec.ts for the new shell."
+verify = "With the network blocked, Home renders header, footer and Poppins; an unknown URL shows the not-found page; unit and e2e tests pass."
+covers = ["CAP-1"]
+after = []
+hitl = true
+risk = "low"
+references = ["DESIGN.md", "_bmad-output/initiative-checkinn-mvp/architecture-checkinn/architecture-checkinn.md#ad-17--nothing-loads-from-the-network-except-seed-photos"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Tracer: database, seed and Home City tiles"
+description = "Installs the data stack (ask first) and copies the seed to data/seed/. Adds the Drizzle schema and committed migration, and src/db/client.ts migrating and seeding on first access (AD-6, AD-12). Adds a Vitest :memory: seeded-DB helper and documents the seed-to-table mapping in the README. Home shows the 6 City tiles (catalog Hotel count, photo credit) through RemoteImage (AD-14), read with io() (AD-2). The tracer bullet: tile links point at /search, which entry 7 builds."
+verify = "On a fresh clone npm run dev shows 6 tiles whose counts sum to 12. Blocked images show placeholders. A repo test on :memory: counts 12 Hotels. npm run build succeeds with no database file. home.spec tolerates failed seed-photo requests."
+covers = ["CAP-1", "CAP-8"]
+after = [1]
+hitl = true
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Reset and e2e isolation"
+description = "Adds npm run db:reset as a transactional wipe-and-reseed, safe while the app runs (AD-6). Playwright runs on a dedicated port with webServer.env.CHECKINN_DB_PATH set to a temp file, a reset in global setup, and serial booking-desktop then booking-mobile projects using unique guest emails (AD-18). Updates the e2e line in AGENTS.md Commands."
+verify = "With npm run dev running, a manually inserted booking row is gone after npm run db:reset and the app still lists 12 Hotels. npm run test:e2e no longer touches data/checkinn.db."
+covers = ["CAP-8"]
+after = [2]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Range calendar, occupancy picker and dialog primitive"
+description = "Builds the client components for the range calendar (desktop popover, phone sheet, keyboard grid, aria names) and the occupancy steppers, emitting a Stay and a Party. Also the shared dialog/sheet primitive (focus trap, inert background, Escape) that entries 8, 9 and 13 reuse. Follows DESIGN.md, EXPERIENCE.md and mockups/key-calendar.html."
+verify = "Component tests pick check-in and check-out by keyboard and by click, and enforce past days, the 30-night limit and the stepper limits with aria-disabled focus kept. The dialog primitive traps and restores focus."
+covers = ["CAP-1"]
+after = [1]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-mvp/ux-checkinn/mockups/key-calendar.html"]
+
+[[entry]]
+id = 5
+type = "story"
+title = "Criteria codec, clock and Home search bar"
+description = "Adds src/domain/criteria.ts (all params, defaults, stay | null rules, strict sel) and src/domain/clock.ts (Africa/Johannesburg), per AD-8 and AD-9. The search bar on Home uses entry 4's pickers, validates, and navigates to the /search criteria URL; City tile links carry the current criteria through the codec (FR-27)."
+verify = "Unit tests cover defaults, absent vs stale dates, limits and round-trips. Submitting the Home search bar navigates to the expected /search URL, and bad dates show field errors."
+covers = ["CAP-1"]
+after = [2, 4]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 6
+type = "story"
+title = "Availability core, pricing and searchHotels"
+description = "Adds availabilityFor in features/hotels/availability.repo.ts (AD-4), src/domain availability, search and pricing, formatZar with cents in src/lib/format.ts (AD-9), and searchHotels in features/search/queries.ts (AD-7). Documents the SearchCriteria, SearchResult and ListingCard types as the replacement seam (workshop-ready)."
+verify = "Unit tests on the seeded :memory: DB: 'Cape Town' ranks Harbourlight Retreat first at R 4 900 for 2 nights; 'cape' returns 6 Hotels; a fixture booking that fills a Hotel excludes it; an empty query returns 12; Night coverage counts check-in and excludes check-out."
+covers = ["CAP-2", "CAP-5"]
+after = [5]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 7
+type = "story"
+title = "Search results page and photo credits"
+description = "Builds /search: the search bar (collapsed on phones), result heading rules, Listing cards with a stretched-link name, ordering, the no-results state with entry 2's City tiles, the Suspense skeleton, the stale-link state and the page title (FR-3, FR-5–FR-8). Also /credits listing every city and hotel photo credit from the seed. Ships the search e2e spec."
+verify = "The e2e spec searches 'Cape Town' and 'cape' and sees the expected headings and first card. A stale link shows the 'Those dates have passed' state. /credits lists 6 city and 12 hotel credits."
+covers = ["CAP-1", "CAP-2", "CAP-5"]
+after = [3, 6]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 8
+type = "story"
+title = "Hotel page"
+description = "Builds /hotels/[hotelId] through features/hotels/hotel.repo.ts and queries.ts: header with See rooms, save (localStorage) and share, using the toast and clipboard fallback this entry owns; the price-match dialog (entry 4's primitive); photos; review panel; facilities; description and house rules (FR-9, FR-10, FR-12–FR-15). Unknown ids call notFound(); sets the page title."
+verify = "Harbourlight Retreat's page shows its seed values. Share over plain HTTP opens the fallback dialog. An unknown hotel id shows the not-found page."
+covers = ["CAP-3"]
+after = [6]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 9
+type = "story"
+title = "Photo viewer"
+description = "Adds the full-screen photo viewer on the Hotel page: arrow keys, swipe and Escape, 'Photo 1 of 2' announced, focus returned to the opening photo (FR-10, FR-11), reusing entry 4's dialog primitive."
+verify = "Component and e2e tests open the viewer, step through by keyboard, close with Escape and get focus back on the photo."
+covers = ["CAP-3"]
+after = [8]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 10
+type = "story"
+title = "Room table, selection and Reserve"
+description = "Adds to the Hotel page: the Stay and Party picker with no-dates and stale-link states, the room table (Sold out, 'Only N left', quantities, 'Show prices'), the booking summary and mobile summary bar with the party-fit check (FR-16–FR-18). Also the startBooking action that validates sel, mints k and redirects to /book (AD-10), and the shared action result type (AD-11) that entries 11–13 reuse."
+verify = "Table View City Lodge's Family Room shows Sold out. 1 Family Room for 5 guests keeps Reserve aria-disabled with the capacity message. Adding a Standard Double enables Reserve, which lands on /book?...&k=..."
+covers = ["CAP-4", "CAP-5"]
+after = [9]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 11
+type = "story"
+title = "Booking engine: confirm transaction and access"
+description = "Adds booking.repo.ts with the single synchronous transaction (AD-3) and the confirmBooking action. Covers idempotency on k, the reference and normaliseReference (AD-10), the cancellation deadline in src/domain/cancellation.ts (AD-9), the snapshot (AD-16), the access token and cookie helper (AD-15), and the room-ran-out redirect with its alert and focus in entry 10's availability section."
+verify = "Repo tests: a confirm returns a CI- reference and lowers Availability; two concurrent confirms for the last Room give one Booking; a repeated k returns the same Booking. An action test sets the access cookie and redirects."
+covers = ["CAP-6"]
+after = [10]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 12
+type = "story"
+title = "Booking details and confirmation pages"
+description = "Builds /book (summary with cancellation line, guest form, error summary, Back to rooms, no-valid-selection redirect) and /bookings/[reference] as the confirmation (reference block with COPY reusing entry 8's toast and fallback; the 'Already booked' state). Ships the UJ-1 and UJ-2 e2e specs (FR-21, FR-22)."
+verify = "The UJ-1 and UJ-2 e2e specs pass on both booking projects: R 4 900,00 and R 24 750,00 totals, references shown; resubmitting after Back shows the same Booking."
+covers = ["CAP-5", "CAP-6"]
+after = [11]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 13
+type = "story"
+title = "Manage booking and cancel"
+description = "Builds /manage (reference and email lookup that sets the access cookie) and extends /bookings/[reference] into the Booking view with a cancel dialog (entry 4's primitive). Cancelling honours the snapshot policy and the 48-hour deadline with all four policy states (FR-23, FR-24; AD-15). Ships the UJ-3 e2e spec."
+verify = "UJ-3 e2e passes. Wrong email and wrong reference show the same not-found. A Free-cancellation Booking cancels and frees its Rooms. Non-refundable and past-deadline Bookings show no cancel."
+covers = ["CAP-7"]
+after = [12]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 14
+type = "story"
+title = "Refactor sweep"
+description = "Cleanup, scoped when it starts from the plans and the review findings deferred during the epic, including a review of the AD-1 layering rule. No new scope."
+verify = "Lint, typecheck, test, build and the existing e2e specs are green with no behaviour change."
+covers = []
+after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 15
+type = "story"
+title = "Cross-cutting e2e and expo dry-run"
+description = "Playwright specs for network-blocked flows, db:reset between runs, the mobile viewport, and an under-1-second render spot check for /search and the Hotel page. Then the expo dry-run on the presenter laptop with the projector and two phones (epic Done when 6)."
+verify = "npm run test:e2e is green in CI against npm start, and the dry-run checklist passes on the laptop with two phones."
+covers = ["CAP-1", "CAP-2", "CAP-3", "CAP-4", "CAP-5", "CAP-6", "CAP-7", "CAP-8"]
+after = [14]
+hitl = true
+risk = "medium"

@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CheckInn key screen: Booking details</title>
+<style>
+/*
+  CheckInn key-screen mock. Illustrates the spine; the spine is the contract.
+  Governing spine sections:
+   - DESIGN.md Layout > Page layouts > Booking details and confirmation (form left, summary right)
+   - DESIGN.md Components > Step indicator, Input (invalid), Booking summary, Cancellation line (Non-refundable), Alerts (alert-error), Primary button
+   - EXPERIENCE.md Component Patterns > Guest form (error summary with links), Step indicator, Booking summary
+   - EXPERIENCE.md Demo and Presenter Concerns > Fictional notice on Booking details
+   - EXPERIENCE.md Voice and Tone ('Non-refundable. This booking can't be cancelled.')
+   - EXPERIENCE.md Key Flows > Flow 1 step 6; PRD FR-21
+  Tokens: DESIGN.md front matter (colours, typography, rounded, spacing, components).
+  Offline: no web font load (Poppins falls back to system-ui), no JS, no network.
+  Photos are rendered as the Image placeholder component (FR-11 fallback).
+*/
+*{box-sizing:border-box}
+body{margin:0;padding:40px;background:#2B3038;font-family:Poppins,system-ui,sans-serif;color:#FFFFFF}
+.mock-label{font-size:14px;font-weight:600;color:#E5E7E8;margin:0 0 12px;letter-spacing:.5px}
+.mock-section{margin-bottom:60px}
+.row{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap}
+/* device frames (mock chrome, not product) */
+.browser{width:1280px;background:#070C14;border:1px solid #4A505A;border-radius:10px;overflow:hidden}
+.chrome{height:40px;background:#1E232B;display:flex;align-items:center;gap:8px;padding:0 14px}
+.chrome i{width:12px;height:12px;border-radius:50%;background:#4A505A;display:block}
+.url{margin-left:14px;flex:1;height:26px;border-radius:13px;background:#2B3038;color:#E5E7E8;font-size:13px;line-height:26px;padding:0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phone{width:399px;border:12px solid #1E232B;border-radius:44px;overflow:hidden;background:#070C14;flex:none}
+.screen{width:375px;position:relative;background:#070C14}
+.screen.fixed{height:812px;overflow:hidden}
+/* page */
+.page{background:#070C14;color:#FFFFFF;font-size:15px;line-height:1.56;font-weight:400}
+.wrap{max-width:1320px;margin:0 auto;padding:0 15px}
+a{color:inherit}
+.hdr{height:100px;background:rgba(7,12,20,.8);box-shadow:0 0 4px rgba(0,0,0,.1)}
+.hdr-in{height:100%;display:flex;align-items:center;justify-content:space-between}
+.logo{height:40px;width:auto;display:block}
+.nav{font-size:14px;color:#FFFFFF;text-decoration:none}
+.ftr{border-top:1px solid #CED4DA;margin-top:100px;padding:25px 0 50px;font-size:14px;color:#E5E7E8}
+.ftr a{color:#FFFFFF;text-decoration:underline}
+main{padding-top:50px}
+.section{margin-top:100px}
+/* type */
+.display{font-size:48px;font-weight:500;line-height:1.2;color:#007FBA;margin:0}
+.grad{background:linear-gradient(to right,#007FBA,#00D2D6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.h-lg{font-size:36px;font-weight:600;line-height:42px;margin:0}
+.h-md{font-size:24px;font-weight:500;line-height:30px;margin:0}
+.h-sm{font-size:20px;font-weight:600;line-height:26px;margin:0}
+.lead{font-size:24px;font-weight:300;line-height:32px;margin:0}
+.sm{font-size:14px;line-height:1.56}
+.muted{color:#E5E7E8}
+.eyebrow{font-size:14px;font-weight:600;line-height:1.56;text-transform:uppercase;color:#E5E7E8;margin:0}
+.price{font-size:24px;font-weight:600;line-height:30px;white-space:nowrap}
+.inline-link{color:#FFFFFF;text-decoration:underline}
+p{margin:0}
+.stack>*+*{margin-top:15px}
+.stack-sm>*+*{margin-top:4px}
+.ico{display:flex;align-items:center;gap:8px}
+/* buttons */
+.btn{height:56px;padding:0 25px;border-radius:32px;border:2px solid #007FBA;font:inherit;font-size:16px;font-weight:500;line-height:30px;letter-spacing:1.5px;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:#FFFFFF;background:transparent;text-decoration:none;white-space:nowrap;cursor:pointer}
+.btn-primary{background:#005A9E}
+.btn-disabled{background:#0B2A44;color:#E5E7E8;border-color:#0B2A44;cursor:default}
+.btn-block{width:100%}
+.btn-round{width:44px;height:44px;padding:0;border-radius:9999px}
+/* card, chip, badges */
+.card{border:1px solid #007FBA;border-radius:12px;padding:25px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-block;border:1px solid #007FBA;border-radius:9999px;padding:4px 15px;font-size:14px;font-weight:600;line-height:1.56;text-transform:uppercase;white-space:nowrap}
+.score-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.score{background:#005A9E;color:#FFFFFF;border-radius:4px;padding:8px;font-size:14px;font-weight:600;line-height:1}
+.badge-ok{display:inline-block;background:#3DDC97;color:#070C14;border-radius:9999px;padding:4px 12px;font-size:14px;font-weight:600;line-height:1.56;white-space:nowrap}
+.cancel-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
+.stars{display:inline-flex;gap:2px;vertical-align:middle}
+/* image placeholder */
+.ph{background:#0B2A44;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;color:#E5E7E8;font-size:20px;font-weight:600;line-height:26px;padding:15px}
+/* search bar */
+.sb{display:flex;align-items:center;height:72px;padding:8px;border:1px solid #007FBA;border-radius:12px}
+.sb-f{flex:1;display:flex;align-items:center;gap:12px;height:100%;padding:0 15px;border-right:1px solid #007FBA;min-width:0}
+.sb-f:last-of-type{border-right:0}
+.sb-f svg{flex:none;color:#E5E7E8}
+.sb-l{display:block;font-size:14px;line-height:1.3;color:#E5E7E8}
+.sb-v{display:block;font-size:15px;line-height:1.4;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-v.ph-text{color:#E5E7E8}
+.sb .btn{margin-left:8px}
+.sb.stacked{flex-direction:column;align-items:stretch;height:auto}
+.sb.stacked .sb-f{height:64px;border-right:0;border-bottom:1px solid #007FBA}
+.sb.stacked .sb-f:last-of-type{border-bottom:0}
+.sb.stacked .sb-v{font-size:16px}
+.sb.stacked .btn{margin:8px 0 0}
+/* city tiles */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.tile-img{position:relative;height:220px;border-radius:12px;background:#0B2A44;overflow:hidden}
+.tile-cap{position:absolute;left:0;right:0;bottom:0;padding:50px 15px 15px;background:linear-gradient(to top,#070C14,rgba(7,12,20,0))}
+.tile{display:block;text-decoration:none;color:#FFFFFF}
+.credit{font-size:14px;color:#E5E7E8;margin-top:4px}
+/* listing card */
+.lc{display:grid;grid-template-columns:33% 1fr 230px;gap:25px;text-decoration:none;color:#FFFFFF}
+.lc .ph{height:230px}
+.lc-price{display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;text-align:right;gap:4px}
+.lc-price .btn{margin-top:15px}
+/* booking summary */
+.sum{background:#0B2A44;border-radius:12px;padding:25px}
+.sum-line{display:flex;justify-content:space-between;gap:15px}
+.sum-line span:last-child{white-space:nowrap}
+.divider{border:0;height:1px;background:#CED4DA;margin:15px 0}
+/* room table */
+.rt{border:1px solid #007FBA;border-radius:12px;overflow:hidden}
+.rt table{width:100%;border-collapse:collapse}
+.rt th{text-align:left;font-size:14px;font-weight:600;line-height:1.56;text-transform:uppercase;color:#E5E7E8;padding:15px 25px}
+.rt td{padding:25px;border-top:1px solid #CED4DA;vertical-align:top}
+.rt .feat{font-size:14px;margin-top:8px}
+.rt .feat .ico{margin-top:4px}
+.sleeps{display:inline-flex;gap:2px}
+.sold{color:#FF6B6B;font-size:14px}
+select.input{height:38px;min-width:90px;padding:0 8px;border:1px solid #007FBA;border-radius:4px;background:#070C14;color:#FFFFFF;font:inherit;font-size:15px}
+/* forms */
+.field{display:block}
+.field label{display:block;font-size:14px;line-height:1.56;margin-bottom:4px}
+.input{display:block;width:100%;height:38px;padding:8px;border:1px solid #007FBA;border-radius:4px;background:transparent;color:#FFFFFF;font:inherit;font-size:15px}
+textarea.input{height:96px;resize:vertical}
+select.input{width:auto}
+.input.invalid{border-color:#FF6B6B}
+.field-err{display:flex;align-items:center;gap:6px;color:#FF6B6B;font-size:14px;margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+/* step indicator */
+.steps{display:flex;gap:50px;list-style:none;margin:0;padding:0}
+.steps li{font-size:14px;line-height:1.56;text-transform:uppercase;color:#E5E7E8;padding-bottom:8px}
+.steps li.on{color:#FFFFFF;font-weight:600;border-bottom:2px solid #00D2D6}
+/* alerts */
+.alert{display:flex;gap:15px;align-items:flex-start;border:1px solid;border-radius:12px;padding:15px;color:#FFFFFF}
+.alert.err{border-color:#FF6B6B}
+.alert.err>svg{color:#FF6B6B;flex:none}
+.alert ul{margin:8px 0 0;padding-left:20px}
+/* two-column flows */
+.cols{display:grid;grid-template-columns:1fr 420px;gap:50px;align-items:start}
+.sticky{position:sticky;top:115px}
+/* mobile overrides (<768px) */
+.m .hdr{height:64px}
+.m .page{font-size:13px}
+.m .display{font-size:26px;line-height:1.2}
+.m .h-lg{font-size:26px;line-height:1.2}
+.m .tiles{grid-template-columns:1fr}
+.m .bar{position:absolute;left:0;right:0;bottom:0;background:#0B2A44;padding:15px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.m select.input{height:44px}
+</style>
+</head>
+<body>
+<section class="mock-section"><p class="mock-label">BOOKING DETAILS · Desktop 1280 · step 2 'Your details', form filled, Non-refundable summary</p>
+<div class="browser"><div class="chrome"><i></i><i></i><i></i><div class="url">localhost:3000/book/details?hotel=harbourlight-retreat&amp;checkIn=2026-11-13&amp;checkOut=2026-11-15&amp;adults=2&amp;children=0&amp;rooms=1&amp;standard=1</div></div><div class="page"><header class="hdr"><div class="wrap hdr-in"><a href="#"><img class="logo" src="../../../../public/logo/checkinn-logo-on-dark.webp" alt="CheckInn" height="40"></a><nav><a class="nav" href="#">Manage booking</a></nav></div></header>
+<main class="wrap">
+  <ol class="steps" aria-label="Booking steps"><li>Your selection</li><li class="on" aria-current="step">Your details</li><li>Confirmation</li></ol>
+  <p style="margin-top:25px"><a class="inline-link sm" href="#">Back</a></p>
+  <div class="cols" style="margin-top:15px">
+    <div>
+      <h1 class="h-lg" id="details-h" tabindex="-1">Your details</h1>
+      <p class="muted" style="margin-top:15px">No payment is taken. This hotel is fictional.</p>
+      <div style="margin-top:25px"><form class="stack" novalidate aria-labelledby="details-h">
+  
+  <div class="grid2">
+    <div class="field"><label for="first">First name</label><input class="input" id="first" value="Thandi" autocomplete="given-name"></div>
+    <div class="field"><label for="last">Last name</label><input class="input" id="last" value="Nkosi" autocomplete="family-name"></div>
+  </div>
+  <div class="field"><label for="email">Email</label><input class="input" id="email" type="email" value="thandi@example.com" autocomplete="email"></div>
+  <div class="grid2">
+    <div class="field"><label for="mobile">Mobile number (optional)</label><input class="input" id="mobile" type="tel" autocomplete="tel"></div>
+    <div class="field"><label for="arrival">Estimated arrival time (optional)</label><select class="input" id="arrival" style="width:100%"><option>Not sure yet</option><option>14:00 – 15:00</option><option>15:00 – 16:00</option></select></div>
+  </div>
+  <div class="field"><label for="req">Special requests (optional)</label><textarea class="input" id="req"></textarea></div>
+</form></div>
+    </div>
+    <aside class="sum" aria-label="Booking summary">
+  <h2 class="h-sm">Harbourlight Retreat</h2>
+  
+  <div class="stack-sm" style="margin-top:15px">
+    <p class="sm">Fri 13 Nov – Sun 15 Nov 2026</p>
+    <p class="sm muted">2&nbsp;nights, 2 adults</p>
+    
+  </div>
+  <hr class="divider">
+  <p class="sm muted">1 room selected</p>
+  <div class="stack-sm" style="margin-top:4px">
+    <p class="sum-line"><span>1 × Standard Double</span><span>R&nbsp;4&nbsp;900,00</span></p>
+  </div>
+  <hr class="divider">
+  <p class="sum-line" aria-live="polite"><span class="h-sm">Total</span><span class="price">R&nbsp;4&nbsp;900,00</span></p>
+  <p class="sm muted" style="margin-top:4px">Includes taxes. No extra fees.</p>
+  <div style="margin-top:15px"><p class="cancel-line ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg><span>Non-refundable. This booking can't be cancelled.</span></p></div>
+  <button class="btn btn-block btn-primary" style="margin-top:25px" type="button">Confirm booking</button>
+</aside>
+  </div>
+</main>
+<footer class="ftr"><div class="wrap"><p>CheckInn is a demo. Hotels, prices and reviews are fictional. Photos are illustrative. No payment is taken.</p><p><a href="#">Photo credits</a></p></div></footer></div></div></section>
+<section class="mock-section"><p class="mock-label">ALTERNATE · Error summary after submit · focus on the summary, two field errors (last name empty, email invalid)</p>
+<div class="browser"><div class="chrome"><i></i><i></i><i></i><div class="url">localhost:3000/book/details?hotel=harbourlight-retreat&amp;checkIn=2026-11-13&amp;checkOut=2026-11-15&amp;adults=2&amp;children=0&amp;rooms=1&amp;standard=1</div></div><div class="page"><header class="hdr"><div class="wrap hdr-in"><a href="#"><img class="logo" src="../../../../public/logo/checkinn-logo-on-dark.webp" alt="CheckInn" height="40"></a><nav><a class="nav" href="#">Manage booking</a></nav></div></header>
+<main class="wrap">
+  <ol class="steps" aria-label="Booking steps"><li>Your selection</li><li class="on" aria-current="step">Your details</li><li>Confirmation</li></ol>
+  <p style="margin-top:25px"><a class="inline-link sm" href="#">Back</a></p>
+  <div class="cols" style="margin-top:15px">
+    <div>
+      <h1 class="h-lg" id="details-h" tabindex="-1">Your details</h1>
+      <p class="muted" style="margin-top:15px">No payment is taken. This hotel is fictional.</p>
+      <div style="margin-top:25px"><form class="stack" novalidate aria-labelledby="details-h">
+  <div class="alert err" role="alert" tabindex="-1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg><div><p class="h-sm">2 details need fixing.</p><ul class="sm"><li><a class="inline-link" href="#last">Enter your last name.</a></li><li><a class="inline-link" href="#email">Enter an email address like name@example.com.</a></li></ul></div></div>
+  <div class="grid2">
+    <div class="field"><label for="first-e">First name</label><input class="input" id="first-e" value="Thandi" autocomplete="given-name"></div>
+    <div class="field"><label for="last-e">Last name</label><input class="input invalid" id="last-e" value="" autocomplete="family-name" aria-invalid="true" aria-describedby="last-err"><p class="field-err" id="last-err"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg><span>Enter your last name.</span></p></div>
+  </div>
+  <div class="field"><label for="email-e">Email</label><input class="input invalid" id="email-e" type="email" value="thandi@example" autocomplete="email" aria-invalid="true" aria-describedby="email-err"><p class="field-err" id="email-err"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg><span>Enter an email address like name@example.com.</span></p></div>
+  <div class="grid2">
+    <div class="field"><label for="mobile-e">Mobile number (optional)</label><input class="input" id="mobile-e" type="tel" autocomplete="tel"></div>
+    <div class="field"><label for="arrival-e">Estimated arrival time (optional)</label><select class="input" id="arrival-e" style="width:100%"><option>Not sure yet</option><option>14:00 – 15:00</option><option>15:00 – 16:00</option></select></div>
+  </div>
+  <div class="field"><label for="req-e">Special requests (optional)</label><textarea class="input" id="req-e"></textarea></div>
+</form></div>
+    </div>
+    <aside class="sum" aria-label="Booking summary">
+  <h2 class="h-sm">Harbourlight Retreat</h2>
+  
+  <div class="stack-sm" style="margin-top:15px">
+    <p class="sm">Fri 13 Nov – Sun 15 Nov 2026</p>
+    <p class="sm muted">2&nbsp;nights, 2 adults</p>
+    
+  </div>
+  <hr class="divider">
+  <p class="sm muted">1 room selected</p>
+  <div class="stack-sm" style="margin-top:4px">
+    <p class="sum-line"><span>1 × Standard Double</span><span>R&nbsp;4&nbsp;900,00</span></p>
+  </div>
+  <hr class="divider">
+  <p class="sum-line" aria-live="polite"><span class="h-sm">Total</span><span class="price">R&nbsp;4&nbsp;900,00</span></p>
+  <p class="sm muted" style="margin-top:4px">Includes taxes. No extra fees.</p>
+  <div style="margin-top:15px"><p class="cancel-line ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg><span>Non-refundable. This booking can't be cancelled.</span></p></div>
+  <button class="btn btn-block btn-primary" style="margin-top:25px" type="button">Confirm booking</button>
+</aside>
+  </div>
+</main>
+<footer class="ftr"><div class="wrap"><p>CheckInn is a demo. Hotels, prices and reviews are fictional. Photos are illustrative. No payment is taken.</p><p><a href="#">Photo credits</a></p></div></footer></div></div></section>
+</body>
+</html>
