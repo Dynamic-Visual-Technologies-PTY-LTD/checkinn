@@ -10,6 +10,11 @@ describe("Home", () => {
     ).toBeInTheDocument();
   });
 
+  it("leaves the main landmark to the layout", () => {
+    render(<Home />);
+    expect(screen.queryByRole("main")).not.toBeInTheDocument();
+  });
+
   it("tells the guest what CheckInn is", () => {
     render(<Home />);
     expect(
