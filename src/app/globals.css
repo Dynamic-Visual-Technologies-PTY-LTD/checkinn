@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-/* Design tokens from DESIGN.md. The theme is dark only. */
+/* Design tokens from DESIGN.md. The theme is dark only. Keep in sync with
+   DESIGN.md: this file is the single source of tokens for the app. */
 @theme inline {
   --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 }
@@ -8,22 +9,33 @@
 @theme {
   --color-primary: #007fba;
   --color-primary-strong: #005a9e;
+  --color-primary-subtle: #0b2a44;
   --color-secondary: #00d2d6;
   --color-tertiary: #ffc300;
   --color-neutral: #070c14;
   --color-surface: #070c14;
   --color-on-surface: #ffffff;
   --color-on-surface-muted: #e5e7e8;
+  --color-on-surface-disabled: #7a828c;
   --color-on-primary: #ffffff;
   --color-on-tertiary: #070c14;
   --color-outline: #ced4da;
+  --color-error: #ff6b6b;
+  --color-success: #3ddc97;
+  --color-on-success: #070c14;
 
   --text-headline-display: 48px;
   --text-headline-display--line-height: 1.2;
   --text-headline-display--font-weight: 500;
+  --text-headline-display-mobile: 26px;
+  --text-headline-display-mobile--line-height: 1.2;
+  --text-headline-display-mobile--font-weight: 500;
   --text-headline-lg: 36px;
   --text-headline-lg--line-height: 42px;
   --text-headline-lg--font-weight: 600;
+  --text-headline-lg-mobile: 22px;
+  --text-headline-lg-mobile--line-height: 28px;
+  --text-headline-lg-mobile--font-weight: 600;
   --text-headline-md: 24px;
   --text-headline-md--line-height: 30px;
   --text-headline-md--font-weight: 500;
@@ -39,6 +51,9 @@
   --text-body-sm: 14px;
   --text-body-sm--line-height: 1.56;
   --text-body-sm--font-weight: 400;
+  --text-input-mobile: 16px;
+  --text-input-mobile--line-height: 1.5;
+  --text-input-mobile--font-weight: 400;
   --text-label-lg: 16px;
   --text-label-lg--line-height: 30px;
   --text-label-lg--font-weight: 500;
@@ -49,6 +64,13 @@
   --text-label-sm: 14px;
   --text-label-sm--line-height: 1.56;
   --text-label-sm--font-weight: 400;
+  --text-price-lg: 24px;
+  --text-price-lg--line-height: 30px;
+  --text-price-lg--font-weight: 600;
+  --text-reference-code: 36px;
+  --text-reference-code--line-height: 42px;
+  --text-reference-code--font-weight: 600;
+  --text-reference-code--letter-spacing: 3px;
 
   --radius-none: 0px;
   --radius-sm: 4px;
@@ -67,17 +89,48 @@
   --container-page: 1320px;
 }
 
-body {
-  background: var(--color-neutral);
-  color: var(--color-on-surface);
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: var(--text-body-md--font-weight);
-  line-height: var(--text-body-md--line-height);
+/* Headlines that swap to their mobile size below 768px (DESIGN.md
+   Typography). Use these instead of pairing the two tokens by hand. */
+@utility text-headline-display-responsive {
+  @apply text-headline-display-mobile md:text-headline-display;
 }
 
-@media (min-width: 768px) {
+@utility text-headline-lg-responsive {
+  @apply text-headline-lg-mobile md:text-headline-lg;
+}
+
+@layer base {
+  html {
+    /* Keep in-page targets clear of the sticky header (64px, 100px from md). */
+    scroll-padding-top: 64px;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      scroll-padding-top: 100px;
+    }
+  }
+
+  /* The header stops being sticky below 500px of viewport height. */
+  @media (max-height: 499px) {
+    html {
+      scroll-padding-top: 0;
+    }
+  }
+
+  /* Body text stays 15px at every width (DESIGN.md Typography). */
   body {
+    background: var(--color-neutral);
+    color: var(--color-on-surface);
+    font-family: var(--font-sans);
     font-size: var(--text-body-md);
+    font-weight: var(--text-body-md--font-weight);
+    line-height: var(--text-body-md--line-height);
+  }
+
+  /* Focus ring: 2px Gold with a 2px offset. Never removed. */
+  :focus-visible {
+    outline: 2px solid var(--color-tertiary);
+    outline-offset: 2px;
   }
 }
