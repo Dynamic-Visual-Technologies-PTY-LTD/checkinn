@@ -52,7 +52,39 @@ describe("hotelPage", () => {
         { term: "Smoking", value: "Smoking is not allowed" },
         { term: "Cancellation", value: "Non-refundable. This booking can't be cancelled." },
       ],
+      rooms: [
+        {
+          id: "hotel-001-standard",
+          name: "Standard Double",
+          maxGuests: 2,
+          bedsLabel: "1 double bed",
+          amenities: [
+            { key: "wifi", label: "Free Wi-Fi" },
+            { key: "private_bathroom", label: "Private bathroom" },
+          ],
+          nightlyRand: 2450,
+        },
+        {
+          id: "hotel-001-family",
+          name: "Family Room",
+          maxGuests: 4,
+          bedsLabel: "1 double bed, 2 single beds",
+          amenities: [
+            { key: "wifi", label: "Free Wi-Fi" },
+            { key: "private_bathroom", label: "Private bathroom" },
+          ],
+          nightlyRand: 3000,
+        },
+      ],
+      cancellationPolicy: "non_refundable",
+      checkInTime: "14:00",
     });
+  });
+
+  it("carries a free-cancellation policy", () => {
+    expect(hotelPage(db, "hotel-002")?.cancellationPolicy).toBe(
+      "free_until_48_hours_before_check_in",
+    );
   });
 
   it("lists only the Facilities a Hotel has", () => {

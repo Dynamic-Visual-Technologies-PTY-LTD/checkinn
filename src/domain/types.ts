@@ -186,4 +186,41 @@ export type HotelPage = {
   photos: { url: string; alt: string }[];
   /** Check-in, Check-out, Children, Pets, Smoking and Cancellation, in that order. */
   houseRules: HouseRule[];
+  /** The Hotel's Room types in seed order, for the room table (FR-17). */
+  rooms: RoomOption[];
+  cancellationPolicy: CancellationPolicy;
+  /** The Hotel's check-in time, `HH:MM`, the base of the cancellation deadline (AD-9). */
+  checkInTime: string;
+};
+
+/** One Room type as the room table shows it. Money is whole rand (AD-9). */
+export type RoomOption = {
+  id: string;
+  name: string;
+  maxGuests: number;
+  /** "1 double bed, 2 single beds". */
+  bedsLabel: string;
+  /** Seed amenity labels, e.g. "Private bathroom", with their keys. */
+  amenities: { key: string; label: string }[];
+  nightlyRand: number;
+};
+
+/** Expected failures a server action returns instead of throwing (AD-11). */
+export type ErrorCode =
+  | "VALIDATION"
+  | "NOT_FOUND"
+  | "NOT_CANCELLABLE"
+  | "DEADLINE_PASSED"
+  | "ALREADY_CANCELLED"
+  | "SERVER_ERROR";
+
+/**
+ * What a server action returns when it does not redirect (AD-11). Success
+ * always ends in `redirect()`, so only the failure shape exists.
+ */
+export type ActionResult = {
+  ok: false;
+  code: ErrorCode;
+  fieldErrors?: Record<string, string>;
+  message: string;
 };

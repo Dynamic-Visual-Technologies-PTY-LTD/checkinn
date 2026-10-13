@@ -1,5 +1,14 @@
 import type { CancellationPolicy, HouseRule } from "@/domain/types";
 
+const BED_NOUNS: Record<string, string> = {
+  double: "double bed",
+  single: "single bed",
+  queen: "queen bed",
+  king: "king bed",
+  twin: "twin bed",
+  sofa_bed: "sofa bed",
+};
+
 const CANCELLATION_RULES: Record<CancellationPolicy, string> = {
   free_until_48_hours_before_check_in: "Free cancellation until 48 hours before check-in.",
   non_refundable: "Non-refundable. This booking can't be cancelled.",
@@ -53,4 +62,17 @@ export function houseRules({ checkInTime, checkOutTime, policies }: HouseRuleInp
  */
 export function availabilityHeadingId(hotelId: string): string {
   return `availability-heading-${hotelId}`;
+}
+
+/**
+ * A Room type's beds as one phrase: "1 double bed", "1 double bed, 2 single
+ * beds". Unknown bed types fall back to "<type> bed".
+ */
+export function bedsLabel(beds: readonly { type: string; count: number }[]): string {
+  return beds
+    .map(({ type, count }) => {
+      const noun = BED_NOUNS[type] ?? `${type.replace(/_/g, " ")} bed`;
+      return `${count} ${count === 1 ? noun : `${noun}s`}`;
+    })
+    .join(", ");
 }

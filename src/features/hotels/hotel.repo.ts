@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import type { Db } from "@/db/client";
-import { cities, hotelImages, hotels } from "@/db/schema";
-import { houseRules } from "@/domain/hotel";
+import { cities, hotelImages, hotels, roomTypes } from "@/db/schema";
+import { bedsLabel, houseRules } from "@/domain/hotel";
 import { reviewLabel } from "@/domain/search";
 import type { CancellationPolicy, HotelPage } from "@/domain/types";
 import { labels } from "@/features/search/search.repo";
@@ -33,6 +33,23 @@ export function hotelPage(db: Db, hotelId: string): HotelPage | null {
     .filter((key) => Boolean(amenityLabels[key]))
     .map((key) => ({ key, label: amenityLabels[key] }));
 
+  const rooms = db
+    .select()
+    .from(roomTypes)
+    .where(eq(roomTypes.hotelId, hotel.id))
+    .orderBy(asc(roomTypes.position))
+    .all()
+    .map((room) => ({
+      id: room.id,
+      name: room.name,
+      maxGuests: room.maxGuests,
+      bedsLabel: bedsLabel(room.beds),
+      amenities: room.amenities
+        .filter((key) => Boolean(amenityLabels[key]))
+        .map((key) => ({ key, label: amenityLabels[key] })),
+      nightlyRand: room.pricePerNightRand,
+    }));
+
   return {
     hotelId: hotel.id,
     name: hotel.name,
@@ -55,5 +72,8 @@ export function hotelPage(db: Db, hotelId: string): HotelPage | null {
         cancellation: { type: hotel.policies.cancellation.type as CancellationPolicy },
       },
     }),
+    rooms,
+    cancellationPolicy: hotel.policies.cancellation.type as CancellationPolicy,
+    checkInTime: hotel.checkInTime,
   };
 }

@@ -38,7 +38,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
   return (
     <div
       role="status"
-      className="pointer-events-none fixed inset-x-0 bottom-space-lg z-40 flex justify-center px-gutter"
+      className="pointer-events-none fixed inset-x-0 bottom-(--toast-offset,var(--spacing-space-lg)) z-40 flex justify-center px-gutter"
     >
       {toast ? <ToastPanel key={toast.id} text={toast.text} onDismiss={onDismiss} /> : null}
     </div>

@@ -1,12 +1,15 @@
 import { io } from "next/cache";
 import { notFound } from "next/navigation";
+import {
+  AvailabilitySection,
+  type AvailabilityContext,
+} from "@/app/hotels/[hotelId]/availability-section";
 import { HotelActions } from "@/app/hotels/[hotelId]/hotel-actions";
 import { HotelPhotos } from "@/app/hotels/[hotelId]/photo-viewer";
 import { ResultsHeading } from "@/app/search/results-heading";
 import { Icon, type IconName } from "@/components/icons/icons";
 import { Stars } from "@/components/stars";
 import { todayIn } from "@/domain/clock";
-import { availabilityHeadingId } from "@/domain/hotel";
 import { hotelHref, parseCriteria } from "@/domain/criteria";
 import type { HotelPage } from "@/domain/types";
 import { getHotelPage } from "@/features/hotels/queries";
@@ -46,7 +49,8 @@ export async function HotelContent({
   const { hotelId } = await params;
   const query = await searchParams;
   await io();
-  const { criteria } = parseCriteria(query, todayIn(), { defaultStay: false });
+  const today = todayIn();
+  const { criteria, problems } = parseCriteria(query, today, { defaultStay: false });
   const hotel = await getHotelPage(hotelId);
   if (!hotel) notFound();
 
@@ -55,15 +59,31 @@ export async function HotelContent({
     stay: criteria.stay,
     party: criteria.party,
   });
-  return <HotelDetails hotel={hotel} sharePath={sharePath} />;
+  // A stale link: the URL had dates or a Party the codec rejected.
+  const stale = criteria.stay === null && problems.some((problem) => problem !== "sel-invalid");
+  return (
+    <HotelDetails
+      hotel={hotel}
+      sharePath={sharePath}
+      availability={{ today, criteria, stale }}
+    />
+  );
 }
 
 /**
  * The Hotel page sections (FR-9, FR-10, FR-12–FR-14, DESIGN.md Hotel page):
  * header, photos, review panel and facilities, about and house rules, then
- * the Availability section.
+ * the Availability section (FR-16 to FR-18).
  */
-export function HotelDetails({ hotel, sharePath }: { hotel: HotelPage; sharePath: string }) {
+export function HotelDetails({
+  hotel,
+  sharePath,
+  availability,
+}: {
+  hotel: HotelPage;
+  sharePath: string;
+  availability: AvailabilityContext;
+}) {
   // Ids carry the Hotel id: Next can keep a previous Hotel page hidden in the DOM.
   const id = (name: string) => `${name}-${hotel.hotelId}`;
   return (
@@ -101,15 +121,7 @@ export function HotelDetails({ hotel, sharePath }: { hotel: HotelPage; sharePath
         </section>
       </div>
 
-      <section
-        id={id("availability")}
-        aria-labelledby={availabilityHeadingId(hotel.hotelId)}
-        className="mt-section"
-      >
-        <h2 id={availabilityHeadingId(hotel.hotelId)} tabIndex={-1} className="text-headline-md">
-          Availability
-        </h2>
-      </section>
+      <AvailabilitySection hotel={hotel} context={availability} />
     </>
   );
 }

@@ -1,12 +1,15 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { HotelPage } from "@/domain/types";
+import type { ReactElement } from "react";
+import { AvailabilityResults, type AvailabilityContext } from "./availability-section";
 import { HotelContent, HotelDetails } from "./hotel-details";
 import HotelRoute, { generateMetadata } from "./page";
 
 const mocks = vi.hoisted(() => ({
   calls: [] as string[],
   getHotelPage: vi.fn(),
+  getAvailability: vi.fn(),
   io: vi.fn(),
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
@@ -14,14 +17,21 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("next/cache", () => ({ io: mocks.io }));
-vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
+vi.mock("next/navigation", () => ({
+  notFound: mocks.notFound,
+  useRouter: () => ({ push: vi.fn() }),
+}));
+vi.mock("@/features/booking/actions", () => ({ startBooking: vi.fn() }));
 vi.mock("@/domain/clock", () => ({
   todayIn: () => {
     mocks.calls.push("todayIn");
     return "2026-11-10";
   },
 }));
-vi.mock("@/features/hotels/queries", () => ({ getHotelPage: mocks.getHotelPage }));
+vi.mock("@/features/hotels/queries", () => ({
+  getHotelPage: mocks.getHotelPage,
+  getAvailability: mocks.getAvailability,
+}));
 
 const harbourlight: HotelPage = {
   hotelId: "hotel-001",
@@ -54,7 +64,41 @@ const harbourlight: HotelPage = {
     { term: "Smoking", value: "Smoking is not allowed" },
     { term: "Cancellation", value: "Non-refundable. This booking can't be cancelled." },
   ],
+  rooms: [
+    {
+      id: "hotel-001-standard",
+      name: "Standard Double",
+      maxGuests: 2,
+      bedsLabel: "1 double bed",
+      amenities: [{ key: "private_bathroom", label: "Private bathroom" }],
+      nightlyRand: 2450,
+    },
+    {
+      id: "hotel-001-family",
+      name: "Family Room",
+      maxGuests: 4,
+      bedsLabel: "1 double bed, 2 single beds",
+      amenities: [{ key: "private_bathroom", label: "Private bathroom" }],
+      nightlyRand: 3000,
+    },
+  ],
+  cancellationPolicy: "non_refundable",
+  checkInTime: "14:00",
 };
+
+const NO_DATES = {
+  today: "2026-11-10",
+  stale: false,
+  criteria: {
+    q: "",
+    stay: null,
+    party: { adults: 2, children: 0, rooms: 1 },
+    hotel: null,
+    sel: null,
+    k: null,
+    notice: null,
+  },
+} satisfies AvailabilityContext;
 
 const SHARE_PATH = "/hotels/hotel-001?adults=2&children=0&rooms=1";
 
@@ -117,8 +161,6 @@ describe("HotelContent", () => {
         params: Promise.resolve({ hotelId: "hotel-001" }),
         searchParams: Promise.resolve({
           q: "Cape Town",
-          checkIn: "2026-11-13",
-          checkOut: "2026-11-15",
           adults: "2",
           children: "0",
           rooms: "1",
@@ -131,6 +173,48 @@ describe("HotelContent", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Harbourlight Retreat" }),
     ).toBeInTheDocument();
+  });
+
+  it("passes the URL's Stay to the Availability section, which shows priced rows", async () => {
+    mocks.getHotelPage.mockResolvedValue(harbourlight);
+    mocks.getAvailability.mockResolvedValue(
+      new Map([
+        ["hotel-001-standard", 10],
+        ["hotel-001-family", 4],
+      ]),
+    );
+
+    // Async server components can't render in jsdom, so read what HotelContent
+    // hands the section and render the section's data part from it.
+    const page = await HotelContent({
+      params: Promise.resolve({ hotelId: "hotel-001" }),
+      searchParams: Promise.resolve({
+        checkIn: "2026-11-13",
+        checkOut: "2026-11-15",
+        adults: "2",
+        children: "0",
+        rooms: "1",
+      }),
+    });
+    const { availability } = (page as ReactElement<{ availability: AvailabilityContext }>).props;
+    expect(availability.today).toBe("2026-11-10");
+    expect(availability.stale).toBe(false);
+    const { stay } = availability.criteria;
+    expect(stay).toEqual({ checkIn: "2026-11-13", checkOut: "2026-11-15" });
+
+    render(
+      await AvailabilityResults({
+        hotel: harbourlight,
+        stay: stay!,
+        today: availability.today,
+        criteria: availability.criteria,
+      }),
+    );
+
+    expect(screen.getByRole("columnheader", { name: "Price for 2 nights" })).toBeInTheDocument();
+    expect(mocks.getAvailability).toHaveBeenCalledWith("hotel-001", stay);
+    expect(screen.getByRole("combobox", { name: "Rooms of Standard Double" })).toBeInTheDocument();
+    expect(screen.getByText("4 900 rand")).toBeInTheDocument();
   });
 
   it("calls notFound for an unknown id", async () => {
@@ -148,7 +232,13 @@ describe("HotelContent", () => {
 
 describe("HotelDetails", () => {
   function renderDetails(hotel: Partial<HotelPage> = {}) {
-    return render(<HotelDetails hotel={{ ...harbourlight, ...hotel }} sharePath={SHARE_PATH} />);
+    return render(
+      <HotelDetails
+        hotel={{ ...harbourlight, ...hotel }}
+        sharePath={SHARE_PATH}
+        availability={NO_DATES}
+      />,
+    );
   }
 
   it("shows the header: category, name, stars, location and actions", () => {
@@ -220,13 +310,16 @@ describe("HotelDetails", () => {
     expect(values).toEqual(harbourlight.houseRules.map((rule) => rule.value));
   });
 
-  it("ends with an Availability section holding only its focusable heading", () => {
+  it("ends with the Availability section: steps, its focusable heading and the no-dates table", () => {
     renderDetails();
 
     const section = screen.getByRole("region", { name: "Availability" });
     const heading = within(section).getByRole("heading", { level: 2, name: "Availability" });
     expect(heading).toHaveAttribute("tabindex", "-1");
-    expect(section.children).toHaveLength(1);
+    expect(within(section).getByText("1 Your selection")).toHaveAttribute("aria-current", "step");
+    expect(
+      within(section).getByText("Select dates to see this property's availability and prices"),
+    ).toBeInTheDocument();
     expect(screen.getAllByRole("region").at(-1)).toBe(section);
   });
 });
