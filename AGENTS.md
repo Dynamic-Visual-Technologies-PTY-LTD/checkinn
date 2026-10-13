@@ -96,10 +96,11 @@ import { formatPrice } from "../../../lib/format"; // no
 | Validate `DESIGN.md` | `npm run design:lint` |
 | Production build | `npm run build` |
 | Serve the production build | `npm start` |
+| Reset the database to the seed (safe while the app runs) | `npm run db:reset` |
 
 `npm run typecheck` runs `next typegen` first, because Next.js generates the route and layout prop types that `tsc` needs. Plain `tsc --noEmit` fails on a clean checkout.
 
-`npm run test:e2e` starts the dev server itself, or reuses one already on port 3000. With `CI` set it runs `npm start` instead, so run `npm run build` first. CI runs the end-to-end tests as a separate `e2e` job.
+`npm run test:e2e` never reuses a running server. It runs `npm run build`, then `npm start` on port 3100 against a temporary database in the OS temp folder, and resets that database in global setup, so `data/checkinn.db` and a dev server on port 3000 are left alone. With `CI` set it skips the build, so run `npm run build` first. Specs that create or cancel Bookings go in `e2e/booking/` and run serially in the `booking-desktop` then `booking-mobile` projects, after the read-only `chromium` and `mobile` projects finish; use `uniqueGuestEmail()` from `e2e/support/guest.ts` in them. CI runs the end-to-end tests as a separate `e2e` job.
 
 There is no formatter configured. ESLint is the only style gate.
 
