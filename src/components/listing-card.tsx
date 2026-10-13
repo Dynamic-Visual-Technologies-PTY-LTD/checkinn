@@ -2,6 +2,7 @@ import Link from "next/link";
 import { secondaryButton } from "@/components/button-styles";
 import { Icon } from "@/components/icons/icons";
 import { RemoteImage } from "@/components/remote-image";
+import { Stars } from "@/components/stars";
 import type { ListingCard as ListingCardModel } from "@/domain/types";
 import { formatZar, spokenZar } from "@/lib/format";
 
@@ -26,25 +27,6 @@ function Rand({ amount }: { amount: number }) {
       <span aria-hidden="true">{formatZar(amount)}</span>
       <span className="sr-only">{spokenZar(amount)}</span>
     </>
-  );
-}
-
-/** White stars, as many as the Star rating, read as "5-star hotel". */
-function Stars({ count }: { count: number }) {
-  return (
-    <span role="img" aria-label={`${count}-star hotel`} className="flex gap-0.5">
-      {Array.from({ length: count }, (_, index) => (
-        <svg
-          key={index}
-          aria-hidden="true"
-          focusable="false"
-          viewBox="0 0 24 24"
-          className="size-4 fill-on-surface"
-        >
-          <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />
-        </svg>
-      ))}
-    </span>
   );
 }
 
@@ -119,8 +101,6 @@ export function ListingCard({ card, href }: ListingCardProps) {
         <h2 className="text-headline-sm">
           <Link
             href={href}
-            // No prefetch until the Hotel page exists (story 8 builds it).
-            prefetch={false}
             className="hover:underline after:absolute after:inset-0 after:rounded-md"
           >
             {card.name}

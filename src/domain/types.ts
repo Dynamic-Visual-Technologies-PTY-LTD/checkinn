@@ -153,3 +153,37 @@ export type PhotoCredits = {
   cities: CityPhotoCredit[];
   hotels: HotelPhotoCredit[];
 };
+
+/** One line of a Hotel's house rules (FR-14), e.g. Check-in "From 14:00". */
+export type HouseRule = {
+  term: string;
+  value: string;
+};
+
+/**
+ * Everything the Hotel page shows about one Hotel (FR-9, FR-10, FR-12–FR-14).
+ * A plain serializable view model: every value is ready to show.
+ */
+export type HotelPage = {
+  hotelId: string;
+  name: string;
+  /** luxury, business, family, boutique or budget. */
+  category: string;
+  /** 1 to 5. */
+  starRating: number;
+  area: string;
+  cityName: string;
+  province: string;
+  description: string;
+  /** Out of 5. */
+  reviewScore: number;
+  /** "Superb", "Very good", "Good", "Pleasant", or null below 3.0 (FR-12). */
+  reviewLabel: string | null;
+  reviewCount: number;
+  /** Every Facility with a seed label, in seed order. `key` is the seed amenity key. */
+  facilities: { key: string; label: string }[];
+  /** The Hotel's photos in seed order, with the seed alt text. */
+  photos: { url: string; alt: string }[];
+  /** Check-in, Check-out, Children, Pets, Smoking and Cancellation, in that order. */
+  houseRules: HouseRule[];
+};

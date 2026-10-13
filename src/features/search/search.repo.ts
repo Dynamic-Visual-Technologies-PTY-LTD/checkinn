@@ -23,8 +23,11 @@ import { availabilityFor } from "@/features/hotels/availability.repo";
 
 let amenityLabels: Record<string, string> | undefined;
 
-/** The seed's amenity labels, read once per process (AD-6). */
-function labels(): Record<string, string> {
+/**
+ * The seed's amenity labels, read once per process (AD-6). Labels are not in
+ * the database, so the Hotel page reads them here too.
+ */
+export function labels(): Record<string, string> {
   amenityLabels ??= loadSeed().amenityLabels;
   return amenityLabels;
 }
