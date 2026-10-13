@@ -124,3 +124,32 @@ export type SearchResult = {
   heading: string | null;
   cards: ListingCard[];
 };
+
+/** A City photo's credit on `/credits`: the source page holds the credit. */
+export type CityPhotoCredit = {
+  cityId: string;
+  cityName: string;
+  sourceUrl: string;
+  /** The seed's instructions, e.g. "Use the photographer credit and licence…". */
+  creditInstructions: string;
+};
+
+/** One Hotel's photo credits on `/credits`, photos in seed order. */
+export type HotelPhotoCredit = {
+  hotelId: string;
+  hotelName: string;
+  photos: {
+    alt: string;
+    provider: string;
+    sourceUrl: string;
+    licenseUrl: string;
+  }[];
+  /** The seed's illustrative-photos note, or null if no photo is illustrative. */
+  note: string | null;
+};
+
+/** Every seed photo credit, Cities then Hotels, in seed order. */
+export type PhotoCredits = {
+  cities: CityPhotoCredit[];
+  hotels: HotelPhotoCredit[];
+};

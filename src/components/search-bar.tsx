@@ -5,11 +5,12 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { iconButton, primaryButton } from "@/components/button-styles";
 import { DateRangeField } from "@/components/date-range-field";
 import { Icon } from "@/components/icons/icons";
-import { OccupancyField } from "@/components/occupancy-field";
+import { countLabel, OccupancyField } from "@/components/occupancy-field";
 import { useRequiredSearchState } from "@/components/search-state";
 import { todayIn } from "@/domain/clock";
 import { problemMessage, searchHref, validateStay } from "@/domain/criteria";
-import type { IsoDate } from "@/domain/types";
+import { compactStayLabel } from "@/domain/dates";
+import type { IsoDate, Party, Stay } from "@/domain/types";
 
 type SearchBarProps = {
   /** Today, read on the server; the calendar disables the days before it. */
@@ -17,7 +18,25 @@ type SearchBarProps = {
   initialQuery?: string;
   /** Today at submit time. Tests inject it; the page may have been open a while. */
   getToday?: () => IsoDate;
+  /**
+   * Below 768px, start as a one-line summary that expands to the full bar on
+   * tap (Search results). From 768px the full bar always shows.
+   */
+  collapsible?: boolean;
+  /** A message to show under Dates from the start, e.g. for a stale link. */
+  datesError?: string;
 };
+
+/** The collapsed bar's summary: "Cape Town · 13–15 Nov · 2 adults". */
+export function searchSummary(query: string, stay: Stay | null, party: Party): string {
+  const people = [countLabel("adults", party.adults)];
+  if (party.children > 0) people.push(countLabel("children", party.children));
+  return [
+    query.trim() || "All destinations",
+    stay ? compactStayLabel(stay) : "Add dates",
+    people.join(", "),
+  ].join(" · ");
+}
 
 type OpenField = "dates" | "occupancy" | null;
 
@@ -26,18 +45,28 @@ type OpenField = "dates" | "occupancy" | null;
  * and Search. It validates on submit and pushes the `/search` URL. Its Stay
  * and Party live in the surrounding `SearchStateProvider`.
  */
-export function SearchBar({ today, initialQuery = "", getToday = todayIn }: SearchBarProps) {
+export function SearchBar({
+  today,
+  initialQuery = "",
+  getToday = todayIn,
+  collapsible = false,
+  datesError,
+}: SearchBarProps) {
   const { stay, party, setStay, setParty } = useRequiredSearchState();
 
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [openField, setOpenField] = useState<OpenField>(null);
-  const [dateErrors, setDateErrors] = useState<string[]>([]);
+  const [dateErrors, setDateErrors] = useState<string[]>(datesError ? [datesError] : []);
+  // A date error must be seen, so the bar starts expanded with one.
+  const [expanded, setExpanded] = useState(!collapsible || Boolean(datesError));
   const focusInvalid = useRef(false);
+  const focusDestination = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const datesRef = useRef<HTMLButtonElement>(null);
   const inputId = useId();
   const datesErrorId = useId();
+  const formId = useId();
 
   // Focus moves once the messages are in the DOM, so the field is announced
   // with its description.
@@ -47,6 +76,19 @@ export function SearchBar({ today, initialQuery = "", getToday = todayIn }: Sear
       datesRef.current?.focus();
     }
   }, [dateErrors]);
+
+  // Expanding moves focus into the bar once it is shown.
+  useEffect(() => {
+    if (focusDestination.current) {
+      focusDestination.current = false;
+      inputRef.current?.focus();
+    }
+  }, [expanded]);
+
+  function expand() {
+    focusDestination.current = true;
+    setExpanded(true);
+  }
 
   /** Opening one picker closes the other, so overlays never stack. */
   function openChange(field: Exclude<OpenField, null>) {
@@ -70,8 +112,9 @@ export function SearchBar({ today, initialQuery = "", getToday = todayIn }: Sear
     inputRef.current?.focus();
   }
 
-  return (
+  const form = (
     <form
+      id={formId}
       role="search"
       aria-label="Search hotels"
       noValidate
@@ -159,14 +202,38 @@ export function SearchBar({ today, initialQuery = "", getToday = todayIn }: Sear
       </button>
     </form>
   );
+
+  if (expanded) return form;
+
+  const summary = searchSummary(query, stay, party);
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={false}
+        aria-controls={formId}
+        aria-label={`Change search: ${summary}`}
+        onClick={expand}
+        className="flex min-h-14 w-full items-center gap-space-sm rounded-md border border-primary bg-surface px-space-md py-space-sm text-left text-body-md text-on-surface hover:border-tertiary md:hidden"
+      >
+        <Icon name="search" className="shrink-0 text-on-surface-muted" />
+        <span className="min-w-0 flex-1">{summary}</span>
+      </button>
+      {/* Collapsed on phones only: from 768px the full bar shows. */}
+      <div className="hidden md:block">{form}</div>
+    </div>
+  );
 }
 
-/** A block the size of the search bar while today's date is read. */
-export function SearchBarSkeleton() {
+/**
+ * A block the size of the search bar while today's date is read. `collapsed`
+ * matches a collapsible bar, which is one line on phones.
+ */
+export function SearchBarSkeleton({ collapsed = false }: { collapsed?: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className="min-h-72 rounded-md border border-primary bg-primary-subtle motion-safe:animate-pulse md:min-h-36 xl:min-h-18"
+      className={`${collapsed ? "min-h-14" : "min-h-72"} rounded-md border border-primary bg-primary-subtle motion-safe:animate-pulse md:min-h-36 xl:min-h-18`}
     />
   );
 }

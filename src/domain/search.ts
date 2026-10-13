@@ -32,6 +32,22 @@ export function matches(query: string, hotel: SearchableHotel): boolean {
 }
 
 /**
+ * The City a Destination names exactly (trimmed, any case, by name or alias),
+ * as its display name, or null. Used for the "Cape Town hotels" page title.
+ */
+export function cityNamed(
+  query: string,
+  cities: readonly { name: string; aliases: readonly string[] }[],
+): string | null {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return null;
+  const city = cities.find((c) =>
+    [c.name, ...c.aliases].some((name) => name.toLowerCase() === needle),
+  );
+  return city?.name ?? null;
+}
+
+/**
  * Search results order (FR-7): Review score highest first, then lowest
  * Nightly price. Returns a new array; remaining ties keep their order.
  */

@@ -2,13 +2,23 @@ import "server-only";
 import { io } from "next/cache";
 import { getDb } from "@/db/client";
 import type { CityTile, SearchCriteria, SearchResult } from "@/domain/types";
-import { listCityTiles } from "@/features/hotels/catalog.repo";
+import { cityNamed } from "@/domain/search";
+import { listCityNames, listCityTiles } from "@/features/hotels/catalog.repo";
 import { searchCatalog } from "@/features/search/search.repo";
 
 /** Home's City tiles, read at request time (AD-2). */
 export async function getCityTiles(): Promise<CityTile[]> {
   await io();
   return listCityTiles(getDb());
+}
+
+/**
+ * The City a Destination names exactly, for the page title, or null. Read at
+ * request time (AD-2).
+ */
+export async function getCityNamed(query: string): Promise<string | null> {
+  await io();
+  return cityNamed(query, listCityNames(getDb()));
 }
 
 /**

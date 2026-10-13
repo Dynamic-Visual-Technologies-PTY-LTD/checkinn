@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { SearchCriteria } from "@/domain/types";
 import {
   defaultCriteria,
+  hotelHref,
   parseCriteria,
   parseSelection,
   problemMessage,
@@ -272,5 +273,19 @@ describe("validateStay", () => {
 
   it("treats no Stay as malformed", () => {
     expect(validateStay(null, today)).toEqual(["stay-malformed"]);
+  });
+});
+
+describe("hotelHref", () => {
+  it("links to the Hotel page with the search criteria kept", () => {
+    expect(
+      hotelHref("hotel-001", {
+        q: "Cape Town",
+        stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+        party: { adults: 2, children: 0, rooms: 1 },
+      }),
+    ).toBe(
+      "/hotels/hotel-001?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=0&rooms=1",
+    );
   });
 });

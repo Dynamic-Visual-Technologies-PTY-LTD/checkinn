@@ -3,13 +3,13 @@ title: 'Search results page and photo credits'
 type: 'feature'
 ticket: '7'
 created: '2026-10-13'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'a5f38d7ff98a13768176fc8ec25b86b879cbbe5d'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
+review: 'quick'
+review_source: 'user'
 lenses_ran: []
 review_loop_iteration: 0
 context:
@@ -66,13 +66,13 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/app/search/page.tsx` + test -- page, metadata, the Suspense child that awaits `searchParams`, parses, and searches or shows the stale/no-results state.
-- [ ] `src/components/listing-card.tsx` + test -- FR-6 card from a `ListingCard` view model; `ListingCardSkeleton`.
-- [ ] `src/components/search-bar.tsx` + test -- phone collapsed summary; stale dates error; initial criteria from the URL.
-- [ ] `src/features/hotels/credits.repo.ts` + test, a `queries.ts` wrapper -- the credits view model.
-- [ ] `src/app/credits/page.tsx` + test -- the credits page per Decisions; title "Photo credits · CheckInn".
-- [ ] `site-footer.tsx`, `city-tiles.tsx`, `not-found.tsx` -- drop the `prefetch={false}` workarounds and their tests' expectations, if any.
-- [ ] `e2e/search.spec.ts` -- the Cape Town, cape, stale and credits rows of the matrix, plus Home → Search → results; dates computed relative to today.
+- [x] `src/app/search/page.tsx` + test -- page, metadata, the Suspense child that awaits `searchParams`, parses, and searches or shows the stale/no-results state.
+- [x] `src/components/listing-card.tsx` + test -- FR-6 card from a `ListingCard` view model; `ListingCardSkeleton`.
+- [x] `src/components/search-bar.tsx` + test -- phone collapsed summary; stale dates error; initial criteria from the URL.
+- [x] `src/features/hotels/credits.repo.ts` + test, a `queries.ts` wrapper -- the credits view model.
+- [x] `src/app/credits/page.tsx` + test -- the credits page per Decisions; title "Photo credits · CheckInn".
+- [x] `site-footer.tsx`, `city-tiles.tsx`, `not-found.tsx` -- drop the `prefetch={false}` workarounds and their tests' expectations, if any.
+- [x] `e2e/search.spec.ts` -- the Cape Town, cape, stale and credits rows of the matrix, plus Home → Search → results; dates computed relative to today.
 
 **Acceptance Criteria:**
 - Given Home, when a guest searches "Cape Town", then `/search` shows the heading and Harbourlight Retreat first, and Back returns to Home.
@@ -80,9 +80,20 @@ context:
 
 ## Implementation Notes
 
+- `/search` page exports only `generateMetadata` and the page; the Suspense children live in `src/app/search/search-results.tsx` (`SearchResults` awaits `searchParams`, then `io()` and `todayIn()`; `Results` runs `searchHotels`). The provider is keyed by the serialized criteria, so a new search or Back starts the bar from the URL.
+- Page title: `getCityNamed(q)` (exact City name or alias, any case) in `features/search/queries.ts`, backed by `listCityNames` and the pure `cityNamed` in `domain/search.ts`.
+- Phone collapse is CSS-only (summary button `md:hidden`, bar `hidden md:block`), so desktop never flashes the summary. The bar starts expanded when it carries the stale-link message. The summary button is named "Change search: Cape Town · 13–15 Nov · 2 adults" (`compactStayLabel` in `domain/dates.ts`).
+- Focus to the count heading: `ResultsHeading` focuses itself unless it was hydrated from server HTML (first-render `useSyncExternalStore` server snapshot), so only client navigation moves focus.
+- The stale state renders a visually hidden h1 "Search results" so the page keeps a headline.
+- Card links keep `prefetch={false}` until the Hotel page exists (story 8).
+- Credits: `listPhotoCredits` in `features/hotels/credits.repo.ts`, wrapped by `getPhotoCredits` (with `io()`) in `features/hotels/queries.ts`. The illustrative note comes from the seed's `metadata.hotelImageNote` (added to the `Seed` type), shown on each Hotel entry whose photos are illustrative.
+- Spoken prices: `spokenZar` in `lib/format.ts` ("4 900 rand"), as sr-only text beside the `aria-hidden` formatted amount.
+- Not done: the "until Wed 11 Nov 2026, 14:00" deadline beside the Free cancellation badge (DESIGN.md L783-785). `ListingCard` (the AD-7 seam type) carries no deadline, so the card shows the badge only.
+
 ## Plan Change Log
 
 ## Review Triage Log
+  - 2026-10-13: bmad-build-auto render returned `ok` instead of a workflow; the user asked to carry on outside the skill. Quick self-review of `/search`, `ResultsHeading` and `ListingCard` against the plan: no findings. A one-off failure in `date-range-field.test.tsx:228` (story 1.4, unchanged here) passed on two reruns; flaky under load, not patched.
 
 ## Verification
 

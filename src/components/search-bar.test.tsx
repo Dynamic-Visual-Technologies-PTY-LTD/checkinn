@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Party, Stay } from "@/domain/types";
 import { setViewportWidth } from "@/test/viewport";
-import { SearchBar } from "./search-bar";
+import { SearchBar, searchSummary } from "./search-bar";
 import { SearchStateProvider } from "./search-state";
 
 const push = vi.fn();
@@ -16,10 +16,18 @@ function renderBar({
   stay = tomorrow,
   party = defaultParty,
   getToday = () => today,
-}: { stay?: Stay | null; party?: Party; getToday?: () => string } = {}) {
+  ...props
+}: {
+  stay?: Stay | null;
+  party?: Party;
+  getToday?: () => string;
+  initialQuery?: string;
+  collapsible?: boolean;
+  datesError?: string;
+} = {}) {
   return render(
     <SearchStateProvider initialStay={stay} initialParty={party}>
-      <SearchBar today={today} getToday={getToday} />
+      <SearchBar today={today} getToday={getToday} {...props} />
     </SearchStateProvider>,
   );
 }
@@ -159,5 +167,81 @@ describe("SearchBar", () => {
     const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() => render(<SearchBar today={today} />)).toThrow(/SearchStateProvider/);
     quiet.mockRestore();
+  });
+});
+
+describe("SearchBar with criteria from the URL", () => {
+  it("starts from the URL's Destination", () => {
+    renderBar({ initialQuery: "Cape Town" });
+
+    expect(destination()).toHaveValue("Cape Town");
+  });
+
+  it("shows a stale-link message under Dates from the start", () => {
+    renderBar({ stay: null, datesError: "Those dates have passed. Pick new ones." });
+
+    expect(datesTrigger()).toHaveAccessibleName("Dates Add dates");
+    expect(datesTrigger()).toHaveAccessibleDescription(
+      "Those dates have passed. Pick new ones.",
+    );
+    expect(screen.getByText("Those dates have passed. Pick new ones.")).toHaveClass(
+      "text-error",
+    );
+    // Not after an action, so focus stays where it is.
+    expect(datesTrigger()).not.toHaveFocus();
+  });
+});
+
+describe("collapsible SearchBar", () => {
+  const capeTownWeekend: Stay = { checkIn: "2026-11-13", checkOut: "2026-11-15" };
+
+  it("starts as a phone-only summary button over a bar shown from 768px", () => {
+    renderBar({ collapsible: true, initialQuery: "Cape Town", stay: capeTownWeekend });
+
+    const summary = screen.getByRole("button", {
+      name: "Change search: Cape Town · 13–15 Nov · 2 adults",
+    });
+    expect(summary).toHaveAttribute("aria-expanded", "false");
+    expect(summary).toHaveClass("md:hidden");
+    const bar = screen.getByRole("search", { name: "Search hotels" });
+    expect(summary).toHaveAttribute("aria-controls", bar.id);
+    expect(bar.parentElement).toHaveClass("hidden", "md:block");
+  });
+
+  it("expands to the full bar on tap and moves focus to Destination", () => {
+    renderBar({ collapsible: true, initialQuery: "Cape Town", stay: capeTownWeekend });
+
+    fireEvent.click(screen.getByRole("button", { name: /^Change search/ }));
+
+    expect(screen.queryByRole("button", { name: /^Change search/ })).toBeNull();
+    expect(screen.getByRole("search").parentElement).not.toHaveClass("hidden");
+    expect(destination()).toHaveFocus();
+    expect(destination()).toHaveValue("Cape Town");
+  });
+
+  it("starts expanded when there is a date error to see", () => {
+    renderBar({
+      collapsible: true,
+      stay: null,
+      datesError: "Those dates have passed. Pick new ones.",
+    });
+
+    expect(screen.queryByRole("button", { name: /^Change search/ })).toBeNull();
+  });
+});
+
+describe("searchSummary", () => {
+  const weekend: Stay = { checkIn: "2026-11-13", checkOut: "2026-11-15" };
+
+  it("reads Destination, dates and adults", () => {
+    expect(searchSummary("Cape Town", weekend, defaultParty)).toBe(
+      "Cape Town · 13–15 Nov · 2 adults",
+    );
+  });
+
+  it("names an empty Destination, missing dates and any children", () => {
+    expect(searchSummary(" ", null, { adults: 1, children: 2, rooms: 1 })).toBe(
+      "All destinations · Add dates · 1 adult, 2 children",
+    );
   });
 });

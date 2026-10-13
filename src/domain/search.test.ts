@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   cancellationLabel,
   cardFacilities,
+  cityNamed,
   heading,
   matches,
   rank,
@@ -158,5 +159,23 @@ describe("cancellationLabel", () => {
   it("names both policies", () => {
     expect(cancellationLabel("free_until_48_hours_before_check_in")).toBe("Free cancellation");
     expect(cancellationLabel("non_refundable")).toBe("Non-refundable");
+  });
+});
+
+describe("cityNamed", () => {
+  const cities = [
+    { name: "Cape Town", aliases: [] },
+    { name: "Gqeberha", aliases: ["Port Elizabeth"] },
+  ];
+
+  it("returns the City a Destination names, in any case and trimmed", () => {
+    expect(cityNamed("  cape town ", cities)).toBe("Cape Town");
+    expect(cityNamed("port elizabeth", cities)).toBe("Gqeberha");
+  });
+
+  it("returns null for a partial, a province or an empty Destination", () => {
+    expect(cityNamed("cape", cities)).toBeNull();
+    expect(cityNamed("Western Cape", cities)).toBeNull();
+    expect(cityNamed("", cities)).toBeNull();
   });
 });

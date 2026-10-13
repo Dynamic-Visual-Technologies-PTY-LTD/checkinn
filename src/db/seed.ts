@@ -7,6 +7,10 @@ import * as schema from "@/db/schema";
 
 /** The shape of `data/seed/hotel-booking-demo.json` that the catalog uses. */
 export type Seed = {
+  metadata: {
+    /** Shown with the Hotel photo credits: the photos are stock and illustrative. */
+    hotelImageNote: string;
+  };
   /** Display labels for Facility and Room amenity keys, e.g. `pool` → "Swimming pool". */
   amenityLabels: Record<string, string>;
   cities: {

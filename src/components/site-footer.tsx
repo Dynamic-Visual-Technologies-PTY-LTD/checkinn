@@ -12,8 +12,6 @@ export function SiteFooter() {
         <p>
           <Link
             href="/credits"
-            // No prefetch until the route exists (a later story builds it).
-            prefetch={false}
             className="text-on-surface underline hover:text-tertiary"
           >
             Photo credits

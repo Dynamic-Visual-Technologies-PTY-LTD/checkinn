@@ -28,8 +28,6 @@ export function CityTiles({ tiles }: { tiles: CityTile[] }) {
           <li key={tile.id}>
             <Link
               href={searchHref({ q: tile.name, stay, party })}
-              // No prefetch until /search exists (a later story builds it).
-              prefetch={false}
               aria-label={`${tile.name}, ${count}`}
               className="group relative block h-[220px] overflow-hidden rounded-md bg-primary-subtle"
             >

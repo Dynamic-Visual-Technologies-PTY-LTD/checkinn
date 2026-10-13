@@ -29,6 +29,19 @@ export function formatZar(
   return (cents ? withCents : wholeRand).format(amountRand);
 }
 
+const spokenNumber = new Intl.NumberFormat("en-ZA", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+/**
+ * The accessible name of a whole-rand amount, "4 900 rand", so screen
+ * readers don't read the symbol and separators (EXPERIENCE.md Formats).
+ */
+export function spokenZar(amountRand: number): string {
+  return `${spokenNumber.format(amountRand)} rand`;
+}
+
 function counted(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }

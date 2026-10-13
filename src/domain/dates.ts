@@ -181,6 +181,18 @@ export function stayLabel(stay: Stay): string {
 }
 
 /**
+ * The shortest range, for the collapsed search bar on phones: "13–15 Nov",
+ * "30 Nov – 2 Dec". Years are left out.
+ */
+export function compactStayLabel(stay: Stay): string {
+  const a = parts(stay.checkIn);
+  const b = parts(stay.checkOut);
+  const monthB = MONTH_NAMES[b.month - 1].slice(0, 3);
+  if (a.year === b.year && a.month === b.month) return `${a.day}–${b.day} ${monthB}`;
+  return `${a.day} ${MONTH_NAMES[a.month - 1].slice(0, 3)} – ${b.day} ${monthB}`;
+}
+
+/**
  * Applies one pick to a range. The first pick sets check-in and the second
  * sets check-out. A pick on or before check-in, or after a complete range,
  * starts again from check-in.

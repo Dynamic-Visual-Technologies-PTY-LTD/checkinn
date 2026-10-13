@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { formatZar, stayPriceLine } from "./format";
+import { formatZar, spokenZar, stayPriceLine } from "./format";
 
 const NBSP = " ";
 
@@ -26,5 +26,12 @@ describe("stayPriceLine", () => {
 
   it("uses the singular for 1", () => {
     expect(stayPriceLine(1, 1, 950)).toBe(`1 night, 1 adult: from R${NBSP}950`);
+  });
+});
+
+describe("spokenZar", () => {
+  it("names the amount in rand, without the symbol", () => {
+    expect(spokenZar(4900)).toBe(`4${NBSP}900 rand`);
+    expect(spokenZar(690)).toBe("690 rand");
   });
 });

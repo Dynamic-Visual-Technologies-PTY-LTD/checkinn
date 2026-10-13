@@ -260,3 +260,8 @@ export function serializeCriteria(criteria: Partial<SearchCriteria>): string {
 export function searchHref(criteria: Partial<SearchCriteria>): string {
   return `/search?${serializeCriteria(criteria)}`;
 }
+
+/** A Hotel page URL that keeps the search criteria (FR-6). */
+export function hotelHref(hotelId: string, criteria: Partial<SearchCriteria>): string {
+  return `/hotels/${encodeURIComponent(hotelId)}?${serializeCriteria(criteria)}`;
+}
