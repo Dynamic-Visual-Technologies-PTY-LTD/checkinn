@@ -56,6 +56,7 @@ export function getDb(): Db {
   return processDb;
 }
 
-function dbPath(): string {
+/** The database file: `CHECKINN_DB_PATH`, or `data/checkinn.db` (AD-12). */
+export function dbPath(): string {
   return process.env.CHECKINN_DB_PATH || DEFAULT_DB_PATH;
 }

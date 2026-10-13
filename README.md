@@ -46,7 +46,7 @@ Then open http://localhost:3000.
 
 ## Data
 
-The catalog lives in a SQLite file, `data/checkinn.db`, which is not committed. The app creates it on the first request, applies the migrations in [`drizzle/`](drizzle) and loads the seed. Set `CHECKINN_DB_PATH` to put the file somewhere else. To start again from the seed, stop the dev server, then delete `checkinn.db` together with its `checkinn.db-wal` and `checkinn.db-shm` files.
+The catalog lives in a SQLite file, `data/checkinn.db`, which is not committed. The app creates it on the first request, applies the migrations in [`drizzle/`](drizzle) and loads the seed. Set `CHECKINN_DB_PATH` to put the file somewhere else. To start again from the seed, run `npm run db:reset`. It empties every table and loads the seed again in one transaction, without deleting the file, so the app can keep running and shows the reset data on its next request.
 
 The seed, [`data/seed/hotel-booking-demo.json`](data/seed/hotel-booking-demo.json), is committed unchanged and its ids are the primary keys. It maps to the tables like this:
 
@@ -72,6 +72,7 @@ The seed, [`data/seed/hotel-booking-demo.json`](data/seed/hotel-booking-demo.jso
 | `npm run test:e2e:ui` | The same tests in Playwright's interactive UI |
 | `npm run design:lint` | Validate the design tokens in `DESIGN.md` |
 | `npm run db:generate` | Generate a migration in `drizzle/` after changing `src/db/schema.ts` |
+| `npm run db:reset` | Reset the database to the seed; safe while the app runs |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |
 
@@ -86,7 +87,7 @@ The end-to-end tests need a browser, downloaded once:
 npx playwright install chromium
 ```
 
-They start the dev server themselves, or reuse one that is already running on port 3000. They run against a desktop and a mobile viewport.
+They build the app and start their own production server on port 3100, against a temporary database that is reset before each run. A dev server on port 3000 and `data/checkinn.db` are left alone. They run against a desktop and a mobile viewport.
 
 </details>
 
