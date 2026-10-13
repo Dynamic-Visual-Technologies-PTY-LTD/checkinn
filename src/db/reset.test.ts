@@ -6,8 +6,9 @@ import { eq, sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type Db, openDb } from "@/db/client";
 import { resetDb } from "@/db/reset";
-import { cities, hotels, roomTypes } from "@/db/schema";
+import { bookingLines, bookings, cities, hotels, roomTypes } from "@/db/schema";
 import { loadSeed, type Seed } from "@/db/seed";
+import { insertTestBooking } from "@/db/test-db";
 import { countHotels, listCityTiles } from "@/features/hotels/catalog.repo";
 
 let dir: string;
@@ -87,6 +88,20 @@ describe("resetDb", () => {
     resetDb(db, loadSeed());
 
     expect(db.all(sql`SELECT * FROM later_table`)).toEqual([]);
+  });
+
+  it("removes every Booking and Booking line", () => {
+    const db = open();
+    insertTestBooking(db, {
+      hotelId: "hotel-001",
+      stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+      lines: [{ roomTypeId: "hotel-001-standard", quantity: 2 }],
+    });
+
+    resetDb(db, loadSeed());
+
+    expect(db.select().from(bookings).all()).toEqual([]);
+    expect(db.select().from(bookingLines).all()).toEqual([]);
   });
 
   it("rolls back and keeps the previous data when an insert fails", () => {

@@ -67,3 +67,60 @@ export type CriteriaProblem =
   | "stay-malformed"
   | "party-invalid"
   | "sel-invalid";
+
+/** A Hotel's Cancellation policy, as the seed's `policies.cancellation.type`. */
+export type CancellationPolicy =
+  | "free_until_48_hours_before_check_in"
+  | "non_refundable";
+
+/**
+ * One Hotel's entry in Search results (FR-6). A plain serializable view
+ * model: every value is ready to show except money, which stays integer rand
+ * and is displayed only through `formatZar` (AD-9).
+ *
+ * Part of the search seam (AD-7): a replacement `searchHotels` returns cards
+ * of exactly this shape, so no page or component has to change.
+ */
+export type ListingCard = {
+  hotelId: string;
+  name: string;
+  /** luxury, business, family, boutique or budget. */
+  category: string;
+  /** 1 to 5. */
+  starRating: number;
+  area: string;
+  cityName: string;
+  /** Out of 5. */
+  reviewScore: number;
+  /** "Superb", "Very good", "Good", "Pleasant", or null below 3.0 (FR-12). */
+  reviewLabel: string | null;
+  reviewCount: number;
+  /** Up to 3 Facility labels from the seed, Wi-Fi left out. */
+  facilities: string[];
+  cancellation: {
+    policy: CancellationPolicy;
+    /** "Free cancellation" or "Non-refundable". */
+    label: string;
+  };
+  /** The Hotel's first photo, or null if it has none. */
+  firstImage: { url: string; alt: string } | null;
+  /** Nights of the searched Stay. */
+  nights: number;
+  /** Adults in the searched Party. */
+  adults: number;
+  /** Lowest available Nightly price × Nights × the Party's Rooms (FR-6). */
+  totalRand: number;
+  /** The lowest Nightly price among the available Room types. */
+  nightlyRand: number;
+};
+
+/**
+ * What `searchHotels` returns (AD-7). `heading` is the FR-7 count line, or
+ * null when nothing was found or no search ran. `cards` are in display order.
+ *
+ * Part of the search seam: a replacement keeps this shape.
+ */
+export type SearchResult = {
+  heading: string | null;
+  cards: ListingCard[];
+};

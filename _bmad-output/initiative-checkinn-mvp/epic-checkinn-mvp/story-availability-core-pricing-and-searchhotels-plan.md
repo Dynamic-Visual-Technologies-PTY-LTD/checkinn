@@ -3,15 +3,16 @@ title: 'Availability core, pricing and searchHotels'
 type: 'feature'
 ticket: '6'
 created: '2026-10-13'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '392c341696639db42599545653da921a3395838a'
 route: 'full'
 route_source: 'auto'
 risk: 'high'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick']
 review_loop_iteration: 0
+followup_review_recommended: false
 context:
   - '{project-root}/_bmad-output/initiative-checkinn-mvp/architecture-checkinn/architecture-checkinn.md'
   - '{project-root}/_bmad-output/initiative-checkinn-mvp/prd-checkinn/prd-checkinn.md'
@@ -66,16 +67,16 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/db/schema.ts`, `drizzle/0001_*` -- the bookings tables plus an index on `(hotel_id, check_in, check_out)` or on the lines' `room_type_id`.
-- [ ] `src/domain/availability.ts` + test -- `nightsOf(stay)`, `countAvailable(totalRooms, lines, stay)`.
-- [ ] `src/features/hotels/availability.repo.ts` + test -- `availabilityFor(db, hotelId, stay): Map<string, number>` with the fixture bookings.
-- [ ] `src/features/hotels/queries.ts` -- an async wrapper with `await io()` (AD-4).
-- [ ] `src/domain/pricing.ts` + test -- `stayTotalRand(nightlyRand, nights, rooms)`, `fromPrice`.
-- [ ] `src/lib/format.ts` + test -- `formatZar`.
-- [ ] `src/domain/search.ts` + test -- `matches`, `rank`, `heading`, `reviewLabel`, `cardFacilities`.
-- [ ] `src/features/search/search.repo.ts` + test -- `searchCatalog(db, criteria): SearchResult`, covering every matrix row on `createTestDb()`.
-- [ ] `src/features/search/queries.ts` -- `searchHotels(criteria)`: `await io()`, then `searchCatalog(getDb(), criteria)`.
-- [ ] `src/domain/types.ts` -- `SearchResult { heading: string | null; cards: ListingCard[] }`, plus `ListingCard` (hotelId, name, category, starRating, area, cityName, reviewScore, reviewLabel, reviewCount, facilities, cancellation, firstImage, nights, adults, totalRand, nightlyRand) with doc comments marking the seam.
+- [x] `src/db/schema.ts`, `drizzle/0001_*` -- the bookings tables plus an index on `(hotel_id, check_in, check_out)` or on the lines' `room_type_id`.
+- [x] `src/domain/availability.ts` + test -- `nightsOf(stay)`, `countAvailable(totalRooms, lines, stay)`.
+- [x] `src/features/hotels/availability.repo.ts` + test -- `availabilityFor(db, hotelId, stay): Map<string, number>` with the fixture bookings.
+- [x] `src/features/hotels/queries.ts` -- an async wrapper with `await io()` (AD-4).
+- [x] `src/domain/pricing.ts` + test -- `stayTotalRand(nightlyRand, nights, rooms)`, `fromPrice`.
+- [x] `src/lib/format.ts` + test -- `formatZar`.
+- [x] `src/domain/search.ts` + test -- `matches`, `rank`, `heading`, `reviewLabel`, `cardFacilities`.
+- [x] `src/features/search/search.repo.ts` + test -- `searchCatalog(db, criteria): SearchResult`, covering every matrix row on `createTestDb()`.
+- [x] `src/features/search/queries.ts` -- `searchHotels(criteria)`: `await io()`, then `searchCatalog(getDb(), criteria)`.
+- [x] `src/domain/types.ts` -- `SearchResult { heading: string | null; cards: ListingCard[] }`, plus `ListingCard` (hotelId, name, category, starRating, area, cityName, reviewScore, reviewLabel, reviewCount, facilities, cancellation, firstImage, nights, adults, totalRand, nightlyRand) with doc comments marking the seam.
 
 **Acceptance Criteria:**
 - Given a fresh clone, when `npm run dev` starts, then the new migration applies and Home still shows 6 tiles summing to 12.
@@ -83,12 +84,39 @@ context:
 
 ## Implementation Notes
 
+- Migration `drizzle/0001_bookings.sql`. Besides the plan's columns, `bookings` has `reference`, `idempotency_key` and `access_token` (each `UNIQUE`, AD-10/AD-15) so story 11 needs no schema change, plus CHECKs on status, `check_out > check_in` and line `quantity > 0`. Indexes on `bookings(hotel_id, check_in, check_out)` and `booking_lines(room_type_id)`; lines have PK `(booking_id, room_type_id)`. `AUTOINCREMENT` adds `sqlite_sequence`, which the reset skips (ids are not reset; harmless, they are internal).
+- `"Waterfront"` heading: FR-7's one-City rule applies, so it reads "Cape Town: 1 property found" (the matrix's "1 property found" is the count phrase). An empty Destination always reads "All destinations: …".
+- `ListingCard.cancellation` is `{ policy, label }` and `firstImage` is `{ url, alt } | null`. The card price line is built by `stayPriceLine(nights, adults, totalRand)` in `src/lib/format.ts`, next to `formatZar`, so the domain stays free of formatting.
+- Amenity labels are not in the database: `search.repo.ts` reads the seed's `amenityLabels` once per process via `loadSeed()` (`Seed` type gained the field).
+- `pricing.ts` also exports `bookingTotalRand` for story 11; `availability.ts` exports `isAvailable`.
+- `insertTestBooking` in `src/db/test-db.ts` writes fixture Bookings for repo tests only.
+- `src/features/hotels/queries.ts` exports `getAvailability(hotelId, stay)`.
+
+- Correction (orchestrator, 2026-10-13): one result now always reads "1 property found" (PRD FR-7 L151, matrix row "One"), overriding the City and "All destinations" prefixes; the earlier note above saying "Cape Town: 1 property found" is superseded.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+### 2026-10-13 — Review pass
+- verdicts: 4 findings — high 0, medium 0, low 3, false 1, maybe-false 0
+- findings:
+  - `[low]` `[patch]` `heading()` vs the Implementation Notes on single results — the code matches FR-7 and the matrix; the stale note was corrected (appended) and the misleading test title "says All destinations…" was split into an FR-7 single-result test.
+  - `[low]` `[reject]` Unchecked `cancellation.type as CancellationPolicy` and no CHECK on `bookings.cancellation_policy` — the seed has only the two known values and story 11 writes the column; a guard or constraint adds complexity no current path needs.
+  - `[low]` `[reject]` Room types are queried twice per Hotel in `searchCatalog` — correct and AD-4 is kept; merging means refactoring `availabilityFor`'s return shape, not a direct correction; 12 Hotels.
+  - `[false]` `[reject]` AC 1 unproven — verified: a copy of the existing dev DB (1 migration, catalog only) opened through `openDb` applied `0001` (2 migrations, `bookings` present), and `listCityTiles` returned 6 tiles summing to 12.
 
 ## Verification
 
 **Commands:**
 - `npm run lint && npm run typecheck && npm test && npm run build` -- expected: all green.
 - `npm run test:e2e` -- expected: all pass (Home unaffected).
+
+## Auto Run Result
+
+- **Summary:** bookings and booking_lines tables (full AD-16 schema, migration `0001_bookings`); `availabilityFor` plus pure `countAvailable`; pricing, `formatZar`; pure search rules; `searchCatalog`/`searchHotels` with documented `SearchCriteria`/`SearchResult`/`ListingCard` seam.
+- **Files:** `src/db/schema.ts`, `drizzle/0001_bookings.sql` + meta (bookings schema); `src/db/seed.ts` (`amenityLabels` on `Seed`); `src/db/test-db.ts` (`insertTestBooking`); `src/db/reset.test.ts` (reset clears bookings); `src/domain/availability.ts`, `pricing.ts`, `search.ts` + tests (pure rules); `src/domain/types.ts` (`ListingCard`, `SearchResult`); `src/lib/format.ts` + test (`formatZar`, `stayPriceLine`); `src/features/hotels/availability.repo.ts` + test, `queries.ts` (Availability); `src/features/search/search.repo.ts` + test, `queries.ts` (`searchHotels`).
+- **Review:** 1 patch (low: test title and note correction), 0 deferred, 3 rejected (2 low, 1 false; reasons in the triage log). Pre-review, the orchestrator fixed `heading()` to FR-7's single-result wording after the matrix audit found a disagreement.
+- **Follow-up review recommended:** false (patched: 0 high, 0 medium, 1 low).
+- **Verification:** lint, typecheck, `npm test` (266 passed), `npm run build`, `npm run test:e2e` (45 passed, 3 desktop-only skips on mobile); a migration check on a copy of the dev DB.
+- **Residual risks:** a few queries per Hotel (fine for 12, would need batching at scale); `bookings` ids keep counting after a reset (`sqlite_sequence` is skipped), and they never show in the UI.
