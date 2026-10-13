@@ -1,9 +1,9 @@
 import { io } from "next/cache";
 import { notFound } from "next/navigation";
 import { HotelActions } from "@/app/hotels/[hotelId]/hotel-actions";
+import { HotelPhotos } from "@/app/hotels/[hotelId]/photo-viewer";
 import { ResultsHeading } from "@/app/search/results-heading";
 import { Icon, type IconName } from "@/components/icons/icons";
-import { RemoteImage } from "@/components/remote-image";
 import { Stars } from "@/components/stars";
 import { todayIn } from "@/domain/clock";
 import { availabilityHeadingId } from "@/domain/hotel";
@@ -133,21 +133,12 @@ function HotelHeader({ hotel, sharePath }: { hotel: HotelPage; sharePath: string
   );
 }
 
-/** Both seed photos, large and small side by side on desktop, stacked on phone (FR-10). */
+/**
+ * Both seed photos, large and small side by side on desktop, stacked on
+ * phone; each opens the photo viewer (FR-10).
+ */
 function Photos({ hotel }: { hotel: HotelPage }) {
-  if (hotel.photos.length === 0) return null;
-  return (
-    <ul
-      aria-label="Photos"
-      className="mt-space-lg grid grid-cols-1 gap-space-md md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
-    >
-      {hotel.photos.map((photo) => (
-        <li key={photo.url}>
-          <RemoteImage src={photo.url} alt={photo.alt} label={hotel.name} className={PHOTO} />
-        </li>
-      ))}
-    </ul>
-  );
+  return <HotelPhotos photos={hotel.photos} hotelName={hotel.name} photoClassName={PHOTO} />;
 }
 
 /** "Guest reviews": the score badge with "/ 5", the label and the review count, read as one sentence (FR-12). */

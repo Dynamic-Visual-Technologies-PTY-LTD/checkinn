@@ -20,6 +20,16 @@ describe("RemoteImage", () => {
     expect(image).toHaveAttribute("src", `${photo.src}?width=800`);
   });
 
+  it("crops to cover by default and can contain the whole photo", () => {
+    const { rerender } = render(<RemoteImage {...photo} />);
+    expect(screen.getByRole("img", { name: photo.alt })).toHaveClass("object-cover");
+
+    rerender(<RemoteImage {...photo} fit="contain" />);
+    const image = screen.getByRole("img", { name: photo.alt });
+    expect(image).toHaveClass("object-contain");
+    expect(image).not.toHaveClass("object-cover");
+  });
+
   it("asks Wikimedia for an 800px photo and leaves other URLs alone", () => {
     expect(sizedPhotoUrl(photo.src)).toBe(`${photo.src}?width=800`);
     expect(sizedPhotoUrl(`${photo.src}?width=400`)).toBe(

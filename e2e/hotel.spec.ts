@@ -176,6 +176,106 @@ test.describe("Hotel page", () => {
     await expect(availability).toBeInViewport();
   });
 
+  test("the photo viewer opens at a photo, steps by keys and buttons, and returns focus", async ({
+    page,
+  }) => {
+    await page.goto(harbourlightPath());
+    const photos = page.getByRole("list", { name: "Photos" });
+    const first = photos.getByRole("button", { name: "Resort exterior and swimming pool" });
+
+    await first.click();
+
+    const viewer = page.getByRole("dialog", { name: "Harbourlight Retreat photos" });
+    await expect(viewer).toBeVisible();
+    await expect(viewer.getByRole("img", { name: "Resort exterior and swimming pool" })).toBeVisible();
+    await expect(viewer.getByText("Photo 1 of 2")).toBeAttached();
+    await expect(viewer.getByText("1 / 2")).toBeVisible();
+
+    await page.keyboard.press("ArrowRight");
+    await expect(viewer.getByText("Photo 2 of 2")).toBeAttached();
+    await expect(viewer.getByRole("img", { name: "Hotel bedroom" })).toBeVisible();
+
+    await page.keyboard.press("ArrowRight");
+    await expect(viewer.getByText("Photo 1 of 2")).toBeAttached();
+
+    await page.keyboard.press("ArrowLeft");
+    await expect(viewer.getByText("Photo 2 of 2")).toBeAttached();
+
+    await viewer.getByRole("button", { name: "Next photo" }).click();
+    await expect(viewer.getByText("Photo 1 of 2")).toBeAttached();
+
+    await viewer.getByRole("button", { name: "Previous photo" }).click();
+    await expect(viewer.getByText("Photo 2 of 2")).toBeAttached();
+    await expect(viewer.getByText("2 / 2")).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(viewer).toBeHidden();
+    await expect(first).toBeFocused();
+  });
+
+  test("Enter on the second photo opens the viewer there", async ({ page }) => {
+    await page.goto(harbourlightPath());
+    const second = page
+      .getByRole("list", { name: "Photos" })
+      .getByRole("button", { name: "Hotel bedroom" });
+
+    await second.focus();
+    await page.keyboard.press("Enter");
+
+    const viewer = page.getByRole("dialog", { name: "Harbourlight Retreat photos" });
+    await expect(viewer.getByText("Photo 2 of 2")).toBeAttached();
+    await viewer.getByRole("button", { name: "Close" }).click();
+    await expect(viewer).toBeHidden();
+    await expect(second).toBeFocused();
+  });
+
+  test("on a phone the viewer covers the screen and a swipe changes the photo", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, "Touch swipe runs in the mobile project.");
+    await page.goto(harbourlightPath());
+    await page
+      .getByRole("list", { name: "Photos" })
+      .getByRole("button", { name: "Resort exterior and swimming pool" })
+      .click();
+
+    const viewer = page.getByRole("dialog", { name: "Harbourlight Retreat photos" });
+    await expect(viewer.getByText("Photo 1 of 2")).toBeAttached();
+    const viewport = page.viewportSize();
+    const box = await viewer.boundingBox();
+    expect(box).toEqual({ x: 0, y: 0, width: viewport?.width, height: viewport?.height });
+
+    // Playwright has no swipe, so the touch points go through the DevTools protocol.
+    const photo = await viewer
+      .getByRole("img", { name: "Resort exterior and swimming pool" })
+      .boundingBox();
+    if (!photo) throw new Error("The photo has no box");
+    const y = photo.y + photo.height / 2;
+    const cdp = await page.context().newCDPSession(page);
+    const drag = async (fromX: number, toX: number) => {
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x: fromX, y }],
+      });
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x: toX, y }],
+      });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    };
+    const centre = photo.x + photo.width / 2;
+
+    await drag(centre + 60, centre - 60);
+    await expect(viewer.getByText("Photo 2 of 2")).toBeAttached();
+
+    await drag(centre - 60, centre + 60);
+    await expect(viewer.getByText("Photo 1 of 2")).toBeAttached();
+
+    await drag(centre + 15, centre - 15);
+    await expect(viewer.getByText("Photo 1 of 2")).toBeAttached();
+  });
+
   test("other Hotels show their own Facilities and rules", async ({ page }) => {
     await page.goto("/hotels/hotel-002");
     await expect(
