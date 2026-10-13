@@ -44,6 +44,21 @@ npm run dev
 
 Then open http://localhost:3000.
 
+## Data
+
+The catalog lives in a SQLite file, `data/checkinn.db`, which is not committed. The app creates it on the first request, applies the migrations in [`drizzle/`](drizzle) and loads the seed. Set `CHECKINN_DB_PATH` to put the file somewhere else. To start again from the seed, stop the dev server, then delete `checkinn.db` together with its `checkinn.db-wal` and `checkinn.db-shm` files.
+
+The seed, [`data/seed/hotel-booking-demo.json`](data/seed/hotel-booking-demo.json), is committed unchanged and its ids are the primary keys. It maps to the tables like this:
+
+| Seed | Table | Notes |
+|---|---|---|
+| `cities[]` | `cities` | `image.*` becomes `image_*` columns; `sort_order` is the position in the seed |
+| `hotels[]` | `hotels` | `priceFromPerNight` becomes `price_from_per_night_rand`; `amenities` and `policies` are JSON text |
+| `hotels[].images[]` | `hotel_images` | Keyed by `hotel_id` and `position` in the array |
+| `hotels[].roomTypes[]` | `room_types` | `pricePerNight` becomes `price_per_night_rand`; `beds` and `amenities` are JSON text |
+
+`amenityLabels` and `metadata` are not stored. Seed photos load from Wikimedia Commons and Unsplash; when they can't, a placeholder shows instead.
+
 ## Scripts
 
 | Command | What it does |
@@ -56,6 +71,7 @@ Then open http://localhost:3000.
 | `npm run test:e2e` | End-to-end tests in a real browser (Playwright) |
 | `npm run test:e2e:ui` | The same tests in Playwright's interactive UI |
 | `npm run design:lint` | Validate the design tokens in `DESIGN.md` |
+| `npm run db:generate` | Generate a migration in `drizzle/` after changing `src/db/schema.ts` |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |
 
@@ -97,6 +113,8 @@ The Run and Debug panel has configurations for debugging the server, the browser
 | Unit and component tests | Vitest, Testing Library, jsdom |
 | End-to-end tests | Playwright, Chromium |
 | Linting | ESLint with `eslint-config-next` |
+| Database | SQLite, embedded in the app |
+| Data access | Drizzle ORM with `better-sqlite3` |
 | CI | GitHub Actions |
 
 It is one full-stack Next.js app. There is no separate API service.
@@ -108,8 +126,6 @@ It is one full-stack Next.js app. There is no separate API service.
 
 | Area | Choice |
 |---|---|
-| Database | SQLite, embedded in the app |
-| Data access | Drizzle ORM with `better-sqlite3` |
 | Vector search | `sqlite-vec`, for the search enhancement |
 | Hosting | Azure |
 | Infrastructure as code | Bicep or Terraform, undecided |

@@ -1,0 +1,89 @@
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { sizedPhotoUrl } from "@/components/remote-image";
+import type { CityTile } from "@/domain/types";
+import { CityTiles, CityTilesSkeleton } from "./city-tiles";
+
+const tiles: CityTile[] = [
+  {
+    id: "cape-town",
+    name: "Cape Town",
+    hotelCount: 2,
+    image: {
+      url: "https://commons.wikimedia.org/wiki/Special:FilePath/Cape%20Town%20Skyline.jpg",
+      alt: "Cape Town destination photograph",
+      sourceUrl: "https://commons.wikimedia.org/wiki/File:Cape%20Town%20Skyline.jpg",
+    },
+  },
+  {
+    id: "gqeberha",
+    name: "Gqeberha",
+    hotelCount: 1,
+    image: {
+      url: "https://commons.wikimedia.org/wiki/Special:FilePath/Gqeberha.jpg",
+      alt: "Gqeberha destination photograph",
+      sourceUrl: "https://commons.wikimedia.org/wiki/File:Gqeberha.jpg",
+    },
+  },
+];
+
+describe("CityTiles", () => {
+  it("links each tile to a search for its City, named with the count", () => {
+    render(<CityTiles tiles={tiles} />);
+
+    expect(
+      screen.getByRole("link", { name: "Cape Town, 2 hotels" }),
+    ).toHaveAttribute("href", "/search?q=Cape+Town");
+    expect(
+      screen.getByRole("link", { name: "Gqeberha, 1 hotel" }),
+    ).toHaveAttribute("href", "/search?q=Gqeberha");
+  });
+
+  it("shows the City name, count and photo in the tile", () => {
+    render(<CityTiles tiles={tiles} />);
+
+    const tile = screen.getByRole("link", { name: "Cape Town, 2 hotels" });
+    expect(within(tile).getByText("Cape Town")).toBeInTheDocument();
+    expect(within(tile).getByText("2 hotels")).toBeInTheDocument();
+    expect(
+      within(tile).getByRole("img", { name: "Cape Town destination photograph" }),
+    ).toHaveAttribute("src", sizedPhotoUrl(tiles[0].image.url));
+  });
+
+  it("puts the photo credit outside the tile link", () => {
+    render(<CityTiles tiles={tiles} />);
+
+    const credit = screen.getByRole("link", { name: "Photo credit: Cape Town" });
+    expect(credit).toHaveAttribute("href", tiles[0].image.sourceUrl);
+    expect(credit.parentElement?.closest("a")).toBeNull();
+  });
+
+  it("keeps the name, count and credit when the photo fails", () => {
+    render(<CityTiles tiles={tiles} />);
+
+    const tile = screen.getByRole("link", { name: "Cape Town, 2 hotels" });
+    fireEvent.error(
+      within(tile).getByRole("img", { name: "Cape Town destination photograph" }),
+    );
+
+    const placeholder = within(tile).getByRole("img", {
+      name: "Cape Town destination photograph",
+    });
+    expect(placeholder.tagName).toBe("DIV");
+    expect(within(tile).getByText("Cape Town")).toBeVisible();
+    expect(within(tile).getByText("2 hotels")).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: "Photo credit: Cape Town" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("CityTilesSkeleton", () => {
+  it("renders six blocks hidden from assistive technology", () => {
+    const { container } = render(<CityTilesSkeleton />);
+
+    const skeleton = container.firstElementChild;
+    expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    expect(skeleton?.children).toHaveLength(6);
+  });
+});

@@ -1,0 +1,1209 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "checkinn-workshop-starter",
+  "isDemo": true,
+  "currency": "ZAR",
+  "metadata": {
+    "description": "Real South African destinations with fictional hotels and mock booking data.",
+    "hotelImageNote": "Stock images are illustrative and do not depict these fictional hotels. Some photos are reused.",
+    "priceNote": "Mock prices in ZAR per room per night, inclusive of demo taxes; no extra demo fees.",
+    "inventoryNote": "totalRooms is static inventory, not date-specific availability. Subtract overlapping bookings per room type to calculate availability.",
+    "ratingsNote": "All hotel stars, scores and review counts are fictional.",
+    "imageNote": "Remote images require internet access. City images carry source-page credit/licence instructions. Hotel image URLs have not been checked for current availability."
+  },
+  "amenityLabels": {
+    "wifi": "Free Wi-Fi",
+    "pool": "Swimming pool",
+    "spa": "Spa",
+    "restaurant": "Restaurant",
+    "parking": "Free parking",
+    "gym": "Gym",
+    "air_conditioning": "Air conditioning",
+    "meeting_rooms": "Meeting rooms",
+    "kitchenette": "Kitchenette",
+    "play_area": "Children’s play area",
+    "private_bathroom": "Private bathroom"
+  },
+  "cities": [
+    {
+      "id": "cape-town",
+      "name": "Cape Town",
+      "aliases": [],
+      "province": "Western Cape",
+      "country": "South Africa",
+      "countryCode": "ZA",
+      "description": "Mountains, coastal walks and city escapes.",
+      "image": {
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Cape%20Town%20Skyline.jpg",
+        "alt": "Cape Town destination photograph",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cape%20Town%20Skyline.jpg",
+        "creditInstructions": "Use the photographer credit and licence on the source page when displaying this image.",
+        "isIllustrative": false
+      }
+    },
+    {
+      "id": "johannesburg",
+      "name": "Johannesburg",
+      "aliases": [],
+      "province": "Gauteng",
+      "country": "South Africa",
+      "countryCode": "ZA",
+      "description": "Urban breaks, dining and business travel.",
+      "image": {
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Johannesburg%20Skyline.jpg",
+        "alt": "Johannesburg destination photograph",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Johannesburg%20Skyline.jpg",
+        "creditInstructions": "Use the photographer credit and licence on the source page when displaying this image.",
+        "isIllustrative": false
+      }
+    },
+    {
+      "id": "durban",
+      "name": "Durban",
+      "aliases": [],
+      "province": "KwaZulu-Natal",
+      "country": "South Africa",
+      "countryCode": "ZA",
+      "description": "Beach breaks and relaxed coastal stays.",
+      "image": {
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/DSkyline.jpg",
+        "alt": "Durban destination photograph",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:DSkyline.jpg",
+        "creditInstructions": "Use the photographer credit and licence on the source page when displaying this image.",
+        "isIllustrative": false
+      }
+    },
+    {
+      "id": "pretoria",
+      "name": "Pretoria",
+      "aliases": [],
+      "province": "Gauteng",
+      "country": "South Africa",
+      "countryCode": "ZA",
+      "description": "Gardens, heritage and peaceful city stays.",
+      "image": {
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Skyline-of-pretoria.jpg",
+        "alt": "Pretoria destination photograph",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Skyline-of-pretoria.jpg",
+        "creditInstructions": "Use the photographer credit and licence on the source page when displaying this image.",
+        "isIllustrative": false
+      }
+    },
+    {
+      "id": "stellenbosch",
+      "name": "Stellenbosch",
+      "aliases": [],
+      "province": "Western Cape",
+      "country": "South Africa",
+      "countryCode": "ZA",
+      "description": "Winelands scenery and weekend retreats.",
+      "image": {
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Stellenbosch%20Town%20Hall.jpg",
+        "alt": "Stellenbosch destination photograph",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Stellenbosch%20Town%20Hall.jpg",
+        "creditInstructions": "Use the photographer credit and licence on the source page when displaying this image.",
+        "isIllustrative": false
+      }
+    },
+    {
+      "id": "gqeberha",
+      "name": "Gqeberha",
+      "aliases": [
+        "Port Elizabeth"
+      ],
+      "province": "Eastern Cape",
+      "country": "South Africa",
+      "countryCode": "ZA",
+      "description": "Coastal getaways along Algoa Bay.",
+      "image": {
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Beach%20front%20and%20pier%2C%20Hobie%20Beach%2C%20Port%20Elizabeth%2C%20Eastern%20Cape%20Province%20(6252669541).jpg",
+        "alt": "Gqeberha destination photograph",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Beach%20front%20and%20pier%2C%20Hobie%20Beach%2C%20Port%20Elizabeth%2C%20Eastern%20Cape%20Province%20(6252669541).jpg",
+        "creditInstructions": "Use the photographer credit and licence on the source page when displaying this image.",
+        "isIllustrative": false
+      }
+    }
+  ],
+  "hotels": [
+    {
+      "id": "hotel-001",
+      "cityId": "cape-town",
+      "name": "Harbourlight Retreat",
+      "isFictional": true,
+      "area": "V&A Waterfront",
+      "category": "luxury",
+      "description": "A fictional coastal retreat with spacious rooms and a relaxed pool terrace.",
+      "starRating": 5,
+      "reviewScore": 4.8,
+      "reviewScoreMax": 5,
+      "reviewCount": 248,
+      "currency": "ZAR",
+      "priceFromPerNight": 2450,
+      "amenities": [
+        "wifi",
+        "pool",
+        "spa",
+        "restaurant",
+        "parking"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Resort exterior and swimming pool",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1566073771259-6a8506099945",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "non_refundable"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-001-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 2450,
+          "totalRooms": 10,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-001-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 3000,
+          "totalRooms": 4,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-002",
+      "cityId": "cape-town",
+      "name": "Table View City Lodge",
+      "isFictional": true,
+      "area": "City Bowl",
+      "category": "budget",
+      "description": "A fictional compact city lodge for affordable weekend breaks.",
+      "starRating": 3,
+      "reviewScore": 4.2,
+      "reviewScoreMax": 5,
+      "reviewCount": 126,
+      "currency": "ZAR",
+      "priceFromPerNight": 950,
+      "amenities": [
+        "wifi",
+        "parking",
+        "air_conditioning"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel building exterior",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "free_until_48_hours_before_check_in"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-002-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 950,
+          "totalRooms": 11,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-002-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 1500,
+          "totalRooms": 0,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-003",
+      "cityId": "johannesburg",
+      "name": "Goldleaf Business Hotel",
+      "isFictional": true,
+      "area": "Sandton",
+      "category": "business",
+      "description": "A fictional business hotel with a workspace and meeting facilities.",
+      "starRating": 4,
+      "reviewScore": 4.6,
+      "reviewScoreMax": 5,
+      "reviewCount": 312,
+      "currency": "ZAR",
+      "priceFromPerNight": 1650,
+      "amenities": [
+        "wifi",
+        "gym",
+        "restaurant",
+        "parking",
+        "meeting_rooms"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel accommodation",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest room interior",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "free_until_48_hours_before_check_in"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-003-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 1650,
+          "totalRooms": 12,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-003-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 2200,
+          "totalRooms": 6,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-004",
+      "cityId": "johannesburg",
+      "name": "Urban Nest Suites",
+      "isFictional": true,
+      "area": "Rosebank",
+      "category": "family",
+      "description": "A fictional suite hotel with extra space for families and longer stays.",
+      "starRating": 4,
+      "reviewScore": 4.5,
+      "reviewScoreMax": 5,
+      "reviewCount": 184,
+      "currency": "ZAR",
+      "priceFromPerNight": 1350,
+      "amenities": [
+        "wifi",
+        "parking",
+        "kitchenette",
+        "air_conditioning"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Resort swimming pool",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1571896349842-33c89424de2d",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "non_refundable"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-004-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 1350,
+          "totalRooms": 13,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-004-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 1900,
+          "totalRooms": 4,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-005",
+      "cityId": "durban",
+      "name": "Coral Coast Resort",
+      "isFictional": true,
+      "area": "Umhlanga",
+      "category": "luxury",
+      "description": "A fictional resort for poolside afternoons and coastal escapes.",
+      "starRating": 5,
+      "reviewScore": 4.7,
+      "reviewScoreMax": 5,
+      "reviewCount": 286,
+      "currency": "ZAR",
+      "priceFromPerNight": 2200,
+      "amenities": [
+        "wifi",
+        "pool",
+        "spa",
+        "restaurant",
+        "parking"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "free_until_48_hours_before_check_in"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-005-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 2200,
+          "totalRooms": 14,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-005-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 2750,
+          "totalRooms": 5,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-006",
+      "cityId": "durban",
+      "name": "Beachside Breeze Inn",
+      "isFictional": true,
+      "area": "North Beach",
+      "category": "budget",
+      "description": "A fictional relaxed inn with comfortable rooms for a beach holiday.",
+      "starRating": 3,
+      "reviewScore": 4.1,
+      "reviewScoreMax": 5,
+      "reviewCount": 98,
+      "currency": "ZAR",
+      "priceFromPerNight": 850,
+      "amenities": [
+        "wifi",
+        "restaurant",
+        "air_conditioning"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest room interior",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "free_until_48_hours_before_check_in"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-006-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 850,
+          "totalRooms": 15,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-006-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 1400,
+          "totalRooms": 6,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-007",
+      "cityId": "pretoria",
+      "name": "Jacaranda Garden Hotel",
+      "isFictional": true,
+      "area": "Hatfield",
+      "category": "business",
+      "description": "A fictional garden hotel with quiet workspaces and comfortable rooms.",
+      "starRating": 4,
+      "reviewScore": 4.4,
+      "reviewScoreMax": 5,
+      "reviewCount": 156,
+      "currency": "ZAR",
+      "priceFromPerNight": 1200,
+      "amenities": [
+        "wifi",
+        "gym",
+        "parking",
+        "meeting_rooms"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest room interior",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "non_refundable"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-007-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 1200,
+          "totalRooms": 16,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-007-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 1750,
+          "totalRooms": 4,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-008",
+      "cityId": "pretoria",
+      "name": "Capital Courtyard Stay",
+      "isFictional": true,
+      "area": "Arcadia",
+      "category": "budget",
+      "description": "A fictional courtyard stay for simple, affordable city visits.",
+      "starRating": 3,
+      "reviewScore": 4,
+      "reviewScoreMax": 5,
+      "reviewCount": 74,
+      "currency": "ZAR",
+      "priceFromPerNight": 750,
+      "amenities": [
+        "wifi",
+        "parking",
+        "air_conditioning"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Resort exterior and swimming pool",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1566073771259-6a8506099945",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "free_until_48_hours_before_check_in"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-008-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 750,
+          "totalRooms": 17,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-008-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 1300,
+          "totalRooms": 5,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-009",
+      "cityId": "stellenbosch",
+      "name": "Oak & Vine Manor",
+      "isFictional": true,
+      "area": "Town Centre",
+      "category": "boutique",
+      "description": "A fictional boutique manor with garden seating and a small pool.",
+      "starRating": 4,
+      "reviewScore": 4.8,
+      "reviewScoreMax": 5,
+      "reviewCount": 142,
+      "currency": "ZAR",
+      "priceFromPerNight": 1950,
+      "amenities": [
+        "wifi",
+        "pool",
+        "restaurant",
+        "parking"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel building exterior",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest room interior",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "free_until_48_hours_before_check_in"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-009-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 1950,
+          "totalRooms": 18,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-009-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 2500,
+          "totalRooms": 6,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-010",
+      "cityId": "stellenbosch",
+      "name": "Winelands Family Lodge",
+      "isFictional": true,
+      "area": "Winelands",
+      "category": "family",
+      "description": "A fictional lodge offering spacious family rooms and outdoor play areas.",
+      "starRating": 4,
+      "reviewScore": 4.5,
+      "reviewScoreMax": 5,
+      "reviewCount": 118,
+      "currency": "ZAR",
+      "priceFromPerNight": 1450,
+      "amenities": [
+        "wifi",
+        "pool",
+        "parking",
+        "kitchenette",
+        "play_area"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel accommodation",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": true,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "non_refundable"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-010-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 1450,
+          "totalRooms": 19,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-010-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 2000,
+          "totalRooms": 4,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-011",
+      "cityId": "gqeberha",
+      "name": "Algoa Bay Hideaway",
+      "isFictional": true,
+      "area": "Summerstrand",
+      "category": "boutique",
+      "description": "A fictional coastal hideaway for relaxed weekends near the beach.",
+      "starRating": 4,
+      "reviewScore": 4.6,
+      "reviewScoreMax": 5,
+      "reviewCount": 173,
+      "currency": "ZAR",
+      "priceFromPerNight": 1550,
+      "amenities": [
+        "wifi",
+        "pool",
+        "restaurant",
+        "parking"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Resort swimming pool",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1571896349842-33c89424de2d",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "free_until_48_hours_before_check_in"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-011-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 1550,
+          "totalRooms": 20,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-011-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 2100,
+          "totalRooms": 5,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotel-012",
+      "cityId": "gqeberha",
+      "name": "Bayview Budget Rooms",
+      "isFictional": true,
+      "area": "Humewood",
+      "category": "budget",
+      "description": "A fictional guest hotel with straightforward rooms and affordable rates.",
+      "starRating": 3,
+      "reviewScore": 4.2,
+      "reviewScoreMax": 5,
+      "reviewCount": 89,
+      "currency": "ZAR",
+      "priceFromPerNight": 690,
+      "amenities": [
+        "wifi",
+        "parking",
+        "air_conditioning"
+      ],
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Hotel bedroom",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
+          "licenseUrl": "https://unsplash.com/license"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
+          "alt": "Guest room interior",
+          "provider": "Unsplash",
+          "isIllustrative": true,
+          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
+          "licenseUrl": "https://unsplash.com/license"
+        }
+      ],
+      "checkInTime": "14:00",
+      "checkOutTime": "10:00",
+      "timeZone": "Africa/Johannesburg",
+      "policies": {
+        "childrenAllowed": true,
+        "petsAllowed": false,
+        "smokingAllowed": false,
+        "cancellation": {
+          "type": "free_until_48_hours_before_check_in"
+        }
+      },
+      "roomTypes": [
+        {
+          "id": "hotel-012-standard",
+          "name": "Standard Double",
+          "maxGuests": 2,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            }
+          ],
+          "pricePerNight": 690,
+          "totalRooms": 21,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        },
+        {
+          "id": "hotel-012-family",
+          "name": "Family Room",
+          "maxGuests": 4,
+          "beds": [
+            {
+              "type": "double",
+              "count": 1
+            },
+            {
+              "type": "single",
+              "count": 2
+            }
+          ],
+          "pricePerNight": 1240,
+          "totalRooms": 6,
+          "amenities": [
+            "wifi",
+            "private_bathroom"
+          ]
+        }
+      ]
+    }
+  ]
+}

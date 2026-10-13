@@ -17,3 +17,16 @@ export type Party = {
   children: number;
   rooms: number;
 };
+
+/** A City tile on Home: the City, its catalog Hotel count and its photo. */
+export type CityTile = {
+  id: string;
+  name: string;
+  hotelCount: number;
+  image: {
+    url: string;
+    alt: string;
+    /** The photo's source page, which holds the photographer credit. */
+    sourceUrl: string;
+  };
+};
