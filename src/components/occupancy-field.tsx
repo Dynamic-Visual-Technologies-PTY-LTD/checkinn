@@ -6,16 +6,10 @@ import { Dialog } from "@/components/dialog";
 import { Icon } from "@/components/icons/icons";
 import { Popover } from "@/components/popover";
 import { useIsDesktop } from "@/components/use-media-query";
+import { PARTY_LIMITS } from "@/domain/criteria";
 import type { Party } from "@/domain/types";
 
 type PartyKey = keyof Party;
-
-/** Stepper limits (EXPERIENCE.md Occupancy picker). Rooms never exceed adults. */
-export const PARTY_LIMITS = {
-  adults: { min: 1, max: 10 },
-  children: { min: 0, max: 6 },
-  rooms: { min: 1, max: 5 },
-} as const satisfies Record<PartyKey, { min: number; max: number }>;
 
 const ROWS: { key: PartyKey; label: string }[] = [
   { key: "adults", label: "Adults" },

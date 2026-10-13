@@ -1,6 +1,7 @@
 import { Suspense } from "react";
-import { CityTiles, CityTilesSkeleton } from "@/components/city-tiles";
-import { getCityTiles } from "@/features/search/queries";
+import { ExploreSection, HomeSearch } from "@/app/home-search";
+import { CityTilesSkeleton } from "@/components/city-tiles";
+import { SearchBarSkeleton } from "@/components/search-bar";
 
 export default function Home() {
   return (
@@ -13,22 +14,20 @@ export default function Home() {
         a few steps.
       </p>
 
-      <section aria-labelledby="explore-heading" className="pt-section">
-        <h2 id="explore-heading" className="text-headline-md">
-          Explore a city
-        </h2>
-        <div className="mt-space-lg">
-          <Suspense fallback={<CityTilesSkeleton />}>
-            <CatalogCityTiles />
-          </Suspense>
-        </div>
-      </section>
+      <Suspense
+        fallback={
+          <>
+            <div className="mt-space-xl">
+              <SearchBarSkeleton />
+            </div>
+            <ExploreSection>
+              <CityTilesSkeleton />
+            </ExploreSection>
+          </>
+        }
+      >
+        <HomeSearch />
+      </Suspense>
     </div>
   );
-}
-
-/** Reads the tiles at request time, inside the Suspense boundary (AD-2). */
-async function CatalogCityTiles() {
-  const tiles = await getCityTiles();
-  return <CityTiles tiles={tiles} />;
 }
