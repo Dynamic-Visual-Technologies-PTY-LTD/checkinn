@@ -1,7 +1,7 @@
 import { io } from "next/cache";
 import { Suspense } from "react";
 import { ExploreSection } from "@/app/home-search";
-import { ResultsHeading } from "@/app/search/results-heading";
+import { PageHeading } from "@/components/page-heading";
 import { CityTiles } from "@/components/city-tiles";
 import { ListingCard, ListingCardSkeleton } from "@/components/listing-card";
 import { SearchBar } from "@/components/search-bar";
@@ -64,7 +64,7 @@ export async function Results({ criteria }: { criteria: SearchCriteria }) {
     return (
       <>
         <div className="mt-space-xl flex flex-col gap-space-md">
-          <ResultsHeading>Nothing matches that search.</ResultsHeading>
+          <PageHeading>Nothing matches that search.</PageHeading>
           <p className="text-body-lg">Try another city, other dates or fewer rooms.</p>
         </div>
         <ExploreSection>
@@ -78,7 +78,7 @@ export async function Results({ criteria }: { criteria: SearchCriteria }) {
   return (
     <>
       <div className="mt-space-xl">
-        <ResultsHeading>{heading}</ResultsHeading>
+        <PageHeading>{heading}</PageHeading>
       </div>
       <ul className="mt-space-lg flex flex-col gap-space-md">
         {cards.map((card) => (

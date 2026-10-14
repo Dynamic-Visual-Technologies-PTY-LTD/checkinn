@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cancellationRule, houseRules } from "./hotel";
+import { availabilitySectionId, cancellationRule, houseRules, roomTableHref } from "./hotel";
 
 const harbourlight = {
   checkInTime: "14:00",
@@ -55,5 +55,21 @@ describe("houseRules", () => {
       "Smoking is allowed",
       "Free cancellation until 48 hours before check-in.",
     ]);
+  });
+});
+
+describe("roomTableHref", () => {
+  it("is the Hotel page with the criteria, scrolled to the Availability section", () => {
+    expect(availabilitySectionId("hotel-001")).toBe("availability-hotel-001");
+    expect(
+      roomTableHref("hotel-001", {
+        q: "Cape Town",
+        stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+        party: { adults: 2, children: 0, rooms: 1 },
+        sel: [{ roomTypeId: "hotel-001-standard", quantity: 1 }],
+      }),
+    ).toBe(
+      "/hotels/hotel-001?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=0&rooms=1&sel=hotel-001-standard%3A1#availability-hotel-001",
+    );
   });
 });

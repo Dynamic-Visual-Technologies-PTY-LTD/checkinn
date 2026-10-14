@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { BookingSummary } from "@/app/hotels/[hotelId]/booking-summary";
-import { MobileSummaryBar } from "@/app/hotels/[hotelId]/mobile-summary-bar";
+import { ReserveButton } from "@/app/hotels/[hotelId]/reserve-button";
 import { RoomTable } from "@/app/hotels/[hotelId]/room-table";
 import { useDatesField } from "@/app/hotels/[hotelId]/stay-party-picker";
+import { BookingSummary } from "@/components/booking-summary";
 import { Icon } from "@/components/icons/icons";
+import { MobileSummaryBar } from "@/components/mobile-summary-bar";
 import { cancellationLine } from "@/domain/cancellation";
 import { parseCriteria, serializeCriteria } from "@/domain/criteria";
 import { nightsBetween } from "@/domain/dates";
+import { availabilitySectionId } from "@/domain/hotel";
 import {
   reserveBlock,
   roomCount,
@@ -145,7 +147,7 @@ export function RoomSelectionPanel({
       roomCount={count}
       totalRand={totalRand}
       cancellation={cancellationLine(cancellationPolicy, stay.checkIn, checkInTime, now)}
-      reserve={allSoldOut ? null : reserveProps}
+      action={allSoldOut ? null : <ReserveButton {...reserveProps} />}
     />
   );
 
@@ -158,7 +160,7 @@ export function RoomSelectionPanel({
           <p>
             No rooms left for these dates. Try other dates.{" "}
             <a
-              href={`#availability-${hotelId}`}
+              href={`#${availabilitySectionId(hotelId)}`}
               onClick={(event) => {
                 event.preventDefault();
                 datesField.focus();
@@ -191,7 +193,7 @@ export function RoomSelectionPanel({
           <MobileSummaryBar
             roomCount={count}
             totalRand={totalRand}
-            reserve={reserveProps}
+            action={<ReserveButton {...reserveProps} inBar />}
             summary={summary}
           />
           <div aria-hidden="true" className="h-24 md:hidden" />

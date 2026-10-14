@@ -4,6 +4,7 @@ import {
   ACCESS_COOKIE,
   ACCESS_COOKIE_OPTIONS,
   addAccessToken,
+  hasAccessToken,
   MAX_ACCESS_TOKENS,
   mintAccessToken,
   parseAccessTokens,
@@ -54,5 +55,19 @@ describe("token lists", () => {
     expect(next).toHaveLength(20);
     expect(next[0]).toBe("t1");
     expect(next.at(-1)).toBe("new");
+  });
+});
+
+describe("hasAccessToken", () => {
+  it("is true only when the cookie holds that token", () => {
+    const value = serializeAccessTokens(["abc", "def"]);
+    expect(hasAccessToken(value, "def")).toBe(true);
+    expect(hasAccessToken(value, "xyz")).toBe(false);
+    expect(hasAccessToken(undefined, "abc")).toBe(false);
+  });
+
+  it("never matches an empty token or part of one", () => {
+    expect(hasAccessToken("abc", "")).toBe(false);
+    expect(hasAccessToken("abcdef", "abc")).toBe(false);
   });
 });

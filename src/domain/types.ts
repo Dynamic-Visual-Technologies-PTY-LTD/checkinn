@@ -216,6 +216,59 @@ export type RoomOption = {
   nightlyRand: number;
 };
 
+/** One Booking line as a summary shows it: "1 × Standard Double  R 4 900,00". */
+export type BookingLineView = {
+  roomTypeId: string;
+  name: string;
+  quantity: number;
+  /** Nightly price × Nights × quantity, whole rand (AD-9). */
+  lineTotalRand: number;
+};
+
+/**
+ * What Booking details (`/book`, FR-21) shows before the guest confirms:
+ * priced from the catalog with the same code `createBooking` stores, so the
+ * summary always equals the Booking. Lines are in the Hotel's Room type order.
+ */
+export type BookingQuote = {
+  hotelId: string;
+  hotelName: string;
+  /** `HH:MM`, the base of the cancellation deadline and the arrival times. */
+  checkInTime: string;
+  cancellationPolicy: CancellationPolicy;
+  stay: Stay;
+  party: Party;
+  lines: BookingLineView[];
+  /** How many Rooms the lines add up to. */
+  roomCount: number;
+  totalRand: number;
+};
+
+export type BookingStatusView = "confirmed" | "cancelled";
+
+/**
+ * A confirmed Booking as the confirmation shows it (FR-22). Read from the
+ * Booking's snapshot only (AD-16): prices, the Stay, the Party and the
+ * Cancellation policy are what the guest confirmed, never the catalog's
+ * current values. Only the Hotel and Room type names come from the catalog.
+ */
+export type BookingView = {
+  reference: string;
+  hotelId: string;
+  hotelName: string;
+  status: BookingStatusView;
+  stay: Stay;
+  party: Party;
+  /** "Thandi Nkosi". */
+  guestName: string;
+  lines: BookingLineView[];
+  roomCount: number;
+  bookingTotalRand: number;
+  cancellationPolicy: CancellationPolicy;
+  /** An ISO UTC instant; null for Non-refundable. */
+  cancellationDeadline: string | null;
+};
+
 /** Expected failures a server action returns instead of throwing (AD-11). */
 export type ErrorCode =
   | "VALIDATION"

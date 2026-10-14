@@ -1,4 +1,5 @@
-import type { CancellationPolicy, HouseRule } from "@/domain/types";
+import { hotelHref } from "@/domain/criteria";
+import type { CancellationPolicy, HouseRule, SearchCriteria } from "@/domain/types";
 
 const BED_NOUNS: Record<string, string> = {
   double: "double bed",
@@ -62,6 +63,19 @@ export function houseRules({ checkInTime, checkOutTime, policies }: HouseRuleInp
  */
 export function availabilityHeadingId(hotelId: string): string {
   return `availability-heading-${hotelId}`;
+}
+
+/** The id of the Hotel page's Availability section, which holds the room table. */
+export function availabilitySectionId(hotelId: string): string {
+  return `availability-${hotelId}`;
+}
+
+/**
+ * The Hotel page scrolled to its room table, keeping the criteria (AD-8):
+ * where Booking details sends a guest back to.
+ */
+export function roomTableHref(hotelId: string, criteria: Partial<SearchCriteria>): string {
+  return `${hotelHref(hotelId, criteria)}#${availabilitySectionId(hotelId)}`;
 }
 
 /**

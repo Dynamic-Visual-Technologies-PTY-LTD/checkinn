@@ -1,6 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { generateReference, normaliseReference, REFERENCE_ALPHABET } from "./reference";
+import {
+  bookingPath,
+  generateReference,
+  normaliseReference,
+  REFERENCE_ALPHABET,
+} from "./reference";
 
 const PATTERN = /^CI-[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/;
 
@@ -28,5 +33,15 @@ describe("normaliseReference", () => {
     expect(normaliseReference(" ci-7k3p9q ")).toBe("CI-7K3P9Q");
     expect(normaliseReference("7K3P9Q")).toBe("CI-7K3P9Q");
     expect(normaliseReference("CI-7K3P9Q")).toBe("CI-7K3P9Q");
+  });
+});
+
+describe("bookingPath", () => {
+  it("is the Booking's page under /bookings", () => {
+    expect(bookingPath("CI-7K3P9Q")).toBe("/bookings/CI-7K3P9Q");
+  });
+
+  it("encodes anything unsafe in a path", () => {
+    expect(bookingPath("CI-7K/3P")).toBe("/bookings/CI-7K%2F3P");
   });
 });

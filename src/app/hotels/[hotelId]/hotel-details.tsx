@@ -6,7 +6,7 @@ import {
 } from "@/app/hotels/[hotelId]/availability-section";
 import { HotelActions } from "@/app/hotels/[hotelId]/hotel-actions";
 import { HotelPhotos } from "@/app/hotels/[hotelId]/photo-viewer";
-import { ResultsHeading } from "@/app/search/results-heading";
+import { PageHeading } from "@/components/page-heading";
 import { Icon, type IconName } from "@/components/icons/icons";
 import { Stars } from "@/components/stars";
 import { nowIso, todayIn } from "@/domain/clock";
@@ -133,7 +133,7 @@ function HotelHeader({ hotel, sharePath }: { hotel: HotelPage; sharePath: string
       <div className="flex min-w-0 flex-col gap-space-xs">
         <p className="text-label-md text-on-surface-muted uppercase">{hotel.category}</p>
         <div className="flex flex-wrap items-center gap-x-space-md gap-y-space-xs">
-          <ResultsHeading>{hotel.name}</ResultsHeading>
+          <PageHeading>{hotel.name}</PageHeading>
           <Stars count={hotel.starRating} />
         </div>
         <p className="flex items-center gap-space-sm text-body-md">

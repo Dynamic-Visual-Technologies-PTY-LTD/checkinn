@@ -1,10 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  ReserveButton,
-  type ReserveProps,
-} from "@/app/hotels/[hotelId]/booking-summary";
 import { Dialog } from "@/components/dialog";
 import { roomsLabel, summaryTriggerLabel } from "@/domain/selection";
 import { formatZar, spokenZar } from "@/lib/format";
@@ -15,22 +11,22 @@ const TOAST_OFFSET = "7rem";
 type MobileSummaryBarProps = {
   roomCount: number;
   totalRand: number;
-  reserve: ReserveProps;
+  /**
+   * The step's primary action: Reserve on the Hotel page, Confirm booking on
+   * Booking details. Its items sit in the bar's two-column grid.
+   */
+  action: ReactNode;
   /** The full booking summary, shown in the sheet. */
   summary: ReactNode;
 };
 
 /**
  * The phone summary bar (EXPERIENCE.md Mobile summary bar): fixed to the
- * bottom below 768px, with the rooms, the total and Reserve. Tapping the text
- * opens the full summary as a sheet. The toast sits above it (the bar sets `--toast-offset` on the body, which the toast reads).
+ * bottom below 768px, with the rooms, the total and the step's primary
+ * button. Tapping the text opens the full summary as a sheet. The toast sits
+ * above it (the bar sets `--toast-offset` on the body, which the toast reads).
  */
-export function MobileSummaryBar({
-  roomCount,
-  totalRand,
-  reserve,
-  summary,
-}: MobileSummaryBarProps) {
+export function MobileSummaryBar({ roomCount, totalRand, action, summary }: MobileSummaryBarProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -58,7 +54,7 @@ export function MobileSummaryBar({
         >
           {roomsLabel(roomCount)} · {formatZar(totalRand, { cents: true })}
         </button>
-        <ReserveButton {...reserve} inBar />
+        {action}
       </div>
       <Dialog
         open={open}

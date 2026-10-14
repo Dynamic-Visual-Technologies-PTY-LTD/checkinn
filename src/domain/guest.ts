@@ -99,3 +99,22 @@ export function validateGuest(input: GuestInput): GuestValidation {
     },
   };
 }
+
+/** The arrival time a guest picks when they don't know yet; stored as no time. */
+export const ARRIVAL_NOT_SURE = "Not sure yet";
+
+/**
+ * The estimated arrival time choices (FR-21): hourly slots from the Hotel's
+ * check-in time to midnight, e.g. "14:00 – 15:00" … "23:00 – 00:00". A
+ * check-in time between hours starts at its hour.
+ */
+export function arrivalTimeOptions(checkInTime: string): string[] {
+  const first = Number(checkInTime.slice(0, 2));
+  if (!Number.isInteger(first) || first < 0 || first > 23) return [];
+  const pad = (hour: number) => `${String(hour % 24).padStart(2, "0")}:00`;
+  const options: string[] = [];
+  for (let hour = first; hour < 24; hour += 1) {
+    options.push(`${pad(hour)} – ${pad(hour + 1)}`);
+  }
+  return options.filter((option) => option.length <= GUEST_LIMITS.arrivalTime);
+}
