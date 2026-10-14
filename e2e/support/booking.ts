@@ -5,7 +5,7 @@ import { openDb } from "@/db/client";
 import { bookingLines, bookings } from "@/db/schema";
 import { todayIn } from "@/domain/clock";
 import { serializeCriteria } from "@/domain/criteria";
-import { addDays, dayLabel } from "@/domain/dates";
+import { addDays, addMonths, dayLabel, endOfMonth, startOfMonth } from "@/domain/dates";
 import type { CancellationPolicy, Party, RoomSelection, Stay } from "@/domain/types";
 import { E2E_DB_PATH } from "./db";
 
@@ -15,42 +15,39 @@ import { E2E_DB_PATH } from "./db";
  * days +3 to +5, and never another project's or retry's.
  */
 
-// Seed photos are the only remote requests (AD-17); they are aborted, as at
-// the stand without internet.
-const SEED_PHOTO_HOSTS = new Set([
-  "commons.wikimedia.org",
-  "upload.wikimedia.org",
-  "images.unsplash.com",
-]);
+export { blockSeedPhotos } from "./network";
 
-export async function blockSeedPhotos(page: Page) {
-  await page.route(
-    (url) => SEED_PHOTO_HOSTS.has(url.hostname),
-    (route) => route.abort(),
-  );
-}
-
-/** Days in each project and retry's window; 10 slots of 5 days. */
-const WINDOW_DAYS = 50;
+/** Days in each project and retry's window; 11 slots of 5 days. */
+const WINDOW_DAYS = 55;
 const SLOT_DAYS = 5;
-const FIRST_DAY = 20;
+/** After the read-only specs' days +1 to +5. */
+const FIRST_DAY = 6;
 /** Two projects, each run at most 3 times (2 retries on CI). */
 const WINDOWS = 6;
-/** Slots 10 to 13 live after every calendar window, in windows of their own. */
+/** Slots 11 to 14 live after every calendar window, in windows of their own. */
 const CALENDAR_SLOTS = WINDOW_DAYS / SLOT_DAYS;
 const URL_SLOTS = 4;
 const URL_WINDOW_DAYS = URL_SLOTS * SLOT_DAYS;
 const URL_FIRST_DAY = FIRST_DAY + WINDOWS * WINDOW_DAYS;
+/** The phone calendar sheet lists this many months from today's (`PHONE_MONTHS`). */
+const PHONE_CALENDAR_MONTHS = 12;
 
 /**
- * A Stay from day +20 onwards that no other test, project or retry books:
+ * A Stay from day +6 onwards that no other test, project or retry books:
  * each (project, retry) pair gets a window, and each test a numbered 5-day
  * slot in it. Stays up to 5 nights fit a slot.
  *
- * - Slots 0 to 9 sit in 50-day windows within the phone calendar's 12
- *   months, so a spec can pick them in the range calendar.
- * - Slots 10 to 13 sit after all of those, beyond the phone calendar: specs
- *   reach them by URL only (`bookHref`, `hotelHref`).
+ * - Slots 0 to 10 sit in 55-day windows, so a spec can pick them in the range
+ *   calendar. The phone sheet ends with the 12th month, at least 334 days
+ *   out; a calendar Stay that would end after it throws (only slot 10 of the
+ *   last retry's window, with more than 3 nights).
+ * - Slots 11 to 14 sit after all of those, beyond the phone calendar: specs
+ *   reach them by URL only (`bookHref`, `hotelHref`, `searchHref`).
+ *
+ * Taken: 0 UJ-1, 1 UJ-2, 2 to 9 booking details, 10 the blocked-network
+ * booking (offline booking on booking-desktop, the phone journey on
+ * booking-mobile: each runs in one project only, so they never share a
+ * window), 11 and 12 UJ-3, 14 reset. 13 is free.
  */
 export function bookingStay(testInfo: TestInfo, slot: number, nights = 2): Stay {
   if (slot < 0 || slot >= CALENDAR_SLOTS + URL_SLOTS || nights > SLOT_DAYS) {
@@ -63,8 +60,14 @@ export function bookingStay(testInfo: TestInfo, slot: number, nights = 2): Stay 
     slot < CALENDAR_SLOTS
       ? FIRST_DAY + window * WINDOW_DAYS + slot * SLOT_DAYS
       : URL_FIRST_DAY + window * URL_WINDOW_DAYS + (slot - CALENDAR_SLOTS) * SLOT_DAYS;
-  const checkIn = addDays(todayIn(), offset);
-  return { checkIn, checkOut: addDays(checkIn, nights) };
+  const today = todayIn();
+  const checkIn = addDays(today, offset);
+  const stay = { checkIn, checkOut: addDays(checkIn, nights) };
+  const lastPhoneDay = endOfMonth(addMonths(startOfMonth(today), PHONE_CALENDAR_MONTHS - 1));
+  if (slot < CALENDAR_SLOTS && stay.checkOut > lastPhoneDay) {
+    throw new Error(`Slot ${slot} with ${nights} nights ends after the phone calendar`);
+  }
+  return stay;
 }
 
 export const COUPLE: Party = { adults: 2, children: 0, rooms: 1 };

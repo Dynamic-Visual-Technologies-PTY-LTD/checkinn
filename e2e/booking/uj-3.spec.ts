@@ -52,7 +52,7 @@ async function lookUp(page: Page, reference: string, email: string) {
 test("UJ-3: look up a Free cancellation Booking from the header and cancel it", async ({
   page,
 }, testInfo) => {
-  const stay = bookingStay(testInfo, 10, 2);
+  const stay = bookingStay(testInfo, 11, 2);
   const email = uniqueGuestEmail("sipho");
   const before = await standardDoublesLeft(page, "hotel-005", stay);
 
@@ -129,7 +129,7 @@ test("UJ-3: look up a Free cancellation Booking from the header and cancel it", 
 test("Non-refundable shows no cancel button; a lookup leaves another Booking's confirmation", async ({
   page,
 }, testInfo) => {
-  const stay = bookingStay(testInfo, 11, 2);
+  const stay = bookingStay(testInfo, 12, 2);
   const standard = [{ roomTypeId: "hotel-001-standard", quantity: 1 }];
   const other = bookRoomsElsewhere({ hotelId: "hotel-001", stay, lines: standard });
 

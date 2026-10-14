@@ -102,6 +102,19 @@ The Run and Debug panel has configurations for debugging the server, the browser
 
 </details>
 
+## Running at the expo
+
+On the presenter laptop, serve a production build to the whole network, so the projector and visitors' phones use one running app over plain HTTP:
+
+```bash
+npm run build
+npm start -- -H 0.0.0.0
+```
+
+Phones open `http://<laptop-ip>:3000` on the same Wi-Fi. Between sessions, run `npm run db:reset` in a second terminal; it is safe while the app runs. After a crash, run `npm start -- -H 0.0.0.0` again; Bookings are kept.
+
+The full steps, with the firewall, the checks for the projector and each phone, and recovery, are in the [expo dry-run checklist](_bmad-output/initiative-checkinn-mvp/epic-checkinn-mvp/expo-dry-run-checklist.md).
+
 ## Stack
 
 | Area | Choice |
