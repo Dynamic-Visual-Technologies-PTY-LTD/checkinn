@@ -4,6 +4,11 @@ import {
   ACCESS_COOKIE,
   ACCESS_COOKIE_OPTIONS,
   addAccessToken,
+  addBookedReference,
+  BOOKED_COOKIE,
+  isBookedReference,
+  parseBookedReferences,
+  removeBookedReference,
   hasAccessToken,
   MAX_ACCESS_TOKENS,
   mintAccessToken,
@@ -69,5 +74,32 @@ describe("hasAccessToken", () => {
   it("never matches an empty token or part of one", () => {
     expect(hasAccessToken("abc", "")).toBe(false);
     expect(hasAccessToken("abcdef", "abc")).toBe(false);
+  });
+});
+
+describe("the just-booked cookie", () => {
+  it("is named checkinn_booked and lists references", () => {
+    expect(BOOKED_COOKIE).toBe("checkinn_booked");
+    const value = serializeAccessTokens(addBookedReference(["CI-AAAAAA"], "CI-BBBBBB"));
+    expect(value).toBe("CI-AAAAAA.CI-BBBBBB");
+    expect(isBookedReference(value, "CI-BBBBBB")).toBe(true);
+    expect(isBookedReference(value, "CI-CCCCCC")).toBe(false);
+    expect(isBookedReference(undefined, "CI-BBBBBB")).toBe(false);
+  });
+
+  it("drops malformed entries", () => {
+    expect(parseBookedReferences("CI-AAAAAA.<script>..ci-lower")).toEqual(["CI-AAAAAA"]);
+  });
+
+  it("keeps the newest 20", () => {
+    const many = Array.from({ length: 20 }, (_, i) => `CI-${String(i).padStart(6, "0")}`);
+    const next = addBookedReference(many, "CI-NEWEST");
+    expect(next).toHaveLength(MAX_ACCESS_TOKENS);
+    expect(next.at(-1)).toBe("CI-NEWEST");
+    expect(next[0]).toBe(many[1]);
+  });
+
+  it("removes only the one reference", () => {
+    expect(removeBookedReference(["CI-AAAAAA", "CI-BBBBBB"], "CI-AAAAAA")).toEqual(["CI-BBBBBB"]);
   });
 });

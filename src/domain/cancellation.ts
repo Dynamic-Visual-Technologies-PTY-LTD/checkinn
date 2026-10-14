@@ -98,3 +98,39 @@ export function cancellationLine(
     policy === "non_refundable" ? null : cancellationDeadlineInstant(checkIn, checkInTime);
   return snapshotCancellationLine(policy, deadline, now);
 }
+
+/**
+ * Whether a stored Booking can be cancelled at `now` (FR-24, AD-9, AD-16),
+ * read from its snapshot only:
+ *
+ * - `cancelled`: already cancelled.
+ * - `non-refundable`: the snapshot's policy is Non-refundable.
+ * - `deadline-passed`: free cancellation, but `now` has reached the stored deadline.
+ * - `open`: free cancellation before the deadline; the guest may cancel.
+ */
+export type CancelState = "open" | "deadline-passed" | "non-refundable" | "cancelled";
+
+export function cancelState(
+  booking: {
+    status: "confirmed" | "cancelled";
+    cancellationPolicy: CancellationPolicy;
+    /** An ISO UTC instant; null for Non-refundable. */
+    cancellationDeadline: string | null;
+  },
+  now: string,
+): CancelState {
+  if (booking.status === "cancelled") return "cancelled";
+  if (booking.cancellationPolicy === "non_refundable" || booking.cancellationDeadline === null) {
+    return "non-refundable";
+  }
+  return Date.parse(now) >= Date.parse(booking.cancellationDeadline) ? "deadline-passed" : "open";
+}
+
+/** Shown when cancel is asked of a Booking that is already cancelled. */
+export const ALREADY_CANCELLED_MESSAGE = "This booking is already cancelled.";
+
+/** "Wed 14 Oct 2026": the Johannesburg date a stored instant falls on (AD-9). */
+export function instantDateLabel(instant: string): string {
+  const { date } = deadlineFromInstant(instant);
+  return `${shortDayLabel(date)} ${date.slice(0, 4)}`;
+}

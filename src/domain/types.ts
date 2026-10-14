@@ -256,6 +256,8 @@ export type BookingView = {
   cancellationPolicy: CancellationPolicy;
   /** An ISO UTC instant; null for Non-refundable. */
   cancellationDeadline: string | null;
+  /** When it was cancelled, an ISO UTC instant; null while Confirmed. */
+  cancelledAt: string | null;
 };
 
 /** Expected failures a server action returns instead of throwing (AD-11). */

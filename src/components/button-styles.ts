@@ -15,3 +15,14 @@ export const iconButton =
 /** Fade in under 200ms; nothing animates under reduced motion. */
 export const overlayEnter =
   "motion-safe:transition-opacity motion-safe:duration-150 motion-safe:starting:opacity-0";
+
+/**
+ * A disabled primary button (DESIGN.md Primary button): Midnight fill, muted
+ * text and a 2px disabled-grey border, with no hover. Add to `primaryButton`.
+ */
+export const primaryButtonDisabled =
+  "disabled:cursor-default disabled:border-2 disabled:border-on-surface-disabled disabled:bg-surface disabled:text-on-surface-muted disabled:hover:bg-surface disabled:hover:text-on-surface-muted";
+
+/** A disabled secondary button: the disabled-grey border, muted text, no hover. Add to `secondaryButton`. */
+export const secondaryButtonDisabled =
+  "disabled:cursor-default disabled:border-on-surface-disabled disabled:text-on-surface-muted disabled:hover:bg-neutral disabled:hover:text-on-surface-muted";

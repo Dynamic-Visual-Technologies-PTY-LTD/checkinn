@@ -5,10 +5,12 @@ import {
   defaultCriteria,
   hotelHref,
   parseCriteria,
+  parseNotice,
   parseSelection,
   problemMessage,
   searchHref,
   serializeCriteria,
+  serializeNotice,
   validateStay,
 } from "./criteria";
 
@@ -287,5 +289,21 @@ describe("hotelHref", () => {
     ).toBe(
       "/hotels/hotel-001?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=0&rooms=1",
     );
+  });
+});
+
+describe("serializeNotice", () => {
+  it("writes the notice alone, with no criteria", () => {
+    expect(serializeNotice({ type: "cancelled" })).toBe("notice=cancelled");
+    expect(
+      serializeNotice({ type: "room-unavailable", roomTypeIds: ["hotel-001-standard"] }),
+    ).toBe("notice=room-unavailable&rt=hotel-001-standard");
+  });
+
+  it("round-trips through parseNotice", () => {
+    expect(parseNotice(new URLSearchParams(serializeNotice({ type: "cancelled" })))).toEqual({
+      type: "cancelled",
+    });
+    expect(parseNotice({ notice: "unknown" })).toBeNull();
   });
 });

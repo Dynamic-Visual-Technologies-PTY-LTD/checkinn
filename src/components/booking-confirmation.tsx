@@ -5,12 +5,8 @@ import { Icon } from "@/components/icons/icons";
 import { PageHeading } from "@/components/page-heading";
 import { ReferenceBlock } from "@/components/reference-block";
 import type { CancellationLine } from "@/domain/cancellation";
+import { managePath } from "@/domain/reference";
 import type { BookingView } from "@/domain/types";
-
-/** Where "Manage this booking" leads: the lookup, with the reference filled in (FR-23). */
-export function manageBookingHref(reference: string): string {
-  return `/manage?${new URLSearchParams({ reference }).toString()}`;
-}
 
 /**
  * The confirmation (EXPERIENCE.md Booked, FR-22): step 3, the Mint tick,
@@ -46,7 +42,7 @@ export function BookingConfirmation({
           </p>
           <p className="mt-space-sm">
             <Link
-              href={manageBookingHref(booking.reference)}
+              href={managePath(booking.reference)}
               prefetch={false}
               className="inline-flex min-h-11 items-center underline hover:text-tertiary"
             >

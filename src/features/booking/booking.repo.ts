@@ -1,7 +1,7 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { bookingLines, bookings, hotels, roomTypes } from "@/db/schema";
 import type { CatalogWriter } from "@/db/seed";
-import { cancellationDeadlineInstant } from "@/domain/cancellation";
+import { cancellationDeadlineInstant, cancelState } from "@/domain/cancellation";
 import type { GuestDetails } from "@/domain/guest";
 import { nightsBetween } from "@/domain/dates";
 import { generateReference } from "@/domain/reference";
@@ -290,8 +290,10 @@ export function createBooking(db: CatalogWriter, input: CreateBookingInput): Cre
   );
 }
 
-/** A Booking's view and the token that opens it (AD-15). */
+/** A Booking's view, its internal id and the token that opens it (AD-15). */
 export type BookingRecord = {
+  /** The internal primary key; never shown or put in a URL. */
+  id: number;
   booking: BookingView;
   accessToken: string;
 };
@@ -327,6 +329,7 @@ export function bookingByReference(db: CatalogWriter, reference: string): Bookin
     .all();
 
   return {
+    id: booking.id,
     accessToken: booking.accessToken,
     booking: {
       reference: booking.reference,
@@ -341,6 +344,94 @@ export function bookingByReference(db: CatalogWriter, reference: string): Bookin
       bookingTotalRand: booking.bookingTotalRand,
       cancellationPolicy: booking.cancellationPolicy as CancellationPolicy,
       cancellationDeadline: booking.cancellationDeadline,
+      cancelledAt: booking.cancelledAt,
     },
   };
+}
+
+/** What a successful Manage booking lookup grants (AD-15). */
+export type LookedUpBooking = {
+  reference: string;
+  accessToken: string;
+};
+
+/**
+ * The Booking with this reference and this email, or null (FR-23). Both are
+ * passed normalised (AD-10): the reference uppercase with `CI-`, the email
+ * trimmed and lowercased. A wrong reference and a right reference with
+ * another email both give null, so the caller can't tell them apart.
+ */
+export function bookingByLookup(
+  db: CatalogWriter,
+  reference: string,
+  email: string,
+): LookedUpBooking | null {
+  return (
+    db
+      .select({ reference: bookings.reference, accessToken: bookings.accessToken })
+      .from(bookings)
+      .where(and(eq(bookings.reference, reference), eq(bookings.email, email)))
+      .get() ?? null
+  );
+}
+
+/**
+ * - `cancelled`: the Booking is now Cancelled.
+ * - `not-found`: no Booking has that id.
+ * - `already-cancelled`, `non-refundable`, `deadline-passed`: nothing changed.
+ */
+export type CancelBookingResult =
+  | { kind: "cancelled" }
+  | { kind: "not-found" }
+  | { kind: "already-cancelled" }
+  | { kind: "non-refundable" }
+  | { kind: "deadline-passed" };
+
+/**
+ * Cancels a Booking in one immediate, synchronous transaction (AD-3, FR-24).
+ * It re-reads the snapshot's status, Cancellation policy and stored deadline
+ * and checks them against `now` (an ISO UTC instant from `src/domain/clock.ts`)
+ * with `cancelState`, then sets `status` and `cancelled_at`. Nothing else is
+ * written: Availability counts only Confirmed lines (AD-4), so the Rooms are
+ * free again.
+ */
+export function cancelBooking(db: CatalogWriter, id: number, now: string): CancelBookingResult {
+  return db.transaction(
+    (tx): CancelBookingResult => {
+      const row = tx
+        .select({
+          status: bookings.status,
+          cancellationPolicy: bookings.cancellationPolicy,
+          cancellationDeadline: bookings.cancellationDeadline,
+        })
+        .from(bookings)
+        .where(eq(bookings.id, id))
+        .get();
+      if (!row) return { kind: "not-found" };
+
+      const state = cancelState(
+        {
+          status: row.status,
+          cancellationPolicy: row.cancellationPolicy as CancellationPolicy,
+          cancellationDeadline: row.cancellationDeadline,
+        },
+        now,
+      );
+      switch (state) {
+        case "cancelled":
+          return { kind: "already-cancelled" };
+        case "non-refundable":
+          return { kind: "non-refundable" };
+        case "deadline-passed":
+          return { kind: "deadline-passed" };
+        case "open":
+          tx.update(bookings)
+            .set({ status: "cancelled", cancelledAt: now })
+            .where(and(eq(bookings.id, id), eq(bookings.status, "confirmed")))
+            .run();
+          return { kind: "cancelled" };
+      }
+    },
+    { behavior: "immediate" },
+  );
 }

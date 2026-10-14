@@ -166,7 +166,8 @@ function serializeSelection(sel: RoomSelection[]): string {
   return sel.map((line) => `${line.roomTypeId}:${line.quantity}`).join(",");
 }
 
-function parseNotice(params: CriteriaParams): CriteriaNotice | null {
+/** The `notice` (and `rt`) in URL parameters, or null. */
+export function parseNotice(params: CriteriaParams): CriteriaNotice | null {
   const notice = readText(params, "notice");
   if (notice === "cancelled") return { type: "cancelled" };
   if (notice === "room-unavailable") {
@@ -247,12 +248,24 @@ export function serializeCriteria(criteria: Partial<SearchCriteria>): string {
     params.set("sel", serializeSelection(criteria.sel));
   }
   if (criteria.k) params.set("k", criteria.k);
-  if (criteria.notice) {
-    params.set("notice", criteria.notice.type);
-    if (criteria.notice.type === "room-unavailable" && criteria.notice.roomTypeIds.length > 0) {
-      params.set("rt", criteria.notice.roomTypeIds.join(","));
-    }
+  if (criteria.notice) setNotice(params, criteria.notice);
+  return params.toString();
+}
+
+function setNotice(params: URLSearchParams, notice: CriteriaNotice) {
+  params.set("notice", notice.type);
+  if (notice.type === "room-unavailable" && notice.roomTypeIds.length > 0) {
+    params.set("rt", notice.roomTypeIds.join(","));
   }
+}
+
+/**
+ * A notice on its own, for a page whose URL holds no criteria, such as the
+ * Booking view: "notice=cancelled".
+ */
+export function serializeNotice(notice: CriteriaNotice): string {
+  const params = new URLSearchParams();
+  setNotice(params, notice);
   return params.toString();
 }
 

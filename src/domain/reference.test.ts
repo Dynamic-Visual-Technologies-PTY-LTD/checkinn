@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   bookingPath,
   generateReference,
+  managePath,
   normaliseReference,
   REFERENCE_ALPHABET,
 } from "./reference";
@@ -43,5 +44,11 @@ describe("bookingPath", () => {
 
   it("encodes anything unsafe in a path", () => {
     expect(bookingPath("CI-7K/3P")).toBe("/bookings/CI-7K%2F3P");
+  });
+});
+
+describe("managePath", () => {
+  it("fills in the reference and never an email", () => {
+    expect(managePath("CI-4M8D2X")).toBe("/manage?reference=CI-4M8D2X");
   });
 });
