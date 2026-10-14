@@ -126,7 +126,10 @@ export function HotelPhotos({ photos, hotelName, photoClassName }: HotelPhotosPr
                 alt={current.alt}
                 label={hotelName}
                 fit="contain"
-                className="size-full"
+                // The photo can be swapped for the placeholder mid-swipe. A touch that
+                // began on the removed node never reaches the handlers above, so the
+                // touch must begin on this stable container instead.
+                className="pointer-events-none size-full"
               />
             </div>
             <div className="flex items-center justify-center gap-space-lg p-space-md">
