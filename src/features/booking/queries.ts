@@ -4,7 +4,12 @@ import { cookies } from "next/headers";
 import { getDb } from "@/db/client";
 import { normaliseReference } from "@/domain/reference";
 import type { BookingView, Party, RoomSelection, Stay } from "@/domain/types";
-import { ACCESS_COOKIE, hasAccessToken } from "@/features/booking/access";
+import {
+  ACCESS_COOKIE,
+  BOOKED_COOKIE,
+  hasAccessToken,
+  isBookedReference,
+} from "@/features/booking/access";
 import {
   bookingByKey,
   bookingByReference,
@@ -35,6 +40,17 @@ export async function getBooking(reference: string): Promise<BookingView | null>
   const record = bookingByReference(getDb(), normaliseReference(reference));
   if (!record || !(await holdsToken(record.accessToken))) return null;
   return record.booking;
+}
+
+/**
+ * Whether this browser confirmed the Booking and has not looked it up since,
+ * so `/bookings/[reference]` shows "You're booked!" rather than the Booking
+ * view. Grants nothing: call it only for a Booking `getBooking` returned.
+ */
+export async function wasJustBooked(reference: string): Promise<boolean> {
+  await io();
+  const store = await cookies();
+  return isBookedReference(store.get(BOOKED_COOKIE)?.value, normaliseReference(reference));
 }
 
 /**

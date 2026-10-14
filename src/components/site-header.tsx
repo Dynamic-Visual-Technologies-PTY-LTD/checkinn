@@ -29,8 +29,6 @@ export function SiteHeader() {
         </Link>
         <Link
           href="/manage"
-          // No prefetch until the route exists (a later story builds it).
-          prefetch={false}
           className="text-body-sm text-on-surface underline hover:text-tertiary"
         >
           Manage booking

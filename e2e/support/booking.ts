@@ -34,20 +34,36 @@ export async function blockSeedPhotos(page: Page) {
 const WINDOW_DAYS = 50;
 const SLOT_DAYS = 5;
 const FIRST_DAY = 20;
+/** Two projects, each run at most 3 times (2 retries on CI). */
+const WINDOWS = 6;
+/** Slots 10 to 13 live after every calendar window, in windows of their own. */
+const CALENDAR_SLOTS = WINDOW_DAYS / SLOT_DAYS;
+const URL_SLOTS = 4;
+const URL_WINDOW_DAYS = URL_SLOTS * SLOT_DAYS;
+const URL_FIRST_DAY = FIRST_DAY + WINDOWS * WINDOW_DAYS;
 
 /**
  * A Stay from day +20 onwards that no other test, project or retry books:
- * each (project, retry) pair gets a 50-day window, and each test a numbered
- * 5-day slot in it (0 to 9). Stays up to 5 nights fit a slot. Windows stay
- * within the phone calendar's 12 months.
+ * each (project, retry) pair gets a window, and each test a numbered 5-day
+ * slot in it. Stays up to 5 nights fit a slot.
+ *
+ * - Slots 0 to 9 sit in 50-day windows within the phone calendar's 12
+ *   months, so a spec can pick them in the range calendar.
+ * - Slots 10 to 13 sit after all of those, beyond the phone calendar: specs
+ *   reach them by URL only (`bookHref`, `hotelHref`).
  */
 export function bookingStay(testInfo: TestInfo, slot: number, nights = 2): Stay {
-  if (slot < 0 || slot >= WINDOW_DAYS / SLOT_DAYS || nights > SLOT_DAYS) {
+  if (slot < 0 || slot >= CALENDAR_SLOTS + URL_SLOTS || nights > SLOT_DAYS) {
     throw new Error(`No room for slot ${slot} with ${nights} nights`);
   }
   const project = testInfo.project.name === "booking-mobile" ? 1 : 0;
   const window = project + 2 * testInfo.retry;
-  const checkIn = addDays(todayIn(), FIRST_DAY + window * WINDOW_DAYS + slot * SLOT_DAYS);
+  if (window >= WINDOWS) throw new Error(`No window for retry ${testInfo.retry}`);
+  const offset =
+    slot < CALENDAR_SLOTS
+      ? FIRST_DAY + window * WINDOW_DAYS + slot * SLOT_DAYS
+      : URL_FIRST_DAY + window * URL_WINDOW_DAYS + (slot - CALENDAR_SLOTS) * SLOT_DAYS;
+  const checkIn = addDays(todayIn(), offset);
   return { checkIn, checkOut: addDays(checkIn, nights) };
 }
 
@@ -135,21 +151,25 @@ export function bookingCount(email: string): number {
 
 /**
  * Books Rooms outside the browser, straight into the e2e database, as another
- * visitor would. Only for setting up the room-ran-out case.
+ * visitor would: a Non-refundable Booking. For setting up the room-ran-out
+ * case, and a Booking of someone else's to look up. Returns its reference and
+ * email.
  */
 export function bookRoomsElsewhere(booking: {
   hotelId: string;
   stay: Stay;
   lines: RoomSelection[];
-}) {
+}): { reference: string; email: string } {
   const db = openDb(E2E_DB_PATH);
   try {
     const code = randomBytes(8).toString("hex");
+    const reference = `CI-E2E${code.slice(0, 6).toUpperCase()}`;
+    const email = `other-${code}@checkinn.test`;
     db.transaction((tx) => {
       const row = tx
         .insert(bookings)
         .values({
-          reference: `CI-E2E${code.slice(0, 6).toUpperCase()}`,
+          reference,
           idempotencyKey: `e2e-${code}`,
           accessToken: `e2e-${code}`,
           hotelId: booking.hotelId,
@@ -161,7 +181,7 @@ export function bookRoomsElsewhere(booking: {
           rooms: booking.lines.reduce((sum, line) => sum + line.quantity, 0),
           firstName: "Other",
           lastName: "Visitor",
-          email: `other-${code}@checkinn.test`,
+          email,
           bookingTotalRand: 0,
           cancellationPolicy: "non_refundable",
           createdAt: new Date().toISOString(),
@@ -180,6 +200,7 @@ export function bookRoomsElsewhere(booking: {
         )
         .run();
     });
+    return { reference, email };
   } finally {
     db.$client.close();
   }

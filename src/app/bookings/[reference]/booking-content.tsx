@@ -1,29 +1,56 @@
 import { io } from "next/cache";
 import { redirect } from "next/navigation";
-import { BookingConfirmation, manageBookingHref } from "@/components/booking-confirmation";
-import { snapshotCancellationLine } from "@/domain/cancellation";
+import { BookingView } from "@/app/bookings/[reference]/booking-view";
+import { BookingConfirmation } from "@/components/booking-confirmation";
+import { cancelState, snapshotCancellationLine } from "@/domain/cancellation";
 import { nowIso } from "@/domain/clock";
-import { normaliseReference } from "@/domain/reference";
-import { getBooking } from "@/features/booking/queries";
+import { parseNotice } from "@/domain/criteria";
+import { managePath, normaliseReference } from "@/domain/reference";
+import { getBooking, wasJustBooked } from "@/features/booking/queries";
 
 /**
- * The confirmation for `/bookings/[reference]` (FR-22). The reference is
- * normalised, so `ci-7k3p9q` works. The Booking shows only to a browser
- * whose access cookie holds its token (AD-15); without one, or for an unknown
+ * `/bookings/[reference]` (FR-22, FR-23, FR-24). The reference is
+ * normalised, so `ci-7k3p9q` works. The Booking shows only to a browser whose
+ * access cookie holds its token (AD-15); without one, or for an unknown
  * reference, the guest is sent to look it up with their email.
+ *
+ * Right after confirming, this browser's just-booked cookie lists the
+ * reference and the page is the confirmation, "You're booked!", even after a
+ * reload. Otherwise (after a lookup, or once cancelled) it is the Booking
+ * view. Only `notice=cancelled` is ever read from the URL.
  */
-export async function BookingContent({ params }: { params: Promise<{ reference: string }> }) {
+export async function BookingContent({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ reference: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const reference = normaliseReference((await params).reference);
   const booking = await getBooking(reference);
-  if (!booking) redirect(manageBookingHref(reference));
+  if (!booking) redirect(managePath(reference));
+
+  const justCancelled =
+    parseNotice(await searchParams)?.type === "cancelled" && booking.status === "cancelled";
+  const justBooked =
+    booking.status === "confirmed" && !justCancelled && (await wasJustBooked(reference));
 
   await io();
+  const now = nowIso();
   const cancellation = snapshotCancellationLine(
     booking.cancellationPolicy,
     booking.cancellationDeadline,
-    nowIso(),
+    now,
   );
-  return <BookingConfirmation booking={booking} cancellation={cancellation} />;
+  if (justBooked) return <BookingConfirmation booking={booking} cancellation={cancellation} />;
+  return (
+    <BookingView
+      booking={booking}
+      state={cancelState(booking, now)}
+      cancellation={cancellation}
+      justCancelled={justCancelled}
+    />
+  );
 }
 
 /** The page's shape while the Booking loads (DESIGN.md Skeleton). */

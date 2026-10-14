@@ -40,6 +40,14 @@ export function normaliseReference(input: string): string {
   return value.startsWith(REFERENCE_PREFIX) ? value : `${REFERENCE_PREFIX}${value}`;
 }
 
+/**
+ * Manage booking with the reference filled in (FR-23), e.g.
+ * "/manage?reference=CI-7K3P9Q". Never an email (AD-15).
+ */
+export function managePath(reference: string): string {
+  return `/manage?${new URLSearchParams({ reference }).toString()}`;
+}
+
 /** The confirmation and Booking view URL for a reference, e.g. "/bookings/CI-7K3P9Q". */
 export function bookingPath(reference: string): string {
   return `/bookings/${encodeURIComponent(reference)}`;

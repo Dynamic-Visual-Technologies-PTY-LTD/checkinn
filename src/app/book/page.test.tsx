@@ -75,6 +75,7 @@ const booking: BookingView = {
   bookingTotalRand: 4900,
   cancellationPolicy: "non_refundable",
   cancellationDeadline: null,
+  cancelledAt: null,
 };
 
 /** A `/book` query as `startBooking` builds it. */

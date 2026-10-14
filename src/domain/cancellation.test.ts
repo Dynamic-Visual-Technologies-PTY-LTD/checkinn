@@ -4,9 +4,11 @@ import {
   cancellationDeadline,
   cancellationDeadlineInstant,
   cancellationLine,
+  cancelState,
   deadlineFromInstant,
   deadlineLabel,
   deadlinePassed,
+  instantDateLabel,
   NON_REFUNDABLE_LINE,
   snapshotCancellationLine,
 } from "./cancellation";
@@ -116,5 +118,51 @@ describe("snapshotCancellationLine", () => {
         cancellationLine(FREE, "2026-11-13", "14:00", now),
       );
     }
+  });
+});
+
+describe("cancelState", () => {
+  const free = {
+    status: "confirmed",
+    cancellationPolicy: FREE,
+    cancellationDeadline: "2026-11-11T12:00:00.000Z",
+  } as const;
+
+  it("is open for free cancellation before the stored deadline", () => {
+    expect(cancelState(free, BEFORE)).toBe("open");
+    expect(cancelState(free, "2026-11-11T11:59:59.999Z")).toBe("open");
+  });
+
+  it("has passed from the deadline instant on", () => {
+    expect(cancelState(free, "2026-11-11T12:00:00.000Z")).toBe("deadline-passed");
+    expect(cancelState(free, "2026-11-12T08:00:00.000Z")).toBe("deadline-passed");
+  });
+
+  it("is non-refundable for a Non-refundable snapshot, at any time", () => {
+    const locked = {
+      status: "confirmed" as const,
+      cancellationPolicy: "non_refundable" as const,
+      cancellationDeadline: null,
+    };
+    expect(cancelState(locked, BEFORE)).toBe("non-refundable");
+    expect(cancelState({ ...free, cancellationDeadline: null }, BEFORE)).toBe("non-refundable");
+  });
+
+  it("is cancelled once cancelled, whatever the policy or time", () => {
+    expect(cancelState({ ...free, status: "cancelled" }, BEFORE)).toBe("cancelled");
+    expect(
+      cancelState(
+        { status: "cancelled", cancellationPolicy: "non_refundable", cancellationDeadline: null },
+        BEFORE,
+      ),
+    ).toBe("cancelled");
+  });
+});
+
+describe("instantDateLabel", () => {
+  it("names the Johannesburg date of a UTC instant", () => {
+    expect(instantDateLabel("2026-10-14T08:00:00.000Z")).toBe("Wed 14 Oct 2026");
+    // 23:30 UTC is already the next day in Johannesburg.
+    expect(instantDateLabel("2026-10-14T23:30:00.000Z")).toBe("Thu 15 Oct 2026");
   });
 });

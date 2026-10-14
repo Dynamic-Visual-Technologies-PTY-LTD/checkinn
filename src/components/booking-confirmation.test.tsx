@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { snapshotCancellationLine } from "@/domain/cancellation";
 import type { BookingView } from "@/domain/types";
 import { formatZar } from "@/lib/format";
-import { BookingConfirmation, manageBookingHref } from "./booking-confirmation";
+import { BookingConfirmation } from "./booking-confirmation";
 
 /** Intl separates digit groups with non-breaking spaces; text matchers see plain spaces. */
 const sp = (text: string) => text.replace(/\s/g, " ");
@@ -24,6 +24,7 @@ const booking: BookingView = {
   bookingTotalRand: 24750,
   cancellationPolicy: "free_until_48_hours_before_check_in",
   cancellationDeadline: "2026-11-11T12:00:00.000Z",
+  cancelledAt: null,
 };
 
 function renderConfirmation() {
@@ -38,12 +39,6 @@ function renderConfirmation() {
     />,
   );
 }
-
-describe("manageBookingHref", () => {
-  it("fills in the reference and never an email", () => {
-    expect(manageBookingHref("CI-4M8D2X")).toBe("/manage?reference=CI-4M8D2X");
-  });
-});
 
 describe("BookingConfirmation", () => {
   it("is step 3 with the headline and the reference block", () => {

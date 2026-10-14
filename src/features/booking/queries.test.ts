@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   db: undefined as unknown,
   calls: [] as string[],
   cookie: undefined as string | undefined,
+  booked: undefined as string | undefined,
 }));
 
 vi.mock("server-only", () => ({}));
@@ -22,7 +23,9 @@ vi.mock("next/headers", () => ({
     get: (name: string) =>
       name === "checkinn_access" && mocks.cookie !== undefined
         ? { name, value: mocks.cookie }
-        : undefined,
+        : name === "checkinn_booked" && mocks.booked !== undefined
+          ? { name, value: mocks.booked }
+          : undefined,
   }),
 }));
 vi.mock("@/db/client", async (importOriginal) => ({
@@ -34,7 +37,7 @@ vi.mock("@/db/client", async (importOriginal) => ({
 }));
 
 import { createBooking } from "./booking.repo";
-import { getBooking, getBookingByKey, getBookingQuote } from "./queries";
+import { getBooking, getBookingByKey, getBookingQuote, wasJustBooked } from "./queries";
 
 const stay: Stay = { checkIn: "2026-11-13", checkOut: "2026-11-15" };
 const couple = { adults: 2, children: 0, rooms: 1 };
@@ -65,6 +68,7 @@ afterAll(() => {
 beforeEach(() => {
   mocks.calls.length = 0;
   mocks.cookie = undefined;
+  mocks.booked = undefined;
 });
 
 describe("getBooking", () => {
@@ -82,6 +86,20 @@ describe("getBooking", () => {
     expect(await getBooking(reference)).toBeNull();
     mocks.cookie = "token-1";
     expect(await getBooking("CI-AAAAAA")).toBeNull();
+  });
+});
+
+describe("wasJustBooked", () => {
+  it("reads the just-booked cookie after io(), with the reference normalised", async () => {
+    mocks.booked = `CI-OTHER1.${reference}`;
+
+    expect(await wasJustBooked(reference.toLowerCase())).toBe(true);
+    expect(mocks.calls[0]).toBe("io");
+    expect(await wasJustBooked("CI-AAAAAA")).toBe(false);
+  });
+
+  it("is false without the cookie", async () => {
+    expect(await wasJustBooked(reference)).toBe(false);
   });
 });
 

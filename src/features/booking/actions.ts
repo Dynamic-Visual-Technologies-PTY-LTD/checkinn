@@ -4,23 +4,37 @@ import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { type Db, getDb } from "@/db/client";
+import {
+  ALREADY_CANCELLED_MESSAGE,
+  NON_REFUNDABLE_LINE,
+  snapshotCancellationLine,
+} from "@/domain/cancellation";
 import { nowIso, todayIn } from "@/domain/clock";
-import { hotelHref, parseCriteria, serializeCriteria } from "@/domain/criteria";
+import { hotelHref, parseCriteria, serializeCriteria, serializeNotice } from "@/domain/criteria";
 import { type GuestInput, normaliseEmail, validateGuest } from "@/domain/guest";
-import { bookingPath } from "@/domain/reference";
+import { type LookupInput, NOT_FOUND_MESSAGE, validateLookup } from "@/domain/lookup";
+import { bookingPath, managePath, normaliseReference } from "@/domain/reference";
 import { clampSelection, reserveBlock, type SelectableRoom } from "@/domain/selection";
 import type { ActionResult, Party, RoomSelection, SearchCriteria, Stay } from "@/domain/types";
 import {
   ACCESS_COOKIE,
   ACCESS_COOKIE_OPTIONS,
   addAccessToken,
+  addBookedReference,
+  BOOKED_COOKIE,
+  hasAccessToken,
   mintAccessToken,
   parseAccessTokens,
+  parseBookedReferences,
+  removeBookedReference,
   serializeAccessTokens,
 } from "@/features/booking/access";
 import {
   type BookingByKey,
   bookingByKey,
+  bookingByLookup,
+  bookingByReference,
+  cancelBooking as cancelStoredBooking,
   createBooking,
   hotelRooms,
 } from "@/features/booking/booking.repo";
@@ -149,13 +163,42 @@ export async function startBooking(input: StartBookingInput): Promise<ActionResu
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
 
-/** Adds a Booking's token to the access cookie (AD-15). */
+/**
+ * Adds a Booking's token to the access cookie (AD-15). Shared by confirming
+ * and by a Manage booking lookup.
+ */
 function grantAccess(store: CookieStore, held: readonly string[], token: string) {
   store.set(
     ACCESS_COOKIE,
     serializeAccessTokens(addAccessToken(held, token)),
     ACCESS_COOKIE_OPTIONS,
   );
+}
+
+/** The just-booked references this browser holds (`checkinn_booked`). */
+function bookedReferences(store: CookieStore): string[] {
+  return parseBookedReferences(store.get(BOOKED_COOKIE)?.value);
+}
+
+/** Marks a Booking this browser just confirmed, so its page shows "You're booked!". */
+function markJustBooked(store: CookieStore, reference: string) {
+  store.set(
+    BOOKED_COOKIE,
+    serializeAccessTokens(addBookedReference(bookedReferences(store), reference)),
+    ACCESS_COOKIE_OPTIONS,
+  );
+}
+
+/**
+ * After a lookup, that one Booking's page shows the Booking view. Every
+ * other just-booked reference is kept.
+ */
+function forgetJustBooked(store: CookieStore, reference: string) {
+  const held = bookedReferences(store);
+  if (!held.includes(reference)) return;
+  const next = removeBookedReference(held, reference);
+  if (next.length === 0) store.delete(BOOKED_COOKIE);
+  else store.set(BOOKED_COOKIE, serializeAccessTokens(next), ACCESS_COOKIE_OPTIONS);
 }
 
 /**
@@ -229,6 +272,7 @@ async function confirmTarget(input: ConfirmBookingInput): Promise<string | Actio
   switch (result.kind) {
     case "created":
       grantAccess(store, held, result.accessToken);
+      markJustBooked(store, result.reference);
       return bookingPath(result.reference);
     case "existing":
       return existingTarget(store, held, result, submittedEmail);
@@ -258,6 +302,105 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Action
     target = outcome;
   } catch (error) {
     logFailure("confirmBooking", error);
+    return SERVER_ERROR;
+  }
+  // After the transaction has committed, outside the try (AD-3).
+  redirect(target);
+}
+
+const NOT_FOUND: ActionResult = { ok: false, code: "NOT_FOUND", message: NOT_FOUND_MESSAGE };
+
+export type FindBookingInput = LookupInput;
+
+/**
+ * Find booking on `/manage` (AD-15, FR-23): normalises the reference and the
+ * email and looks for a Booking matching both. A wrong reference and a right
+ * reference with another email both return the same `NOT_FOUND`. On a match
+ * it adds the Booking's token to the access cookie and redirects to
+ * `/bookings/<reference>`, which then shows the Booking view. The email is
+ * never put in a URL or a log.
+ */
+export async function findBooking(input: FindBookingInput): Promise<ActionResult> {
+  let target: string;
+  try {
+    const checked = validateLookup(input ?? {});
+    if (!checked.ok) {
+      return {
+        ok: false,
+        code: "VALIDATION",
+        fieldErrors: checked.fieldErrors,
+        message: "Check the reference and email and try again.",
+      };
+    }
+    const found = bookingByLookup(getDb(), checked.reference, checked.email);
+    if (!found) return NOT_FOUND;
+
+    const store = await cookies();
+    grantAccess(store, parseAccessTokens(store.get(ACCESS_COOKIE)?.value), found.accessToken);
+    forgetJustBooked(store, found.reference);
+    target = bookingPath(found.reference);
+  } catch (error) {
+    logFailure("findBooking", error);
+    return SERVER_ERROR;
+  }
+  redirect(target);
+}
+
+export type CancelBookingInput = {
+  /** As typed in the URL; normalised here. */
+  reference: string;
+};
+
+/**
+ * Cancel booking on the Booking view (AD-3, AD-9, AD-11, AD-15, FR-24). It
+ * needs the Booking's token in the access cookie; without it, or for an
+ * unknown reference, it changes nothing and redirects to
+ * `/manage?reference=…`. The repo re-checks the snapshot's policy and
+ * deadline against "now" inside one transaction. Success redirects to the
+ * Booking view with `notice=cancelled`; Non-refundable, a passed deadline and
+ * an already-cancelled Booking return a result the page shows.
+ */
+export async function cancelBooking(input: CancelBookingInput): Promise<ActionResult> {
+  let target: string;
+  try {
+    const typed = typeof input?.reference === "string" ? input.reference.trim() : "";
+    if (!typed) {
+      target = "/manage";
+    } else {
+      const reference = normaliseReference(typed);
+      const db = getDb();
+      const record = bookingByReference(db, reference);
+      const store = await cookies();
+      if (!record || !hasAccessToken(store.get(ACCESS_COOKIE)?.value, record.accessToken)) {
+        target = managePath(reference);
+      } else {
+        const now = nowIso();
+        const result = cancelStoredBooking(db, record.id, now);
+        switch (result.kind) {
+          case "cancelled":
+            target = `${bookingPath(reference)}?${serializeNotice({ type: "cancelled" })}`;
+            break;
+          case "not-found":
+            target = managePath(reference);
+            break;
+          case "already-cancelled":
+            return { ok: false, code: "ALREADY_CANCELLED", message: ALREADY_CANCELLED_MESSAGE };
+          case "non-refundable":
+            return { ok: false, code: "NOT_CANCELLABLE", message: NON_REFUNDABLE_LINE };
+          case "deadline-passed": {
+            const { booking } = record;
+            const line = snapshotCancellationLine(
+              booking.cancellationPolicy,
+              booking.cancellationDeadline,
+              now,
+            );
+            return { ok: false, code: "DEADLINE_PASSED", message: line.text };
+          }
+        }
+      }
+    }
+  } catch (error) {
+    logFailure("cancelBooking", error);
     return SERVER_ERROR;
   }
   // After the transaction has committed, outside the try (AD-3).

@@ -62,6 +62,17 @@ export function normaliseEmail(value: unknown): string {
   return text(value).toLowerCase();
 }
 
+/**
+ * The message for an email that fails the rule, or undefined when it passes.
+ * Shared by the guest form and the Manage booking lookup. Pass the
+ * normalised email.
+ */
+export function emailError(email: string): string | undefined {
+  if (!email) return GUEST_MESSAGES.email;
+  if (!EMAIL.test(email)) return GUEST_MESSAGES.emailFormat;
+  return undefined;
+}
+
 /** Checks every field and returns the stored form, or one message per bad field. */
 export function validateGuest(input: GuestInput): GuestValidation {
   const fieldErrors: Partial<Record<GuestField, string>> = {};
@@ -71,8 +82,8 @@ export function validateGuest(input: GuestInput): GuestValidation {
   const email = normaliseEmail(input.email);
   if (!firstName) fieldErrors.firstName = GUEST_MESSAGES.firstName;
   if (!lastName) fieldErrors.lastName = GUEST_MESSAGES.lastName;
-  if (!email) fieldErrors.email = GUEST_MESSAGES.email;
-  else if (!EMAIL.test(email)) fieldErrors.email = GUEST_MESSAGES.emailFormat;
+  const emailProblem = emailError(email);
+  if (emailProblem) fieldErrors.email = emailProblem;
 
   const optional = {
     phone: text(input.phone),

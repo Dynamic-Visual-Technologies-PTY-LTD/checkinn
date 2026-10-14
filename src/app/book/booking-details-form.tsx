@@ -8,12 +8,17 @@ import {
   useRef,
   useState,
 } from "react";
-import { primaryButton, secondaryButton } from "@/components/button-styles";
+import {
+  primaryButton,
+  primaryButtonDisabled,
+  secondaryButton,
+} from "@/components/button-styles";
 import { BookingSummary } from "@/components/booking-summary";
 import { ErrorSummary } from "@/components/error-summary";
 import { fieldClassName, fieldErrorProps, FormField } from "@/components/form-field";
 import { Icon } from "@/components/icons/icons";
 import { MobileSummaryBar } from "@/components/mobile-summary-bar";
+import { NETWORK_ERROR, redirectTarget } from "@/components/server-action";
 import type { CancellationLine } from "@/domain/cancellation";
 import {
   ARRIVAL_NOT_SURE,
@@ -60,32 +65,7 @@ function guestErrors(fieldErrors: Record<string, string>): Errors {
   return errors;
 }
 
-/** When the request itself fails, the guest sees the same message as a server error. */
-const NETWORK_ERROR: ActionResult = {
-  ok: false,
-  code: "SERVER_ERROR",
-  message: "Something went wrong on our side. Try again.",
-};
-
-/**
- * Where a server action that redirected sent the guest, or null for any other
- * error. It rejects with Next's redirect error after the router has
- * navigated; the digest reads "NEXT_REDIRECT;<type>;<url>;<status>;".
- */
-function redirectTarget(error: unknown): string | null {
-  if (
-    typeof error !== "object" ||
-    error === null ||
-    !("digest" in error) ||
-    typeof error.digest !== "string" ||
-    !error.digest.startsWith("NEXT_REDIRECT;")
-  ) {
-    return null;
-  }
-  return error.digest.split(";")[2] ?? "";
-}
-
-const confirmButton = `${primaryButton} disabled:cursor-default disabled:border-2 disabled:border-on-surface-disabled disabled:bg-surface disabled:text-on-surface-muted disabled:hover:bg-surface disabled:hover:text-on-surface-muted`;
+const confirmButton = `${primaryButton} ${primaryButtonDisabled}`;
 
 type BookingDetailsFormProps = {
   quote: BookingQuote;

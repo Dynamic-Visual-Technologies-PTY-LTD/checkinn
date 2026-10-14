@@ -9,8 +9,10 @@ import type { Stay } from "@/domain/types";
 import { availabilityFor } from "@/features/hotels/availability.repo";
 import {
   bookingByKey,
+  bookingByLookup,
   bookingByReference,
   bookingQuote,
+  cancelBooking,
   createBooking,
   type CreateBookingInput,
   hotelRooms,
@@ -363,6 +365,7 @@ describe("bookingByReference", () => {
     if (created.kind !== "created") throw new Error("expected created");
 
     expect(bookingByReference(db, created.reference)).toEqual({
+      id: expect.any(Number),
       accessToken: "secret-token",
       booking: {
         reference: created.reference,
@@ -384,6 +387,7 @@ describe("bookingByReference", () => {
         bookingTotalRand: 4900,
         cancellationPolicy: "non_refundable",
         cancellationDeadline: null,
+        cancelledAt: null,
       },
     });
   });
@@ -401,5 +405,118 @@ describe("bookingByReference", () => {
 
   it("is null for an unknown reference", () => {
     expect(bookingByReference(db, "CI-AAAAAA")).toBeNull();
+  });
+});
+
+describe("bookingByLookup", () => {
+  it("finds a Booking by its reference and email, and gives its token", () => {
+    const created = createBooking(db, input({ accessToken: "lookup-token" }));
+    if (created.kind !== "created") throw new Error("expected created");
+
+    expect(bookingByLookup(db, created.reference, "thandi@example.com")).toEqual({
+      reference: created.reference,
+      accessToken: "lookup-token",
+    });
+  });
+
+  it("is null for a wrong reference and for a right reference with another email", () => {
+    const created = createBooking(db, input());
+    if (created.kind !== "created") throw new Error("expected created");
+
+    expect(bookingByLookup(db, "CI-AAAAAA", "thandi@example.com")).toBeNull();
+    expect(bookingByLookup(db, created.reference, "sipho@example.com")).toBeNull();
+  });
+});
+
+describe("cancelBooking", () => {
+  /** Coral Coast Resort: Free cancellation, check-in 14:00, so the deadline is 2026-11-11T12:00Z. */
+  function freeBooking(): number {
+    const created = createBooking(
+      db,
+      input({
+        hotelId: "hotel-005",
+        stay: durban,
+        lines: [{ roomTypeId: "hotel-005-standard", quantity: 1 }],
+      }),
+    );
+    if (created.kind !== "created") throw new Error("expected created");
+    const record = bookingByReference(db, created.reference);
+    if (!record) throw new Error("expected the Booking");
+    return record.id;
+  }
+
+  function stored(id: number) {
+    return db.select().from(bookings).where(eq(bookings.id, id)).get();
+  }
+
+  it("cancels a Free cancellation Booking before its deadline and frees its Rooms", () => {
+    const before = availabilityFor(db, "hotel-005", durban).get("hotel-005-standard") ?? 0;
+    const id = freeBooking();
+    expect(availabilityFor(db, "hotel-005", durban).get("hotel-005-standard")).toBe(before - 1);
+
+    expect(cancelBooking(db, id, "2026-11-10T08:00:00.000Z")).toEqual({ kind: "cancelled" });
+
+    expect(stored(id)).toMatchObject({
+      status: "cancelled",
+      cancelledAt: "2026-11-10T08:00:00.000Z",
+    });
+    expect(availabilityFor(db, "hotel-005", durban).get("hotel-005-standard")).toBe(before);
+    // Only the status changed: the lines and the snapshot stay.
+    expect(db.select().from(bookingLines).where(eq(bookingLines.bookingId, id)).all()).toHaveLength(
+      1,
+    );
+  });
+
+  it("refuses once the deadline has passed and changes nothing", () => {
+    const id = freeBooking();
+    expect(cancelBooking(db, id, "2026-11-11T12:00:00.000Z")).toEqual({
+      kind: "deadline-passed",
+    });
+    expect(stored(id)).toMatchObject({ status: "confirmed", cancelledAt: null });
+  });
+
+  it("refuses a Non-refundable Booking and changes nothing", () => {
+    const created = createBooking(db, input());
+    if (created.kind !== "created") throw new Error("expected created");
+    const id = bookingByReference(db, created.reference)!.id;
+
+    expect(cancelBooking(db, id, "2026-10-14T08:00:00.000Z")).toEqual({ kind: "non-refundable" });
+    expect(stored(id)).toMatchObject({ status: "confirmed", cancelledAt: null });
+  });
+
+  it("refuses a Booking that is already cancelled and keeps its first cancel time", () => {
+    const id = freeBooking();
+    cancelBooking(db, id, "2026-11-01T08:00:00.000Z");
+
+    expect(cancelBooking(db, id, "2026-11-02T08:00:00.000Z")).toEqual({
+      kind: "already-cancelled",
+    });
+    expect(stored(id)?.cancelledAt).toBe("2026-11-01T08:00:00.000Z");
+  });
+
+  it("is not-found for an unknown id", () => {
+    expect(cancelBooking(db, 999_999, "2026-11-01T08:00:00.000Z")).toEqual({ kind: "not-found" });
+  });
+
+  it("reads the stored deadline, not one recomputed from the catalog", () => {
+    const id = freeBooking();
+    // A snapshot whose deadline has already passed, whatever the catalog says.
+    db.update(bookings)
+      .set({ cancellationDeadline: "2026-11-01T00:00:00.000Z" })
+      .where(eq(bookings.id, id))
+      .run();
+    expect(cancelBooking(db, id, "2026-11-05T08:00:00.000Z")).toEqual({
+      kind: "deadline-passed",
+    });
+  });
+
+  it("shows the cancel time in the Booking's view", () => {
+    const id = freeBooking();
+    cancelBooking(db, id, "2026-11-01T08:00:00.000Z");
+    const reference = stored(id)!.reference;
+    expect(bookingByReference(db, reference)?.booking).toMatchObject({
+      status: "cancelled",
+      cancelledAt: "2026-11-01T08:00:00.000Z",
+    });
   });
 });

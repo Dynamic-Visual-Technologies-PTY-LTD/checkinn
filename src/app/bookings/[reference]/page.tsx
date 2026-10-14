@@ -12,15 +12,15 @@ export async function generateMetadata({
 }
 
 /**
- * The confirmation, step 3 of the booking flow (FR-22). The shell
- * prerenders; the reference, the cookie and the database are read only
- * inside the Suspense boundary (AD-2).
+ * The confirmation, step 3 of the booking flow (FR-22), and the Booking view
+ * (FR-23, FR-24). The shell prerenders; the URL, the cookies and the
+ * database are read only inside the Suspense boundary (AD-2).
  */
-export default function BookingPage({ params }: PageProps<"/bookings/[reference]">) {
+export default function BookingPage({ params, searchParams }: PageProps<"/bookings/[reference]">) {
   return (
     <div className="mx-auto w-full max-w-page px-gutter pt-space-xl pb-space-xl">
       <Suspense fallback={<BookingSkeleton />}>
-        <BookingContent params={params} />
+        <BookingContent params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );

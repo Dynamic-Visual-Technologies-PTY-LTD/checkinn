@@ -56,3 +56,39 @@ export function serializeAccessTokens(tokens: readonly string[]): string {
 export function hasAccessToken(value: string | undefined, token: string): boolean {
   return token !== "" && parseAccessTokens(value).includes(token);
 }
+
+/**
+ * The `checkinn_booked` cookie: the references this browser confirmed and has
+ * not looked up since. It only decides whether `/bookings/[reference]` shows
+ * "You're booked!" or the Booking view; it grants nothing, since every
+ * Booking still needs its token in `checkinn_access`. A lookup removes only
+ * the Booking it found, so it never changes how another Booking's page shows.
+ */
+export const BOOKED_COOKIE = "checkinn_booked";
+
+/** References are `CI-` plus letters and digits, so `.` never appears inside one. */
+const REFERENCE = /^[A-Z0-9-]+$/;
+
+/** The just-booked references in a cookie value, oldest first. Anything malformed is dropped. */
+export function parseBookedReferences(value: string | undefined): string[] {
+  if (!value) return [];
+  return value.split(SEPARATOR).filter((reference) => REFERENCE.test(reference));
+}
+
+/** The list with `reference` added last, unique, capped at the newest 20. */
+export function addBookedReference(references: readonly string[], reference: string): string[] {
+  return addAccessToken(references, reference);
+}
+
+/** The list without `reference`. */
+export function removeBookedReference(
+  references: readonly string[],
+  reference: string,
+): string[] {
+  return references.filter((existing) => existing !== reference);
+}
+
+/** Whether a cookie value lists `reference` as just booked. */
+export function isBookedReference(value: string | undefined, reference: string): boolean {
+  return parseBookedReferences(value).includes(reference);
+}

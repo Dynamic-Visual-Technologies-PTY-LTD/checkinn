@@ -2,7 +2,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/db/client";
 import { createTestDb, insertTestBooking } from "@/db/test-db";
+import { validateGuest } from "@/domain/guest";
 import type { Stay } from "@/domain/types";
+import { createBooking } from "@/features/booking/booking.repo";
+import { availabilityFor } from "@/features/hotels/availability.repo";
 
 const mocks = vi.hoisted(() => {
   const jar = new Map<string, string>();
@@ -15,6 +18,10 @@ const mocks = vi.hoisted(() => {
     set: vi.fn((name: string, value: string) => {
       jar.set(name, value);
     }),
+    delete: vi.fn((name: string) => {
+      jar.delete(name);
+    }),
+    now: "2026-11-10T08:00:00.000Z",
   };
 });
 
@@ -29,16 +36,19 @@ vi.mock("next/headers", () => ({
     get: (name: string) =>
       mocks.jar.has(name) ? { name, value: mocks.jar.get(name) } : undefined,
     set: mocks.set,
+    delete: mocks.delete,
   }),
 }));
 vi.mock("@/domain/clock", () => ({
   todayIn: () => "2026-11-10",
-  nowIso: () => "2026-11-10T08:00:00.000Z",
+  nowIso: () => mocks.now,
 }));
 
 import {
+  cancelBooking,
   confirmBooking,
   type ConfirmBookingInput,
+  findBooking,
   startBooking,
   type StartBookingInput,
 } from "./actions";
@@ -56,7 +66,9 @@ afterAll(() => {
 beforeEach(() => {
   mocks.redirect.mockClear();
   mocks.set.mockClear();
+  mocks.delete.mockClear();
   mocks.jar.clear();
+  mocks.now = "2026-11-10T08:00:00.000Z";
 });
 
 function input(overrides: Partial<StartBookingInput> = {}): StartBookingInput {
@@ -190,6 +202,7 @@ describe("startBooking", () => {
 });
 
 const ACCESS = "checkinn_access";
+const BOOKED = "checkinn_booked";
 let keyCount = 0;
 
 function confirmInput(overrides: Partial<ConfirmBookingInput> = {}): ConfirmBookingInput {
@@ -217,7 +230,7 @@ describe("confirmBooking", () => {
     const url = await confirmRedirect(confirmInput());
 
     expect(url.pathname).toMatch(/^\/bookings\/CI-[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/);
-    expect(mocks.set).toHaveBeenCalledTimes(1);
+    expect(mocks.set.mock.calls.map(([name]) => name)).toEqual([ACCESS, BOOKED]);
     const [name, value, options] = mocks.set.mock.calls[0] as unknown as [
       string,
       string,
@@ -235,6 +248,8 @@ describe("confirmBooking", () => {
     // No email or token in the URL.
     expect(url.toString()).not.toContain("thandi");
     expect(url.toString()).not.toContain(value);
+    // The Booking is marked just booked, by reference only.
+    expect(mocks.jar.get(BOOKED)).toBe(url.pathname.replace("/bookings/", ""));
   });
 
   it("keeps earlier tokens and drops the oldest past 20", async () => {
@@ -262,7 +277,7 @@ describe("confirmBooking", () => {
 
     expect(again.pathname).toBe(firstUrl.pathname);
     expect(countRows()).toBe(before);
-    expect(mocks.set).toHaveBeenCalledTimes(1);
+    expect(mocks.set.mock.calls.map(([name]) => name)).toEqual([ACCESS]);
   });
 
   it("sets no cookie for a repeated key with another, empty or missing email", async () => {
@@ -379,6 +394,247 @@ describe("confirmBooking", () => {
       expect(logged).not.toContain("thandi");
       expect(logged).not.toContain("Nkosi");
       expect(mocks.set).not.toHaveBeenCalled();
+    } finally {
+      mocks.db = db;
+      error.mockRestore();
+    }
+  });
+});
+
+let fixtureCount = 0;
+
+/**
+ * A Booking made straight through the repo. Coral Coast Resort (`hotel-005`)
+ * is Free cancellation with check-in at 14:00, so a check-in on day D has its
+ * deadline on D - 2 at 12:00 UTC. Harbourlight Retreat (`hotel-001`) is
+ * Non-refundable.
+ */
+function seedBooking(
+  options: { hotelId?: string; stay?: Stay; email?: string } = {},
+): { reference: string; token: string; stay: Stay } {
+  fixtureCount += 1;
+  const hotelId = options.hotelId ?? "hotel-005";
+  const bookingStay = options.stay ?? { checkIn: "2027-02-10", checkOut: "2027-02-12" };
+  const guest = validateGuest({
+    firstName: "Sipho",
+    lastName: "Dlamini",
+    email: options.email ?? "sipho@example.com",
+  });
+  if (!guest.ok) throw new Error("bad fixture guest");
+  const token = `fixture-token-${fixtureCount}`;
+  const created = createBooking(db, {
+    hotelId,
+    stay: bookingStay,
+    party: { adults: 2, children: 0, rooms: 1 },
+    lines: [{ roomTypeId: `${hotelId}-standard`, quantity: 1 }],
+    guest: guest.guest,
+    idempotencyKey: `fixture-key-${fixtureCount}`,
+    accessToken: token,
+    now: "2026-10-14T08:00:00.000Z",
+  });
+  if (created.kind !== "created") throw new Error(`expected created, got ${created.kind}`);
+  return { reference: created.reference, token, stay: bookingStay };
+}
+
+function statusOf(reference: string): { status: string; cancelled_at: string | null } {
+  return db.$client
+    .prepare("SELECT status, cancelled_at FROM bookings WHERE reference = ?")
+    .get(reference) as { status: string; cancelled_at: string | null };
+}
+
+async function actionRedirect(run: () => Promise<unknown>): Promise<URL> {
+  mocks.redirect.mockClear();
+  await expect(run()).rejects.toThrow("NEXT_REDIRECT");
+  return new URL(mocks.redirect.mock.calls[0][0], "http://localhost");
+}
+
+describe("findBooking", () => {
+  it("finds a Booking by a messy reference and email, grants access and redirects to it", async () => {
+    const { reference, token } = seedBooking({ email: "thandi@example.com" });
+    mocks.jar.set(ACCESS, "earlier");
+
+    const url = await actionRedirect(() =>
+      findBooking({ reference: ` ${reference.toLowerCase()} `, email: " Thandi@Example.COM " }),
+    );
+
+    expect(`${url.pathname}${url.search}`).toBe(`/bookings/${reference}`);
+    expect(mocks.jar.get(ACCESS)).toBe(`earlier.${token}`);
+    expect(url.toString()).not.toContain("thandi");
+  });
+
+  it("accepts the reference without its CI- prefix", async () => {
+    const { reference } = seedBooking();
+    const url = await actionRedirect(() =>
+      findBooking({ reference: reference.slice(3), email: "sipho@example.com" }),
+    );
+    expect(url.pathname).toBe(`/bookings/${reference}`);
+  });
+
+  it("gives the same NOT_FOUND for a wrong reference and for a wrong email", async () => {
+    const { reference } = seedBooking();
+    const expected = {
+      ok: false,
+      code: "NOT_FOUND",
+      message: "We couldn't find that booking. Check the reference and email.",
+    };
+
+    expect(await findBooking({ reference: "CI-AAAAAA", email: "sipho@example.com" })).toEqual(
+      expected,
+    );
+    expect(await findBooking({ reference, email: "someone@example.com" })).toEqual(expected);
+    expect(mocks.set).not.toHaveBeenCalled();
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("returns field errors for empty fields and looks nothing up", async () => {
+    expect(await findBooking({ reference: " ", email: "" })).toEqual({
+      ok: false,
+      code: "VALIDATION",
+      fieldErrors: {
+        reference: "Enter your booking reference.",
+        email: "Enter your email address.",
+      },
+      message: "Check the reference and email and try again.",
+    });
+    expect(mocks.set).not.toHaveBeenCalled();
+  });
+
+  it("clears only the found Booking's just-booked mark", async () => {
+    const { reference } = seedBooking();
+    mocks.jar.set(BOOKED, `CI-OTHER2.${reference}`);
+
+    await actionRedirect(() => findBooking({ reference, email: "sipho@example.com" }));
+    expect(mocks.jar.get(BOOKED)).toBe("CI-OTHER2");
+
+    // Looking up a Booking that isn't marked leaves the others alone.
+    const other = seedBooking();
+    mocks.set.mockClear();
+    await actionRedirect(() =>
+      findBooking({ reference: other.reference, email: "sipho@example.com" }),
+    );
+    expect(mocks.jar.get(BOOKED)).toBe("CI-OTHER2");
+    expect(mocks.set.mock.calls.map(([name]) => name)).toEqual([ACCESS]);
+  });
+
+  it("deletes the just-booked cookie when its last mark goes", async () => {
+    const { reference } = seedBooking();
+    mocks.jar.set(BOOKED, reference);
+
+    await actionRedirect(() => findBooking({ reference, email: "sipho@example.com" }));
+    expect(mocks.delete).toHaveBeenCalledWith(BOOKED);
+    expect(mocks.jar.has(BOOKED)).toBe(false);
+  });
+
+  it("returns SERVER_ERROR and logs neither the email nor the reference", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.db = {
+      select: () => {
+        throw Object.assign(new Error("SELECT ... sipho@example.com"), { name: "SqliteError" });
+      },
+    };
+    try {
+      const result = await findBooking({ reference: "CI-7K3P9Q", email: "sipho@example.com" });
+      expect(result).toMatchObject({ ok: false, code: "SERVER_ERROR" });
+      const logged = JSON.stringify(error.mock.calls);
+      expect(logged).not.toContain("sipho");
+      expect(logged).not.toContain("7K3P9Q");
+    } finally {
+      mocks.db = db;
+      error.mockRestore();
+    }
+  });
+});
+
+describe("cancelBooking", () => {
+  it("cancels with the token, frees the Rooms and redirects with notice=cancelled", async () => {
+    const stay: Stay = { checkIn: "2027-03-10", checkOut: "2027-03-12" };
+    const free = () => availabilityFor(db, "hotel-005", stay).get("hotel-005-standard") ?? 0;
+    const before = free();
+    const { reference, token } = seedBooking({ stay });
+    expect(free()).toBe(before - 1);
+    mocks.jar.set(ACCESS, token);
+
+    const url = await actionRedirect(() => cancelBooking({ reference: reference.toLowerCase() }));
+
+    expect(`${url.pathname}${url.search}`).toBe(`/bookings/${reference}?notice=cancelled`);
+    expect(statusOf(reference)).toEqual({
+      status: "cancelled",
+      cancelled_at: "2026-11-10T08:00:00.000Z",
+    });
+    expect(free()).toBe(before);
+  });
+
+  it("changes nothing and redirects to Manage booking without the token", async () => {
+    const { reference } = seedBooking();
+    mocks.jar.set(ACCESS, "someone-elses-token");
+
+    const url = await actionRedirect(() => cancelBooking({ reference }));
+
+    expect(`${url.pathname}${url.search}`).toBe(`/manage?reference=${reference}`);
+    expect(statusOf(reference).status).toBe("confirmed");
+  });
+
+  it("redirects an unknown reference to Manage booking", async () => {
+    const url = await actionRedirect(() => cancelBooking({ reference: "ci-aaaaaa" }));
+    expect(`${url.pathname}${url.search}`).toBe("/manage?reference=CI-AAAAAA");
+  });
+
+  it("refuses a Non-refundable Booking with NOT_CANCELLABLE", async () => {
+    const { reference, token } = seedBooking({ hotelId: "hotel-001" });
+    mocks.jar.set(ACCESS, token);
+
+    expect(await cancelBooking({ reference })).toEqual({
+      ok: false,
+      code: "NOT_CANCELLABLE",
+      message: "Non-refundable. This booking can't be cancelled.",
+    });
+    expect(statusOf(reference).status).toBe("confirmed");
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("refuses with DEADLINE_PASSED once the clock reaches the stored deadline", async () => {
+    // Check-in Wed 10 Feb 2027 at 14:00: free cancellation ends Mon 8 Feb, 14:00.
+    const { reference, token } = seedBooking({
+      stay: { checkIn: "2027-02-10", checkOut: "2027-02-11" },
+    });
+    mocks.jar.set(ACCESS, token);
+    mocks.now = "2027-02-08T12:00:00.000Z";
+
+    expect(await cancelBooking({ reference })).toEqual({
+      ok: false,
+      code: "DEADLINE_PASSED",
+      message: "Free cancellation ended on Mon 8 Feb 2027, 14:00.",
+    });
+    expect(statusOf(reference).status).toBe("confirmed");
+  });
+
+  it("refuses an already cancelled Booking with ALREADY_CANCELLED", async () => {
+    const { reference, token } = seedBooking();
+    mocks.jar.set(ACCESS, token);
+    await actionRedirect(() => cancelBooking({ reference }));
+    mocks.now = "2026-11-10T09:00:00.000Z";
+
+    expect(await cancelBooking({ reference })).toEqual({
+      ok: false,
+      code: "ALREADY_CANCELLED",
+      message: "This booking is already cancelled.",
+    });
+    expect(statusOf(reference).cancelled_at).toBe("2026-11-10T08:00:00.000Z");
+  });
+
+  it("returns SERVER_ERROR when the repo throws", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.db = {
+      select: () => {
+        throw Object.assign(new Error("boom"), { name: "SqliteError", code: "SQLITE_BUSY" });
+      },
+    };
+    try {
+      expect(await cancelBooking({ reference: "CI-7K3P9Q" })).toMatchObject({
+        ok: false,
+        code: "SERVER_ERROR",
+      });
+      expect(JSON.stringify(error.mock.calls)).toContain("SqliteError SQLITE_BUSY");
     } finally {
       mocks.db = db;
       error.mockRestore();

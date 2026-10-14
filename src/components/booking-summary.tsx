@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Icon } from "@/components/icons/icons";
+import { CancellationLineText } from "@/components/cancellation-line";
 import { countLabel } from "@/components/occupancy-field";
 import type { CancellationLine } from "@/domain/cancellation";
 import { nightsBetween, nightsLabel, stayLabel } from "@/domain/dates";
@@ -16,7 +16,8 @@ type BookingSummaryProps = {
   lines: BookingLineView[];
   roomCount: number;
   totalRand: number;
-  cancellation: CancellationLine;
+  /** Left out where the page shows the cancellation state itself (the Booking view). */
+  cancellation?: CancellationLine;
   /** "Thandi Nkosi", once the Booking exists. */
   guestName?: string;
   /** The step's primary button (Reserve, Confirm booking), or null for none. */
@@ -78,23 +79,11 @@ export function BookingSummary({
       <p className="mt-space-xs text-body-sm text-on-surface-muted">
         Includes taxes. No extra fees.
       </p>
-      <div className="mt-space-md text-body-sm">
-        {cancellation.kind === "free" ? (
-          <p className="flex flex-wrap items-center gap-x-space-sm gap-y-space-xs">
-            <span className="rounded-full bg-success px-space-sm text-label-md text-on-success">
-              Free cancellation
-            </span>
-            <span>{cancellation.until}</span>
-          </p>
-        ) : cancellation.kind === "ended" ? (
-          <p>{cancellation.text}</p>
-        ) : (
-          <p className="flex items-start gap-space-xs">
-            <Icon name="warning" className="mt-0.5 shrink-0" />
-            {cancellation.text}
-          </p>
-        )}
-      </div>
+      {cancellation && (
+        <div className="mt-space-md text-body-sm">
+          <CancellationLineText line={cancellation} />
+        </div>
+      )}
       {action ? <div className="mt-space-lg">{action}</div> : null}
     </div>
   );
