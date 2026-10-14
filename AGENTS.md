@@ -15,7 +15,7 @@
 - Keep it small and readable. Prefer the simple solution over the clever one.
 - The repo is public. No secrets, client names or internal material.
 
-**Current state.** Project shell only: a placeholder home page. No booking features, no database, no search.
+**Current state.** Guests can search, see results, open a Hotel page with its photos, and choose rooms. Reserve leads to Booking details, which is not built yet, nor are confirmation, manage booking and cancel. The catalog lives in SQLite, seeded from `data/seed/hotel-booking-demo.json`. Work follows the tickets in `_bmad-output/initiative-checkinn-mvp/`.
 
 ## Technology Stack
 
@@ -31,14 +31,15 @@
 | Linting | ESLint with `eslint-config-next` | 9.39.5 / 16.4.0 |
 | Package manager | npm | lockfile committed |
 | Design tokens | `@google/design.md` CLI | 0.4.0 |
+| Database | SQLite, embedded in the app | via `better-sqlite3` 13.0.3 |
+| Data access | Drizzle ORM, with `drizzle-kit` for migrations | 0.45.4 / 0.31.11 |
+| Scripts | `tsx` | 4.23.15 |
 | CI | GitHub Actions | `.github/workflows/ci.yml` |
 
 Agreed but **not installed yet**:
 
 | Area | Choice |
 |---|---|
-| Database | SQLite, embedded in the app |
-| Data access | Drizzle ORM with `better-sqlite3` |
 | Vector search | `sqlite-vec`, for the search enhancement |
 | Hosting | Azure |
 | Infrastructure as code | Bicep or Terraform, undecided |
@@ -55,6 +56,14 @@ Agreed but **not installed yet**:
 | Path | Contents |
 |---|---|
 | `src/app/` | Routes, layouts and pages (App Router) |
+| `src/components/` | Shared UI components |
+| `src/features/` | Server-side reads and actions per feature: `*.repo.ts`, `queries.ts`, `actions.ts` |
+| `src/domain/` | Pure TypeScript rules and view-model types, no Next, React or database imports |
+| `src/db/` | Drizzle schema, connection, seed and reset |
+| `src/lib/` | Small shared helpers (formatting, clipboard) |
+| `drizzle/` | Generated SQL migrations, committed |
+| `data/seed/` | The seed file, committed unchanged. The runtime `data/checkinn.db` is gitignored |
+| `scripts/` | `db-reset.ts`, run by `npm run db:reset` |
 | `e2e/` | Playwright end-to-end tests, configured in `playwright.config.ts` |
 | `DESIGN.md` | Visual identity: design tokens and usage rules, in the [DESIGN.md format](https://github.com/google-labs-code/design.md) |
 | `infra/` | Infrastructure as code. Placeholder, no code yet |
@@ -97,6 +106,7 @@ import { formatPrice } from "../../../lib/format"; // no
 | Production build | `npm run build` |
 | Serve the production build | `npm start` |
 | Reset the database to the seed (safe while the app runs) | `npm run db:reset` |
+| Generate a migration after a schema change | `npm run db:generate` |
 
 `npm run typecheck` runs `next typegen` first, because Next.js generates the route and layout prop types that `tsc` needs. Plain `tsc --noEmit` fails on a clean checkout.
 

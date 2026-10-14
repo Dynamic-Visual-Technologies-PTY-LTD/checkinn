@@ -50,21 +50,31 @@ function Score({ card }: { card: ListingCardModel }) {
   );
 }
 
-/** "Free cancellation" as a Mint pill, or "Non-refundable" with a warning icon. */
+/**
+ * The cancellation line for the Stay, worded as on the Hotel page: "Free
+ * cancellation" as a Mint pill with its deadline, the ended sentence once the
+ * deadline has passed, or "Non-refundable" with a warning icon.
+ */
 function Cancellation({ card }: { card: ListingCardModel }) {
-  if (card.cancellation.policy === "free_until_48_hours_before_check_in") {
+  const line = card.cancellation;
+  if (line.kind === "free") {
     return (
-      <p>
+      <p className="flex flex-wrap items-center gap-x-space-sm gap-y-space-xs text-body-sm">
         <span className="inline-block rounded-full bg-success px-space-sm text-label-md text-on-success">
-          {card.cancellation.label}
+          Free cancellation
         </span>
+        <span>{line.until}</span>
       </p>
     );
+  }
+  if (line.kind === "ended") {
+    return <p className="text-body-sm">{line.text}</p>;
   }
   return (
     <p className="flex items-center gap-space-sm text-body-sm">
       <Icon name="warning" className="shrink-0" />
-      {card.cancellation.label}
+      {/* The card keeps FR-6's short label; the Hotel page has the sentence. */}
+      Non-refundable
     </p>
   );
 }

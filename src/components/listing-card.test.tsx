@@ -14,7 +14,7 @@ const harbourlight: ListingCardModel = {
   reviewLabel: "Superb",
   reviewCount: 248,
   facilities: ["Swimming pool", "Spa", "Restaurant"],
-  cancellation: { policy: "non_refundable", label: "Non-refundable" },
+  cancellation: { kind: "non-refundable", text: "Non-refundable. This booking can't be cancelled." },
   firstImage: {
     url: "https://images.unsplash.com/photo-1?w=1200",
     alt: "Resort exterior and swimming pool",
@@ -97,14 +97,29 @@ describe("ListingCard", () => {
     ]);
   });
 
-  it("shows Non-refundable or Free cancellation", () => {
-    renderCard();
+  it("shows Non-refundable, Free cancellation with its deadline, or that it has ended", () => {
+    const nonRefundable = renderCard();
     expect(screen.getByText("Non-refundable")).toBeInTheDocument();
+    nonRefundable.unmount();
 
-    renderCard({
-      cancellation: { policy: "free_until_48_hours_before_check_in", label: "Free cancellation" },
+    const open = renderCard({
+      cancellation: {
+        kind: "free",
+        until: "until Wed 11 Nov 2026, 14:00",
+        text: "Free cancellation until Wed 11 Nov 2026, 14:00",
+      },
     });
     expect(screen.getByText("Free cancellation")).toBeInTheDocument();
+    expect(screen.getByText("until Wed 11 Nov 2026, 14:00")).toBeInTheDocument();
+    open.unmount();
+
+    renderCard({
+      cancellation: { kind: "ended", text: "Free cancellation ended on Wed 11 Nov 2026, 14:00." },
+    });
+    expect(
+      screen.getByText("Free cancellation ended on Wed 11 Nov 2026, 14:00."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Free cancellation")).not.toBeInTheDocument();
   });
 
   it("shows the stay price and the nightly price, each with a spoken name", () => {

@@ -1,7 +1,6 @@
 /**
  * Base domain types. Names follow the PRD Glossary.
  */
-
 /** An ISO calendar date, `YYYY-MM-DD`, with no time and no time zone. */
 export type IsoDate = string;
 
@@ -68,6 +67,17 @@ export type CriteriaProblem =
   | "party-invalid"
   | "sel-invalid";
 
+/**
+ * A cancellation line for a Stay (AD-9). `free` shows a Mint "Free
+ * cancellation" badge beside `until`; `ended` (the deadline has passed) and
+ * `non-refundable` show `text` alone. `text` is always the whole sentence,
+ * for screen readers.
+ */
+export type CancellationLine =
+  | { kind: "free"; until: string; text: string }
+  | { kind: "ended"; text: string }
+  | { kind: "non-refundable"; text: string };
+
 /** A Hotel's Cancellation policy, as the seed's `policies.cancellation.type`. */
 export type CancellationPolicy =
   | "free_until_48_hours_before_check_in"
@@ -97,11 +107,12 @@ export type ListingCard = {
   reviewCount: number;
   /** Up to 3 Facility labels from the seed, Wi-Fi left out. */
   facilities: string[];
-  cancellation: {
-    policy: CancellationPolicy;
-    /** "Free cancellation" or "Non-refundable". */
-    label: string;
-  };
+  /**
+   * The Hotel's cancellation policy for this Stay, as the Hotel page shows it:
+   * open with its deadline, ended once the deadline has passed, or
+   * Non-refundable.
+   */
+  cancellation: CancellationLine;
   /** The Hotel's first photo, or null if it has none. */
   firstImage: { url: string; alt: string } | null;
   /** Nights of the searched Stay. */

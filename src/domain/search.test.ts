@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
-  cancellationLabel,
   cardFacilities,
   cityNamed,
   heading,
@@ -64,7 +63,7 @@ function card(overrides: Partial<ListingCard>): ListingCard {
     reviewLabel: "Very good",
     reviewCount: 1,
     facilities: [],
-    cancellation: { policy: "non_refundable", label: "Non-refundable" },
+    cancellation: { kind: "non-refundable", text: "Non-refundable. This booking can't be cancelled." },
     firstImage: null,
     nights: 1,
     adults: 2,
@@ -152,13 +151,6 @@ describe("cardFacilities", () => {
 
   it("returns fewer when the Hotel has fewer, and skips unlabelled keys", () => {
     expect(cardFacilities(["wifi", "sauna", "parking"], labels)).toEqual(["Free parking"]);
-  });
-});
-
-describe("cancellationLabel", () => {
-  it("names both policies", () => {
-    expect(cancellationLabel("free_until_48_hours_before_check_in")).toBe("Free cancellation");
-    expect(cancellationLabel("non_refundable")).toBe("Non-refundable");
   });
 });
 
