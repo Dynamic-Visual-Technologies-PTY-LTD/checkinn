@@ -33,14 +33,21 @@ type RoomSelectionProps = {
   cancellationPolicy: CancellationPolicy;
   checkInTime: string;
   today: IsoDate;
+  /** The current instant, read at request time, for the cancellation deadline. */
+  now: string;
   q: string;
   stay: Stay;
   party: Party;
   availability: Record<string, number>;
   /** The URL's selection, already clamped to Availability on the server. */
   initialSelection: RoomSelection[];
-  /** Said once on arrival when a new Stay lowered a chosen quantity. */
+  /**
+   * Said once on arrival when a new Stay lowered a chosen quantity. Leaves
+   * out the lines the room-ran-out alert already names.
+   */
   loweredNotice: string;
+  /** The server lowered the URL's selection, so the address bar follows it. */
+  selectionLowered: boolean;
 };
 
 function selectionKey(selection: readonly RoomSelection[]): string {
@@ -71,12 +78,14 @@ export function RoomSelectionPanel({
   cancellationPolicy,
   checkInTime,
   today,
+  now,
   q,
   stay,
   party,
   availability,
   initialSelection,
   loweredNotice,
+  selectionLowered,
 }: RoomSelectionProps) {
   const [selection, setSelection] = useState(initialSelection);
   const [seenKey, setSeenKey] = useState(selectionKey(initialSelection));
@@ -96,8 +105,8 @@ export function RoomSelectionPanel({
   // The server clamped the URL's selection; the address bar follows it.
   useEffect(() => {
     if (liveRef.current) liveRef.current.textContent = loweredNotice;
-    if (loweredNotice) replaceSelectionInUrl(initialSelection, today);
-  }, [loweredNotice, initialSelection, today]);
+    if (selectionLowered) replaceSelectionInUrl(initialSelection, today);
+  }, [loweredNotice, selectionLowered, initialSelection, today]);
 
   const nights = nightsBetween(stay.checkIn, stay.checkOut);
   const lines = summaryLines(selection, rooms, nights);
@@ -135,7 +144,7 @@ export function RoomSelectionPanel({
       lines={lines}
       roomCount={count}
       totalRand={totalRand}
-      cancellation={cancellationLine(cancellationPolicy, stay.checkIn, checkInTime)}
+      cancellation={cancellationLine(cancellationPolicy, stay.checkIn, checkInTime, now)}
       reserve={allSoldOut ? null : reserveProps}
     />
   );

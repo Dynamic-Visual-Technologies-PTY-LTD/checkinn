@@ -8,6 +8,7 @@ const sp = (text: string) => text.replace(/\s/g, " ");
 import {
   AvailabilitySection,
   AvailabilityResults,
+  RoomRanOutAlert,
   type AvailabilityContext,
 } from "./availability-section";
 import { DatesFieldProvider, StayPartyPicker } from "./stay-party-picker";
@@ -74,14 +75,18 @@ function criteria(overrides: Partial<SearchCriteria> = {}): SearchCriteria {
   };
 }
 
+/** Before Coral Coast's deadline for the 13 Nov check-in (Wed 11 Nov, 14:00). */
+const NOW = "2026-11-10T08:00:00.000Z";
+
 const context = (c: SearchCriteria, stale = false): AvailabilityContext => ({
   today: "2026-11-10",
+  now: NOW,
   criteria: c,
   stale,
 });
 
-async function renderResults(c: SearchCriteria) {
-  render(await AvailabilityResults({ hotel, stay, today: "2026-11-10", criteria: c }));
+async function renderResults(c: SearchCriteria, now = NOW) {
+  render(await AvailabilityResults({ hotel, stay, today: "2026-11-10", now, criteria: c }));
 }
 
 beforeEach(() => {
@@ -114,7 +119,7 @@ describe("AvailabilitySection", () => {
     expect(screen.queryByRole("button", { name: "Reserve" })).toBeNull();
   });
 
-  it("names the Room type that ran out in an alert at the top", () => {
+  it("shows no room-ran-out alert without a Stay: there is nothing to check", () => {
     render(
       <AvailabilitySection
         hotel={hotel}
@@ -127,13 +132,53 @@ describe("AvailabilitySection", () => {
       />,
     );
 
-    const section = screen.getByRole("region", { name: "Availability" });
-    expect(section.firstElementChild).toBe(
-      screen.getByRole("group", { name: "Room no longer available" }),
+    expect(screen.queryByRole("group", { name: "Room no longer available" })).toBeNull();
+  });
+});
+
+describe("RoomRanOutAlert", () => {
+  const ranOut = (sel: SearchCriteria["sel"], roomTypeIds: string[]) =>
+    criteria({ sel, notice: { type: "room-unavailable", roomTypeIds } });
+
+  beforeEach(() => {
+    window.history.replaceState(
+      null,
+      "",
+      "/hotels/hotel-005?adults=3&children=2&rooms=1&notice=room-unavailable&rt=hotel-005-standard",
     );
-    expect(screen.getByRole("group", { name: "Room no longer available" })).toHaveTextContent(
-      "Sorry, the last Standard Double was just booked. Pick another room.",
+  });
+
+  it("names a Room type the selection asks for more of than is left", async () => {
+    mocks.getAvailability.mockResolvedValue(
+      new Map([
+        ["hotel-005-standard", 1],
+        ["hotel-005-family", 5],
+      ]),
     );
+    const alert = await RoomRanOutAlert({
+      hotel,
+      stay,
+      today: "2026-11-10",
+      criteria: ranOut([{ roomTypeId: "hotel-005-standard", quantity: 2 }], ["hotel-005-standard"]),
+    });
+    render(alert);
+
+    const group = screen.getByRole("group", { name: "Room no longer available" });
+    expect(group).toHaveTextContent(
+      "Sorry, the Standard Double now has only 1 left. Pick another room.",
+    );
+    expect(group).toHaveFocus();
+  });
+
+  it("does not name a Room type that is not over-asked, and shows nothing then", async () => {
+    const alert = await RoomRanOutAlert({
+      hotel,
+      stay,
+      today: "2026-11-10",
+      criteria: ranOut([{ roomTypeId: "hotel-005-standard", quantity: 1 }], ["hotel-005-standard"]),
+    });
+
+    expect(alert).toBeNull();
   });
 });
 
@@ -155,6 +200,70 @@ describe("AvailabilityResults and the selection", () => {
     );
     // The address bar follows the clamp: only the Family Room, at 5.
     expect(new URLSearchParams(window.location.search).get("sel")).toBe("hotel-005-family:5");
+  });
+
+  it("does not announce the lowered quantity while the room-ran-out alert shows", async () => {
+    mocks.getAvailability.mockResolvedValue(
+      new Map([
+        ["hotel-005-standard", 1],
+        ["hotel-005-family", 5],
+      ]),
+    );
+    await renderResults(
+      criteria({
+        sel: [{ roomTypeId: "hotel-005-standard", quantity: 2 }],
+        notice: { type: "room-unavailable", roomTypeIds: ["hotel-005-standard"] },
+      }),
+    );
+
+    expect(screen.getByRole("combobox", { name: "Rooms of Standard Double" })).toHaveValue("1");
+    expect(screen.getByRole("status", { hidden: true })).toHaveTextContent("");
+    expect(new URLSearchParams(window.location.search).get("sel")).toBe("hotel-005-standard:1");
+  });
+
+  it("still announces lowered lines the room-ran-out alert does not name", async () => {
+    mocks.getAvailability.mockResolvedValue(
+      new Map([
+        ["hotel-005-standard", 1],
+        ["hotel-005-family", 1],
+      ]),
+    );
+    await renderResults(
+      criteria({
+        sel: [
+          { roomTypeId: "hotel-005-standard", quantity: 2 },
+          { roomTypeId: "hotel-005-family", quantity: 3 },
+        ],
+        notice: { type: "room-unavailable", roomTypeIds: ["hotel-005-standard"] },
+      }),
+    );
+
+    const status = screen.getByRole("status", { hidden: true });
+    expect(status).toHaveTextContent(
+      "Family Room lowered to 1, the most available for your dates.",
+    );
+    expect(status).not.toHaveTextContent("Standard Double");
+    expect(new URLSearchParams(window.location.search).get("sel")).toBe(
+      "hotel-005-standard:1,hotel-005-family:1",
+    );
+  });
+
+  it("shows free cancellation with its deadline while it is open", async () => {
+    await renderResults(criteria());
+
+    const aside = screen.getByRole("complementary", { name: "Booking summary" });
+    expect(within(aside).getByText("Free cancellation")).toBeInTheDocument();
+    expect(within(aside).getByText("until Wed 11 Nov 2026, 14:00")).toBeInTheDocument();
+  });
+
+  it("says free cancellation ended, with no Mint badge, once the deadline has passed", async () => {
+    await renderResults(criteria(), "2026-11-12T08:00:00.000Z");
+
+    const aside = screen.getByRole("complementary", { name: "Booking summary" });
+    expect(
+      within(aside).getByText("Free cancellation ended on Wed 11 Nov 2026, 14:00."),
+    ).toBeInTheDocument();
+    expect(within(aside).queryByText("Free cancellation")).toBeNull();
   });
 
   it("blocks Reserve with nothing selected", async () => {
@@ -249,7 +358,13 @@ describe("AvailabilityResults and the selection", () => {
           stay={stay}
           party={criteria().party}
         />
-        {await AvailabilityResults({ hotel, stay, today: "2026-11-10", criteria: criteria() })}
+        {await AvailabilityResults({
+          hotel,
+          stay,
+          today: "2026-11-10",
+          now: NOW,
+          criteria: criteria(),
+        })}
       </DatesFieldProvider>,
     );
 

@@ -9,7 +9,7 @@ import { HotelPhotos } from "@/app/hotels/[hotelId]/photo-viewer";
 import { ResultsHeading } from "@/app/search/results-heading";
 import { Icon, type IconName } from "@/components/icons/icons";
 import { Stars } from "@/components/stars";
-import { todayIn } from "@/domain/clock";
+import { nowIso, todayIn } from "@/domain/clock";
 import { hotelHref, parseCriteria } from "@/domain/criteria";
 import type { HotelPage } from "@/domain/types";
 import { getHotelPage } from "@/features/hotels/queries";
@@ -50,6 +50,7 @@ export async function HotelContent({
   const query = await searchParams;
   await io();
   const today = todayIn();
+  const now = nowIso();
   const { criteria, problems } = parseCriteria(query, today, { defaultStay: false });
   const hotel = await getHotelPage(hotelId);
   if (!hotel) notFound();
@@ -65,7 +66,7 @@ export async function HotelContent({
     <HotelDetails
       hotel={hotel}
       sharePath={sharePath}
-      availability={{ today, criteria, stale }}
+      availability={{ today, now, criteria, stale }}
     />
   );
 }

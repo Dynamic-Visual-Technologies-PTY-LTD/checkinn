@@ -1,4 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
+import { cancellationDeadline, deadlineLabel } from "@/domain/cancellation";
 import { todayIn } from "@/domain/clock";
 import { DEFAULT_PARTY, hotelHref, searchHref } from "@/domain/criteria";
 import { addDays } from "@/domain/dates";
@@ -19,6 +20,19 @@ function weekendStay() {
 
 const criteria = () => ({ q: "Cape Town", stay: weekendStay(), party: DEFAULT_PARTY });
 const harbourlightPath = () => hotelHref("hotel-001", criteria());
+
+/**
+ * The booking summary a guest can read: the side panel on desktop, the sheet
+ * behind the summary bar on a phone.
+ */
+async function bookingSummary(page: Page, isMobile: boolean): Promise<Locator> {
+  if (!isMobile) return page.getByRole("complementary", { name: "Booking summary" });
+  await page
+    .getByRole("region", { name: "Booking summary" })
+    .getByRole("button", { name: /Show full summary/ })
+    .click();
+  return page.getByRole("dialog", { name: "Booking summary" });
+}
 
 function heading(page: Page) {
   return page.getByRole("heading", { level: 1, name: "Harbourlight Retreat" });
@@ -285,6 +299,83 @@ test.describe("Hotel page", () => {
 
     await page.goto("/hotels/hotel-010");
     await expect(page.getByText("Pets are welcome")).toBeVisible();
+  });
+
+  test("the room-ran-out alert names the Room type, takes focus and leaves the URL", async ({
+    page,
+  }) => {
+    // Table View City Lodge's Family Room has 0 inventory, so asking for one
+    // over-asks it without any fixture Booking.
+    const path = hotelHref("hotel-002", {
+      ...criteria(),
+      sel: [{ roomTypeId: "hotel-002-family", quantity: 1 }],
+      notice: { type: "room-unavailable", roomTypeIds: ["hotel-002-family"] },
+    });
+    await page.goto(path);
+
+    const alert = page.getByRole("group", { name: "Room no longer available" });
+    await expect(alert).toHaveText(
+      "Sorry, the last Family Room was just booked. Pick another room.",
+    );
+    await expect(alert).toBeFocused();
+    await expect(page).not.toHaveURL(/notice=/);
+    await expect(page).not.toHaveURL(/rt=/);
+    await expect(page).toHaveURL(/checkIn=/);
+
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Table View City Lodge" }),
+    ).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Rooms of Standard Double" })).toBeVisible();
+    await expect(alert).toHaveCount(0);
+  });
+
+  test("a Room type in rt that was not over-asked is not named", async ({ page }) => {
+    await page.goto(
+      hotelHref("hotel-002", {
+        ...criteria(),
+        sel: [{ roomTypeId: "hotel-002-standard", quantity: 1 }],
+        notice: { type: "room-unavailable", roomTypeIds: ["hotel-002-standard"] },
+      }),
+    );
+
+    await expect(page.getByRole("combobox", { name: "Rooms of Standard Double" })).toHaveValue("1");
+    await expect(page.getByRole("group", { name: "Room no longer available" })).toHaveCount(0);
+  });
+
+  test("free cancellation shows its deadline while it is open", async ({ page, isMobile }) => {
+    const stay = weekendStay();
+    await page.goto(hotelHref("hotel-002", { stay, party: DEFAULT_PARTY }));
+    await expect(page.getByRole("combobox", { name: "Rooms of Standard Double" })).toBeVisible();
+
+    const summary = await bookingSummary(page, isMobile);
+    await expect(summary.getByText("Free cancellation", { exact: true })).toBeVisible();
+    await expect(
+      summary.getByText(`until ${deadlineLabel(cancellationDeadline(stay.checkIn, "14:00"))}`),
+    ).toBeVisible();
+  });
+
+  test("a passed free-cancellation deadline reads as ended, with no Mint badge", async ({
+    page,
+    isMobile,
+  }) => {
+    // The default search: check-in tomorrow, whose deadline was yesterday.
+    const checkIn = addDays(todayIn(), 1);
+    await page.goto(
+      hotelHref("hotel-002", {
+        stay: { checkIn, checkOut: addDays(checkIn, 1) },
+        party: DEFAULT_PARTY,
+      }),
+    );
+    await expect(page.getByRole("combobox", { name: "Rooms of Standard Double" })).toBeVisible();
+
+    const summary = await bookingSummary(page, isMobile);
+    await expect(
+      summary.getByText(
+        `Free cancellation ended on ${deadlineLabel(cancellationDeadline(checkIn, "14:00"))}.`,
+      ),
+    ).toBeVisible();
+    await expect(summary.getByText("Free cancellation", { exact: true })).toHaveCount(0);
   });
 
   test("an unknown Hotel shows the not-found page", async ({ page }) => {

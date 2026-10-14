@@ -147,6 +147,8 @@ export function BookingSummary({
             </span>
             <span>{cancellation.until}</span>
           </p>
+        ) : cancellation.kind === "ended" ? (
+          <p>{cancellation.text}</p>
         ) : (
           <p className="flex items-start gap-space-xs">
             <Icon name="warning" className="mt-0.5 shrink-0" />
