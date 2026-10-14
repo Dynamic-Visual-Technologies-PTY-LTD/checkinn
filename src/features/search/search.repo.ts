@@ -3,10 +3,10 @@ import type { Db } from "@/db/client";
 import { cities, hotelImages, hotels, roomTypes } from "@/db/schema";
 import { loadSeed } from "@/db/seed";
 import { isAvailable } from "@/domain/availability";
+import { cancellationLine } from "@/domain/cancellation";
 import { nightsBetween } from "@/domain/dates";
 import { fromPrice } from "@/domain/pricing";
 import {
-  cancellationLabel,
   cardFacilities,
   heading,
   matches,
@@ -36,9 +36,10 @@ export function labels(): Record<string, string> {
  * Search results for criteria (AD-7, FR-2, FR-3, FR-5–FR-7): Hotels whose
  * Destination matches and that have a Room type available for every Night of
  * the Stay, as Listing cards in display order. With no Stay, no query runs
- * and the result is empty.
+ * and the result is empty. `now` (an ISO instant read at request time) says
+ * whether each Hotel's free cancellation has already ended for the Stay.
  */
-export function searchCatalog(db: Db, criteria: SearchCriteria): SearchResult {
+export function searchCatalog(db: Db, criteria: SearchCriteria, now: string): SearchResult {
   const { stay, party, q } = criteria;
   if (!stay) return { heading: null, cards: [] };
   const nights = nightsBetween(stay.checkIn, stay.checkOut);
@@ -98,7 +99,7 @@ export function searchCatalog(db: Db, criteria: SearchCriteria): SearchResult {
       reviewLabel: reviewLabel(hotel.reviewScore),
       reviewCount: hotel.reviewCount,
       facilities: cardFacilities(hotel.amenities, labels()),
-      cancellation: { policy, label: cancellationLabel(policy) },
+      cancellation: cancellationLine(policy, stay.checkIn, hotel.checkInTime, now),
       firstImage: image ?? null,
       nights,
       adults: party.adults,

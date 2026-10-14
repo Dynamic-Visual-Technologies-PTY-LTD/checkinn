@@ -43,7 +43,7 @@ function card(overrides: Partial<ListingCard>): ListingCard {
     reviewLabel: "Superb",
     reviewCount: 248,
     facilities: ["Swimming pool", "Spa"],
-    cancellation: { policy: "non_refundable", label: "Non-refundable" },
+    cancellation: { kind: "non-refundable", text: "Non-refundable. This booking can't be cancelled." },
     firstImage: null,
     nights: 2,
     adults: 2,
