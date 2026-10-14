@@ -26,7 +26,7 @@ async function standardDoublesLeft(page: Page, hotelId: string, stay: Stay): Pro
   await page.goto(hotelHref(hotelId, { stay, party: COUPLE }));
   const select = page.getByRole("combobox", { name: "Rooms of Standard Double" });
   await expect(select).toBeVisible();
-  return Number(await select.locator("option").last().getAttribute("value"));
+  return Number(await select.getByRole("option").last().getAttribute("value"));
 }
 
 /** Books straight from a `/book` URL and returns the reference on the confirmation. */

@@ -49,6 +49,7 @@ describe("RemoteImage", () => {
     const placeholder = screen.getByRole("img", { name: photo.alt });
     expect(placeholder.tagName).toBe("DIV");
     expect(placeholder).toHaveTextContent("Cape Town");
+    // Proves the failed <img> is gone; the placeholder also has role img.
     expect(document.querySelector("img")).toBeNull();
   });
 

@@ -68,6 +68,7 @@ describe("HomeSearch", () => {
     const bar = screen.getByRole("search");
     const section = screen.getByRole("region", { name: "Explore a city" });
     expect(bar.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The six tile skeletons are aria-hidden, so no role or text can count them.
     expect(section.querySelector('[aria-hidden="true"]')?.children).toHaveLength(6);
   });
 });

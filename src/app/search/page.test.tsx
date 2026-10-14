@@ -92,6 +92,7 @@ describe("SearchPage", () => {
     );
 
     expect(screen.queryByRole("search")).not.toBeInTheDocument();
+    // The skeleton is aria-hidden, so no role or text can find it.
     expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
     expect(mocks.calls).toEqual([]);
   });

@@ -267,6 +267,7 @@ describe("BookRoute", () => {
     const never = new Promise<never>(() => {});
     const { container } = render(<BookRoute searchParams={never} params={never} />);
 
+    // The skeleton is aria-hidden, so no role or text can find it.
     expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
     expect(mocks.getBookingQuote).not.toHaveBeenCalled();
   });

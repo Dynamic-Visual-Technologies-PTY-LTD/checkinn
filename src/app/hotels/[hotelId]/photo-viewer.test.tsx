@@ -32,8 +32,9 @@ function expectShowing(alt: string, position: string) {
   expect(dialog.getByText(position.replace(" of ", " / "))).toHaveAttribute("aria-hidden", "true");
 }
 
+/** Touches the photo, as a guest does; the events bubble to the swipe area. */
 function swipe(dx: number, dy = 0) {
-  const area = within(viewer()).getByRole("img").parentElement as HTMLElement;
+  const area = within(viewer()).getByRole("img");
   fireEvent.touchStart(area, { touches: [{ clientX: 200, clientY: 300 }] });
   fireEvent.touchEnd(area, { changedTouches: [{ clientX: 200 + dx, clientY: 300 + dy }] });
 }
@@ -118,7 +119,7 @@ describe("HotelPhotos", () => {
   it("ignores a two-finger drag and a cancelled touch", () => {
     renderPhotos();
     openAt("Resort exterior and swimming pool");
-    const area = within(viewer()).getByRole("img").parentElement as HTMLElement;
+    const area = within(viewer()).getByRole("img");
 
     fireEvent.touchStart(area, {
       touches: [

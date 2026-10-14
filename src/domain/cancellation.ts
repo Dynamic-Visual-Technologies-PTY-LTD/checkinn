@@ -6,7 +6,12 @@
  * needs no time zone database.
  */
 import { addDays, shortDayLabel } from "@/domain/dates";
-import type { CancellationLine, CancellationPolicy, IsoDate } from "@/domain/types";
+import type {
+  BookingStatus,
+  CancellationLine,
+  CancellationPolicy,
+  IsoDate,
+} from "@/domain/types";
 
 export type { CancellationLine };
 
@@ -103,7 +108,7 @@ export type CancelState = "open" | "deadline-passed" | "non-refundable" | "cance
 
 export function cancelState(
   booking: {
-    status: "confirmed" | "cancelled";
+    status: BookingStatus;
     cancellationPolicy: CancellationPolicy;
     /** An ISO UTC instant; null for Non-refundable. */
     cancellationDeadline: string | null;

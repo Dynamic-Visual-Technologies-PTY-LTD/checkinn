@@ -118,6 +118,11 @@ export const roomTypes = sqliteTable(
  * them from the catalog. Times are ISO UTC timestamps (AD-9).
  */
 
+/**
+ * The data layer's copy of the domain's `BOOKING_STATUSES` (AD-1: `src/db`
+ * imports nothing from `src/domain`). `src/db/schema.test.ts` holds the two
+ * equal, along with the status check below.
+ */
 export const BOOKING_STATUSES = ["confirmed", "cancelled"] as const;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 

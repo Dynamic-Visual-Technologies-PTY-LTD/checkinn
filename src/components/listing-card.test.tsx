@@ -130,7 +130,9 @@ describe("ListingCard", () => {
     expect(screen.getByText("4 900 rand")).toHaveClass("sr-only");
     expect(screen.getByText("R 2 450")).toHaveAttribute("aria-hidden", "true");
     expect(screen.getByText("2 450 rand")).toHaveClass("sr-only");
-    expect(screen.getByText("R 2 450").parentElement).toHaveTextContent(/a night$/);
+    const nightly = screen.getByText("a night");
+    expect(within(nightly).getByText("R 2 450")).toBeInTheDocument();
+    expect(nightly).toHaveTextContent(/a night$/);
   });
 
   it("uses the singular for 1 night and 1 adult", () => {
@@ -150,6 +152,7 @@ describe("ListingCardSkeleton", () => {
   it("is hidden from assistive technology", () => {
     const { container } = render(<ListingCardSkeleton />);
 
+    // The skeleton is aria-hidden, so no role or text can find it.
     expect(container.firstElementChild).toHaveAttribute("aria-hidden", "true");
   });
 });

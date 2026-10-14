@@ -187,8 +187,8 @@ test.describe("Room table, selection and Reserve", () => {
     const dates = rooms.getByRole("button", { name: /^Dates/ });
     await dates.click();
     const calendar = page.getByRole("dialog");
-    await calendar.locator(`[aria-label^="${dayLabel(longer.checkIn)}"]`).click();
-    await calendar.locator(`[aria-label^="${dayLabel(longer.checkOut)}"]`).click();
+    await calendar.getByRole("button", { name: new RegExp(`^${dayLabel(longer.checkIn)}`) }).click();
+    await calendar.getByRole("button", { name: new RegExp(`^${dayLabel(longer.checkOut)}`) }).click();
     await calendar.getByRole("button", { name: "Done" }).click();
 
     await expect(page).toHaveURL(new RegExp(`checkOut=${longer.checkOut}`));

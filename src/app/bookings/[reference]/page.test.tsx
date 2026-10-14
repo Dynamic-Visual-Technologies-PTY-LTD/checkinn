@@ -60,6 +60,12 @@ const booking: BookingView = {
   cancelledAt: null,
 };
 
+/** The definition paired with a term in the details list, as a screen reader pairs them. */
+function definitionOf(term: string): HTMLElement {
+  const index = screen.getAllByRole("term").findIndex((element) => element.textContent === term);
+  return screen.getAllByRole("definition")[index];
+}
+
 beforeEach(() => {
   mocks.calls.length = 0;
   mocks.justBooked = false;
@@ -88,6 +94,7 @@ describe("BookingRoute", () => {
       />,
     );
 
+    // The skeleton is aria-hidden, so no role or text can find it.
     expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
     expect(mocks.getBooking).not.toHaveBeenCalled();
   });
@@ -126,8 +133,7 @@ describe("BookingContent", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Your booking" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "You're booked!" })).toBeNull();
-    const status = screen.getByText("Status").closest("div")!;
-    expect(status).toHaveTextContent("Confirmed");
+    expect(definitionOf("Status")).toHaveTextContent("Confirmed");
     expect(screen.getByText("Free cancellation")).toBeInTheDocument();
     expect(screen.getByText("until Mon 9 Nov 2026, 14:00")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel booking" })).toBeInTheDocument();
@@ -168,7 +174,7 @@ describe("BookingContent", () => {
     render(await content("CI-7K3P9Q"));
 
     expect(screen.getByRole("heading", { level: 1, name: "Your booking" })).toBeInTheDocument();
-    expect(screen.getByText("Status").closest("div")).toHaveTextContent(
+    expect(definitionOf("Status")).toHaveTextContent(
       "Cancelled on Thu 5 Nov 2026",
     );
     expect(screen.queryByRole("button", { name: "Cancel booking" })).toBeNull();

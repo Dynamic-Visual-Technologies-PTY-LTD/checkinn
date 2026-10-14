@@ -77,7 +77,8 @@ describe("CityTiles", () => {
 
     const credit = screen.getByRole("link", { name: "Photo credit: Cape Town" });
     expect(credit).toHaveAttribute("href", tiles[0].image.sourceUrl);
-    expect(credit.parentElement?.closest("a")).toBeNull();
+    const tile = screen.getByRole("link", { name: "Cape Town, 2 hotels" });
+    expect(within(tile).queryByRole("link", { name: "Photo credit: Cape Town" })).toBeNull();
   });
 
   it("keeps the name, count and credit when the photo fails", () => {
@@ -104,6 +105,7 @@ describe("CityTilesSkeleton", () => {
   it("renders six blocks hidden from assistive technology", () => {
     const { container } = render(<CityTilesSkeleton />);
 
+    // The skeleton is aria-hidden, so no role or text can find it.
     const skeleton = container.firstElementChild;
     expect(skeleton).toHaveAttribute("aria-hidden", "true");
     expect(skeleton?.children).toHaveLength(6);

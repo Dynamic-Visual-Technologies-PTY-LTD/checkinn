@@ -10,6 +10,7 @@ describe("Icon", () => {
   it("is decorative when it has no title", () => {
     const { container } = render(<Icon name="search" />);
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    // A decorative icon has no role or name, so only its tag can find it.
     expect(container.querySelector("svg")).toHaveAttribute(
       "aria-hidden",
       "true",
@@ -23,6 +24,7 @@ describe("Icon", () => {
 
   it.each(iconNames)("draws %s as a 20px line icon", (name) => {
     const { container } = render(<Icon name={name} />);
+    // A decorative icon has no role or name, so only its tag can find it.
     const svg = container.querySelector("svg");
     expect(svg).toHaveAttribute("viewBox", "0 0 24 24");
     expect(svg).toHaveAttribute("width", "20");

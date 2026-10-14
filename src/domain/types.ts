@@ -78,10 +78,17 @@ export type CancellationLine =
   | { kind: "ended"; text: string }
   | { kind: "non-refundable"; text: string };
 
+/**
+ * The Cancellation policies, as the seed's `policies.cancellation.type`.
+ * The one list the app, features and components import.
+ */
+export const CANCELLATION_POLICIES = [
+  "free_until_48_hours_before_check_in",
+  "non_refundable",
+] as const;
+
 /** A Hotel's Cancellation policy, as the seed's `policies.cancellation.type`. */
-export type CancellationPolicy =
-  | "free_until_48_hours_before_check_in"
-  | "non_refundable";
+export type CancellationPolicy = (typeof CANCELLATION_POLICIES)[number];
 
 /**
  * One Hotel's entry in Search results (FR-6). A plain serializable view
@@ -244,7 +251,13 @@ export type BookingQuote = {
   totalRand: number;
 };
 
-export type BookingStatusView = "confirmed" | "cancelled";
+/**
+ * A Booking's status. `src/db/schema.ts` keeps its own copy, because the data
+ * layer imports nothing from the domain (AD-1); `src/db/schema.test.ts` holds
+ * the two equal.
+ */
+export const BOOKING_STATUSES = ["confirmed", "cancelled"] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
 /**
  * A confirmed Booking as the confirmation shows it (FR-22). Read from the
@@ -256,7 +269,7 @@ export type BookingView = {
   reference: string;
   hotelId: string;
   hotelName: string;
-  status: BookingStatusView;
+  status: BookingStatus;
   stay: Stay;
   party: Party;
   /** "Thandi Nkosi". */

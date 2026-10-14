@@ -94,6 +94,7 @@ describe("Dialog", () => {
   it("dims the page behind a dialog", () => {
     render(<Harness />);
     openDialog();
+    // The backdrop is presentational, with no role or text, so it is the dialog's parent.
     expect(screen.getByRole("dialog").parentElement).toHaveClass("bg-neutral/70");
   });
 
