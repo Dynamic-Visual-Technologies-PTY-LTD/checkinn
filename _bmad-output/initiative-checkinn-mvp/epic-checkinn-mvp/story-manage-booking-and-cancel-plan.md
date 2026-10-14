@@ -142,7 +142,7 @@ Status: built (2026-10-14).
 
 **Follow-up review recommended:** false (patched: high 0, medium 1, low 2).
 
-**Verification:** see the commit and PR; full checks run after merging `main`.
+**Verification (after the patches, merged with `main`):** `npm run lint` clean; `npm run typecheck` clean; `npm test` 645 passed; `npm run build` succeeds; `npm run test:e2e` 160 passed, 6 skipped, on all four projects; `npm run design:lint` 0 errors, 0 warnings.
 
 **Residual risks:**
 - A `checkinn_booked` cookie (httpOnly, references only, no access) tells "You're booked!" from the Booking view; it is not in AD-15.
