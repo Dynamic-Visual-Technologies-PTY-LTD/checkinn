@@ -117,6 +117,7 @@ describe("SearchBar", () => {
     expect(datesTrigger()).toHaveAccessibleDescription("Check-in can't be in the past.");
     expect(screen.getByText("Check-in can't be in the past.")).toHaveClass("text-error");
     // The field around the trigger takes the 1px Coral border (DESIGN.md Input).
+    // That wrapper has no role or name, so it is reached from the trigger.
     const field = datesTrigger().parentElement?.parentElement;
     expect(field).toHaveClass("border", "border-error");
   });
@@ -205,6 +206,7 @@ describe("collapsible SearchBar", () => {
     expect(summary).toHaveClass("md:hidden");
     const bar = screen.getByRole("search", { name: "Search hotels" });
     expect(summary).toHaveAttribute("aria-controls", bar.id);
+    // The wrapper that hides the bar on phones has no role or name.
     expect(bar.parentElement).toHaveClass("hidden", "md:block");
   });
 
@@ -214,6 +216,7 @@ describe("collapsible SearchBar", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Change search/ }));
 
     expect(screen.queryByRole("button", { name: /^Change search/ })).toBeNull();
+    // The wrapper that hides the bar on phones has no role or name.
     expect(screen.getByRole("search").parentElement).not.toHaveClass("hidden");
     expect(destination()).toHaveFocus();
     expect(destination()).toHaveValue("Cape Town");

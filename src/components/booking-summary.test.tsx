@@ -75,6 +75,7 @@ describe("BookingSummary", () => {
   it("announces the total in a polite live region", () => {
     renderSummary();
 
+    // A bare aria-live region has no role or name; it is found through its label.
     const total = screen.getByText("Total").parentElement;
     expect(total).toHaveAttribute("aria-live", "polite");
     expect(total).toHaveTextContent(sp(formatZar(4900, { cents: true })));

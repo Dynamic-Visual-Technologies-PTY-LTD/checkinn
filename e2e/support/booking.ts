@@ -6,7 +6,7 @@ import { bookingLines, bookings } from "@/db/schema";
 import { todayIn } from "@/domain/clock";
 import { serializeCriteria } from "@/domain/criteria";
 import { addDays, dayLabel } from "@/domain/dates";
-import type { Party, RoomSelection, Stay } from "@/domain/types";
+import type { CancellationPolicy, Party, RoomSelection, Stay } from "@/domain/types";
 import { E2E_DB_PATH } from "./db";
 
 /**
@@ -124,7 +124,7 @@ export async function shownReference(page: Page): Promise<string> {
 export async function pickStay(page: Page, stay: Stay) {
   const calendar = page.getByRole("dialog");
   for (const date of [stay.checkIn, stay.checkOut]) {
-    const day = calendar.locator(`[aria-label^="${dayLabel(date)}"]`);
+    const day = calendar.getByRole("button", { name: new RegExp(`^${dayLabel(date)}`) });
     const next = calendar.getByRole("button", { name: "Next month" });
     // Desktop shows two months with Next month; a phone sheet lists 12.
     for (let i = 0; i < 13 && (await day.count()) === 0 && (await next.count()) > 0; i += 1) {
@@ -183,7 +183,7 @@ export function bookRoomsElsewhere(booking: {
           lastName: "Visitor",
           email,
           bookingTotalRand: 0,
-          cancellationPolicy: "non_refundable",
+          cancellationPolicy: "non_refundable" satisfies CancellationPolicy,
           createdAt: new Date().toISOString(),
         })
         .returning({ id: bookings.id })

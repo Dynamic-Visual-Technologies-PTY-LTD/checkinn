@@ -26,6 +26,10 @@ function Harness({
 
 const day = (name: string) => screen.getByRole("button", { name });
 
+/** The grid cell holding a day's button: the cell carries `aria-selected`. */
+const cellOf = (name: string) =>
+  screen.getAllByRole("gridcell").find((cell) => within(cell).queryByRole("button", { name }));
+
 // The phone layout renders 12 months; scoping to one keeps queries fast.
 const dayIn = (month: string, name: string) =>
   within(screen.getByRole("grid", { name: month })).getByRole("button", { name });
@@ -81,9 +85,9 @@ describe("RangeCalendar on desktop", () => {
       "Saturday 14 November 2026, in your stay",
       "Sunday 15 November 2026, check-out",
     ]) {
-      expect(day(name).closest("td")).toHaveAttribute("aria-selected", "true");
+      expect(cellOf(name)).toHaveAttribute("aria-selected", "true");
     }
-    expect(day("Monday 16 November 2026").closest("td")).not.toHaveAttribute("aria-selected");
+    expect(cellOf("Monday 16 November 2026")).not.toHaveAttribute("aria-selected");
   });
 
   it("picks a range by keyboard", () => {

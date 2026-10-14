@@ -40,6 +40,7 @@ describe("Home", () => {
     expect(
       screen.getByRole("heading", { level: 2, name: "Explore a city" }),
     ).toBeInTheDocument();
+    // The six tile skeletons are aria-hidden, so no role or text can count them.
     expect(section.querySelector('[aria-hidden="true"]')?.children).toHaveLength(
       6,
     );

@@ -60,6 +60,7 @@ describe("CreditsPage", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Photo credits" }),
     ).toBeInTheDocument();
+    // The skeleton is aria-hidden, so no role or text can find it.
     expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
   });
 });

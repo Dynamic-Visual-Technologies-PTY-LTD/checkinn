@@ -127,6 +127,7 @@ describe("HotelRoute", () => {
       />,
     );
 
+    // The skeleton is aria-hidden, so no role or text can find it.
     expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
     expect(mocks.getHotelPage).not.toHaveBeenCalled();
   });
@@ -278,6 +279,7 @@ describe("HotelDetails", () => {
 
     const panel = screen.getByRole("region", { name: "Guest reviews" });
     for (const text of ["4.8", "/ 5", "Superb", "248 reviews"]) {
+      // Proves the visible parts are aria-hidden; no role query can see that.
       expect(within(panel).getByText(text).closest('[aria-hidden="true"]')).not.toBeNull();
     }
     expect(within(panel).getByText("Rated 4.8 out of 5, Superb, 248 reviews")).toBeInTheDocument();

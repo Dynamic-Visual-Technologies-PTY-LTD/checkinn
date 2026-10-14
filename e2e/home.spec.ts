@@ -101,6 +101,7 @@ test.describe("Home page", () => {
         name: `${city} destination photograph`,
       });
       await expect(placeholder).toBeVisible();
+      // Proves the failed <img> is gone; the placeholder also has role img.
       await expect(tile.locator("img")).toHaveCount(0);
       await expect(tile.getByText(city, { exact: true })).toBeVisible();
       await expect(
@@ -118,6 +119,7 @@ test.describe("Home page", () => {
     await page.goto("/");
 
     await expect(page).toHaveTitle("CheckInn");
+    // The document language is an attribute of <html>; no role exposes it.
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
   });
 
@@ -133,7 +135,7 @@ test.describe("Home page", () => {
     await expect(
       banner.getByRole("link", { name: "Manage booking" }),
     ).toBeVisible();
-    await expect(page.locator("main#main")).toBeVisible();
+    await expect(page.getByRole("main")).toBeVisible();
 
     const footer = page.getByRole("contentinfo");
     await expect(
@@ -155,7 +157,7 @@ test.describe("Home page", () => {
     await expect(skip).toBeVisible();
 
     await page.keyboard.press("Enter");
-    await expect(page.locator("main#main")).toBeFocused();
+    await expect(page.getByRole("main")).toBeFocused();
   });
 
   test("shows a 2px Gold focus ring with an offset", async ({ page }) => {
@@ -265,6 +267,7 @@ test.describe("Home page", () => {
     await page.goto("/");
 
     const logo = page.getByRole("link", { name: "CheckInn home" });
+    // Both images are decorative (alt=""), so only their source tells them apart.
     await expect(logo.locator('img[src*="checkinn-icon"]')).toBeVisible();
     await expect(logo.locator('img[src*="checkinn-logo"]')).toBeHidden();
     await expect(page.getByRole("banner")).toHaveCSS("height", "64px");
@@ -275,6 +278,7 @@ test.describe("Home page", () => {
     await page.goto("/");
 
     const logo = page.getByRole("link", { name: "CheckInn home" });
+    // Both images are decorative (alt=""), so only their source tells them apart.
     await expect(logo.locator('img[src*="checkinn-logo"]')).toBeVisible();
     await expect(logo.locator('img[src*="checkinn-icon"]')).toBeHidden();
   });
