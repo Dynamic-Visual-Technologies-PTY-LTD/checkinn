@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { GUEST_MESSAGES, normaliseEmail, validateGuest } from "./guest";
+import { arrivalTimeOptions, GUEST_MESSAGES, normaliseEmail, validateGuest } from "./guest";
 
 const valid = { firstName: "Thandi", lastName: "Nkosi", email: "thandi@example.com" };
 
@@ -65,5 +65,28 @@ describe("normaliseEmail", () => {
   it("trims and lowercases", () => {
     expect(normaliseEmail(" Thandi@Example.COM ")).toBe("thandi@example.com");
     expect(normaliseEmail(undefined)).toBe("");
+  });
+});
+
+describe("arrivalTimeOptions", () => {
+  it("runs hourly from the check-in time to midnight", () => {
+    const options = arrivalTimeOptions("14:00");
+    expect(options[0]).toBe("14:00 – 15:00");
+    expect(options.at(-1)).toBe("23:00 – 00:00");
+    expect(options).toHaveLength(10);
+  });
+
+  it("starts at the hour of a check-in time between hours", () => {
+    expect(arrivalTimeOptions("15:30")[0]).toBe("15:00 – 16:00");
+  });
+
+  it("offers nothing for an unreadable time", () => {
+    expect(arrivalTimeOptions("soon")).toEqual([]);
+  });
+
+  it("every option is a valid stored arrival time", () => {
+    for (const arrivalTime of arrivalTimeOptions("00:00")) {
+      expect(validateGuest({ ...valid, arrivalTime }).ok).toBe(true);
+    }
   });
 });

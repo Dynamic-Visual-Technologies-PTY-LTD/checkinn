@@ -39,3 +39,8 @@ export function normaliseReference(input: string): string {
   const value = input.trim().toUpperCase();
   return value.startsWith(REFERENCE_PREFIX) ? value : `${REFERENCE_PREFIX}${value}`;
 }
+
+/** The confirmation and Booking view URL for a reference, e.g. "/bookings/CI-7K3P9Q". */
+export function bookingPath(reference: string): string {
+  return `/bookings/${encodeURIComponent(reference)}`;
+}

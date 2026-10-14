@@ -7,7 +7,14 @@ import { createTestDb, insertTestBooking } from "@/db/test-db";
 import { validateGuest, type GuestDetails } from "@/domain/guest";
 import type { Stay } from "@/domain/types";
 import { availabilityFor } from "@/features/hotels/availability.repo";
-import { bookingByKey, createBooking, type CreateBookingInput, hotelRooms } from "./booking.repo";
+import {
+  bookingByKey,
+  bookingByReference,
+  bookingQuote,
+  createBooking,
+  type CreateBookingInput,
+  hotelRooms,
+} from "./booking.repo";
 
 const REFERENCE = /^CI-[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/;
 const weekend: Stay = { checkIn: "2026-11-13", checkOut: "2026-11-15" };
@@ -251,5 +258,148 @@ describe("hotelRooms", () => {
       "hotel-001-family",
     ]);
     expect(hotelRooms(db, "nope")).toEqual([]);
+  });
+});
+
+describe("bookingQuote", () => {
+  const family = { adults: 2, children: 3, rooms: 2 };
+
+  it("prices the selection as createBooking stores it, lines in the Hotel's order", () => {
+    const quote = bookingQuote(db, {
+      hotelId: "hotel-005",
+      stay: durban,
+      party: family,
+      // The URL can list the lines in any order.
+      lines: [
+        { roomTypeId: "hotel-005-family", quantity: 1 },
+        { roomTypeId: "hotel-005-standard", quantity: 1 },
+      ],
+    });
+
+    expect(quote).toEqual({
+      kind: "ok",
+      quote: {
+        hotelId: "hotel-005",
+        hotelName: "Coral Coast Resort",
+        checkInTime: "14:00",
+        cancellationPolicy: "free_until_48_hours_before_check_in",
+        stay: durban,
+        party: family,
+        lines: [
+          {
+            roomTypeId: "hotel-005-standard",
+            name: "Standard Double",
+            quantity: 1,
+            lineTotalRand: 11000,
+          },
+          { roomTypeId: "hotel-005-family", name: "Family Room", quantity: 1, lineTotalRand: 13750 },
+        ],
+        roomCount: 2,
+        totalRand: 24750,
+      },
+    });
+
+    const created = createBooking(
+      db,
+      input({
+        hotelId: "hotel-005",
+        stay: durban,
+        party: family,
+        lines: [
+          { roomTypeId: "hotel-005-family", quantity: 1 },
+          { roomTypeId: "hotel-005-standard", quantity: 1 },
+        ],
+      }),
+    );
+    if (created.kind !== "created" || quote.kind !== "ok") throw new Error("expected both");
+    const stored = bookingByReference(db, created.reference);
+    expect(stored?.booking.lines).toEqual(quote.quote.lines);
+    expect(stored?.booking.bookingTotalRand).toBe(quote.quote.totalRand);
+  });
+
+  it("tells an unknown Hotel apart from a selection that does not fit", () => {
+    const base = { stay: weekend, party: { adults: 2, children: 0, rooms: 1 } };
+    expect(
+      bookingQuote(db, { ...base, hotelId: "nope", lines: [{ roomTypeId: "x", quantity: 1 }] }),
+    ).toEqual({ kind: "no-hotel" });
+    expect(
+      bookingQuote(db, {
+        ...base,
+        hotelId: "hotel-001",
+        lines: [{ roomTypeId: "hotel-005-standard", quantity: 1 }],
+      }),
+    ).toEqual({ kind: "invalid" });
+    expect(
+      bookingQuote(db, {
+        ...base,
+        hotelId: "hotel-005",
+        party: { adults: 2, children: 3, rooms: 1 },
+        lines: [{ roomTypeId: "hotel-005-family", quantity: 1 }],
+      }),
+    ).toEqual({ kind: "invalid" });
+  });
+
+  it("names the Room types that ran out", () => {
+    insertTestBooking(db, {
+      hotelId: "hotel-001",
+      stay: weekend,
+      lines: [{ roomTypeId: "hotel-001-standard", quantity: 10 }],
+    });
+
+    expect(
+      bookingQuote(db, {
+        hotelId: "hotel-001",
+        stay: weekend,
+        party: { adults: 2, children: 0, rooms: 1 },
+        lines: [{ roomTypeId: "hotel-001-standard", quantity: 1 }],
+      }),
+    ).toEqual({ kind: "unavailable", roomTypeIds: ["hotel-001-standard"] });
+  });
+});
+
+describe("bookingByReference", () => {
+  it("reads the snapshot, the guest name and the token", () => {
+    const created = createBooking(db, input({ accessToken: "secret-token" }));
+    if (created.kind !== "created") throw new Error("expected created");
+
+    expect(bookingByReference(db, created.reference)).toEqual({
+      accessToken: "secret-token",
+      booking: {
+        reference: created.reference,
+        hotelId: "hotel-001",
+        hotelName: "Harbourlight Retreat",
+        status: "confirmed",
+        stay: weekend,
+        party: { adults: 2, children: 0, rooms: 1 },
+        guestName: "Thandi Nkosi",
+        lines: [
+          {
+            roomTypeId: "hotel-001-standard",
+            name: "Standard Double",
+            quantity: 1,
+            lineTotalRand: 4900,
+          },
+        ],
+        roomCount: 1,
+        bookingTotalRand: 4900,
+        cancellationPolicy: "non_refundable",
+        cancellationDeadline: null,
+      },
+    });
+  });
+
+  it("never recomputes prices from the catalog", () => {
+    const created = createBooking(db, input());
+    if (created.kind !== "created") throw new Error("expected created");
+    db.update(bookingLines).set({ lineTotalRand: 1234 }).run();
+    db.update(bookings).set({ bookingTotalRand: 1234 }).run();
+
+    const stored = bookingByReference(db, created.reference);
+    expect(stored?.booking.lines[0].lineTotalRand).toBe(1234);
+    expect(stored?.booking.bookingTotalRand).toBe(1234);
+  });
+
+  it("is null for an unknown reference", () => {
+    expect(bookingByReference(db, "CI-AAAAAA")).toBeNull();
   });
 });

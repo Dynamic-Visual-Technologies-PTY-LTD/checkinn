@@ -7,6 +7,7 @@ import { type Db, getDb } from "@/db/client";
 import { nowIso, todayIn } from "@/domain/clock";
 import { hotelHref, parseCriteria, serializeCriteria } from "@/domain/criteria";
 import { type GuestInput, normaliseEmail, validateGuest } from "@/domain/guest";
+import { bookingPath } from "@/domain/reference";
 import { clampSelection, reserveBlock, type SelectableRoom } from "@/domain/selection";
 import type { ActionResult, Party, RoomSelection, SearchCriteria, Stay } from "@/domain/types";
 import {
@@ -155,10 +156,6 @@ function grantAccess(store: CookieStore, held: readonly string[], token: string)
     serializeAccessTokens(addAccessToken(held, token)),
     ACCESS_COOKIE_OPTIONS,
   );
-}
-
-function bookingPath(reference: string): string {
-  return `/bookings/${encodeURIComponent(reference)}`;
 }
 
 /**

@@ -65,7 +65,7 @@ test.describe("Room table, selection and Reserve", () => {
     ).toHaveCount(5);
   });
 
-  test("Coral Coast: a party that does not fit blocks Reserve until it does, then lands on /book", async ({
+  test("Coral Coast: a party that does not fit blocks Reserve until it does, then lands on step 2", async ({
     page,
     isMobile,
   }) => {
@@ -99,6 +99,12 @@ test.describe("Room table, selection and Reserve", () => {
     expect(url.searchParams.get("hotel")).toBe("hotel-005");
     expect(url.searchParams.get("sel")).toBe(sel);
     expect(url.searchParams.get("k")).toMatch(/^[0-9a-f-]{36}$/);
+
+    // Reserve lands on a real step 2, with the selection in its summary.
+    await expect(page.getByRole("heading", { level: 1, name: "Your details" })).toBeVisible();
+    const details = page.getByRole("complementary", { name: "Booking summary" });
+    await expect(details).toContainText("1 × Standard Double");
+    await expect(details).toContainText("1 × Family Room");
   });
 
   test("a selection in the URL comes back selected, with the total in the summary", async ({

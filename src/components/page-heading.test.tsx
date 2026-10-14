@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { expect, it } from "vitest";
-import { ResultsHeading } from "./results-heading";
+import { PageHeading } from "./page-heading";
 
-const heading = <ResultsHeading>Cape Town: 2 properties found</ResultsHeading>;
+const heading = <PageHeading>Cape Town: 2 properties found</PageHeading>;
 
 it("is the page headline and can take focus", () => {
   render(heading);
@@ -27,4 +27,12 @@ it("leaves focus alone when hydrated on a full page load", () => {
   render(heading, { container, hydrate: true });
 
   expect(screen.getByRole("heading")).not.toHaveFocus();
+});
+
+it("takes another type style", () => {
+  render(<PageHeading className="text-headline-display-responsive">You&apos;re booked!</PageHeading>);
+
+  expect(screen.getByRole("heading", { name: "You're booked!" })).toHaveClass(
+    "text-headline-display-responsive",
+  );
 });

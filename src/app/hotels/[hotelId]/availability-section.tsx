@@ -3,9 +3,10 @@ import { AvailabilityAlert } from "@/app/hotels/[hotelId]/availability-alert";
 import { RoomSelectionPanel } from "@/app/hotels/[hotelId]/room-selection";
 import { RoomTable, RoomTableSkeleton } from "@/app/hotels/[hotelId]/room-table";
 import { DatesFieldProvider, StayPartyPicker } from "@/app/hotels/[hotelId]/stay-party-picker";
+import { BookingSteps } from "@/components/booking-steps";
 import { Icon } from "@/components/icons/icons";
 import { STALE_LINK_MESSAGE } from "@/domain/criteria";
-import { availabilityHeadingId } from "@/domain/hotel";
+import { availabilityHeadingId, availabilitySectionId } from "@/domain/hotel";
 import {
   clampSelection,
   loweredMessage,
@@ -25,8 +26,6 @@ export type AvailabilityContext = {
   stale: boolean;
 };
 
-const STEPS = ["Your selection", "Your details", "Confirmation"];
-
 /**
  * The Availability section (FR-16 to FR-18): the room-ran-out alert, the step
  * indicator, the heading See rooms focuses, the Stay and Party picker, then
@@ -45,7 +44,7 @@ export function AvailabilitySection({
 
   return (
     <section
-      id={`availability-${hotel.hotelId}`}
+      id={availabilitySectionId(hotel.hotelId)}
       aria-labelledby={availabilityHeadingId(hotel.hotelId)}
       className="mt-section"
     >
@@ -54,21 +53,7 @@ export function AvailabilitySection({
           <RoomRanOutAlert hotel={hotel} stay={stay} today={today} criteria={criteria} />
         </Suspense>
       )}
-      <ol aria-label="Booking steps" className="flex flex-wrap gap-x-space-lg gap-y-space-sm">
-        {STEPS.map((step, index) => (
-          <li
-            key={step}
-            aria-current={index === 0 ? "step" : undefined}
-            className={
-              index === 0
-                ? "border-b-2 border-secondary pb-space-xs text-label-md"
-                : "text-label-sm text-on-surface-muted"
-            }
-          >
-            {index + 1} {step}
-          </li>
-        ))}
-      </ol>
+      <BookingSteps current={1} />
       <h2
         id={availabilityHeadingId(hotel.hotelId)}
         tabIndex={-1}

@@ -51,3 +51,8 @@ export function addAccessToken(tokens: readonly string[], token: string): string
 export function serializeAccessTokens(tokens: readonly string[]): string {
   return tokens.join(SEPARATOR);
 }
+
+/** Whether a cookie value holds a Booking's token (AD-15). */
+export function hasAccessToken(value: string | undefined, token: string): boolean {
+  return token !== "" && parseAccessTokens(value).includes(token);
+}
