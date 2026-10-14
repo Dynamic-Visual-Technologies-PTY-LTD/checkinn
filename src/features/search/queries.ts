@@ -2,6 +2,7 @@ import "server-only";
 import { io } from "next/cache";
 import { getDb } from "@/db/client";
 import type { CityTile, SearchCriteria, SearchResult } from "@/domain/types";
+import { nowIso } from "@/domain/clock";
 import { cityNamed } from "@/domain/search";
 import { listCityNames, listCityTiles } from "@/features/hotels/catalog.repo";
 import { searchCatalog } from "@/features/search/search.repo";
@@ -36,5 +37,5 @@ export async function searchHotels(
   criteria: SearchCriteria,
 ): Promise<SearchResult> {
   await io();
-  return searchCatalog(getDb(), criteria);
+  return searchCatalog(getDb(), criteria, nowIso());
 }

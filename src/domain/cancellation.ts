@@ -6,7 +6,9 @@
  * needs no time zone database.
  */
 import { addDays, shortDayLabel } from "@/domain/dates";
-import type { CancellationPolicy, IsoDate } from "@/domain/types";
+import type { CancellationLine, CancellationPolicy, IsoDate } from "@/domain/types";
+
+export type { CancellationLine };
 
 /** Free cancellation ends this many days before check-in (48 hours). */
 const FREE_CANCELLATION_DAYS = 2;
@@ -42,17 +44,6 @@ export function deadlinePassed(checkIn: IsoDate, checkInTime: string, now: strin
 export function deadlineLabel(deadline: { date: IsoDate; time: string }): string {
   return `${shortDayLabel(deadline.date)} ${deadline.date.slice(0, 4)}, ${deadline.time}`;
 }
-
-/**
- * The summary's cancellation line. `free` shows a Mint badge "Free
- * cancellation" beside `until`; `ended` (the deadline has passed) and
- * `non-refundable` show `text` alone. `text` is the whole sentence either
- * way, for screen readers.
- */
-export type CancellationLine =
-  | { kind: "free"; until: string; text: string }
-  | { kind: "ended"; text: string }
-  | { kind: "non-refundable"; text: string };
 
 /** `now` is an ISO instant read at request time. */
 export function cancellationLine(

@@ -3,7 +3,7 @@
  * result heading (FR-7), and Listing card labels (FR-6, FR-12). Pure: the
  * catalog and Availability are loaded by `src/features/search/search.repo.ts`.
  */
-import type { CancellationPolicy, ListingCard } from "@/domain/types";
+import type { ListingCard } from "@/domain/types";
 
 /** The text of a Hotel that a Destination is matched against (FR-3). */
 export type SearchableHotel = {
@@ -106,14 +106,4 @@ export function cardFacilities(
     .filter((key) => key !== "wifi" && Boolean(labels[key]))
     .slice(0, CARD_FACILITY_COUNT)
     .map((key) => labels[key]);
-}
-
-const CANCELLATION_LABELS: Record<CancellationPolicy, string> = {
-  free_until_48_hours_before_check_in: "Free cancellation",
-  non_refundable: "Non-refundable",
-};
-
-/** "Free cancellation" or "Non-refundable" (FR-6). */
-export function cancellationLabel(policy: CancellationPolicy): string {
-  return CANCELLATION_LABELS[policy];
 }
