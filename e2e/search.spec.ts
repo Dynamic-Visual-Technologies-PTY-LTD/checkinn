@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { todayIn } from "@/domain/clock";
+import { cancellationDeadline, deadlineLabel } from "@/domain/cancellation";
 import { DEFAULT_PARTY, searchHref } from "@/domain/criteria";
 import { addDays } from "@/domain/dates";
 
@@ -92,6 +93,28 @@ test.describe("Search results", () => {
       page.getByRole("heading", { level: 1, name: "All destinations: 12 properties found" }),
     ).toBeVisible();
     await expect(cards(page)).toHaveCount(12);
+  });
+
+  test("a card's free cancellation matches the Hotel page: open, or ended inside 48 hours", async ({
+    page,
+  }) => {
+    // Table View City Lodge has Free cancellation and checks in at 14:00.
+    const tableView = () =>
+      cards(page).filter({ has: page.getByRole("link", { name: "Table View City Lodge" }) });
+
+    const stay = weekendStay();
+    await page.goto(searchFor("Table View"));
+    const open = deadlineLabel(cancellationDeadline(stay.checkIn, "14:00"));
+    await expect(tableView().getByText("Free cancellation", { exact: true })).toBeVisible();
+    await expect(tableView().getByText(`until ${open}`)).toBeVisible();
+
+    // With no dates the search runs the default Stay, which checks in
+    // tomorrow, inside the 48 hours.
+    const tomorrow = addDays(todayIn(), 1);
+    await page.goto("/search?q=Table+View");
+    const ended = deadlineLabel(cancellationDeadline(tomorrow, "14:00"));
+    await expect(tableView().getByText(`Free cancellation ended on ${ended}.`)).toBeVisible();
+    await expect(tableView().getByText("Free cancellation", { exact: true })).toHaveCount(0);
   });
 
   test("no match explains itself and offers the City tiles", async ({ page }) => {
