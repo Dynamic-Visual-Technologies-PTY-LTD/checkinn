@@ -8,8 +8,15 @@ const sp = (text: string) => text.replace(/\s/g, " ");
 import { BookingSummary } from "./booking-summary";
 
 const stay = { checkIn: "2026-11-13", checkOut: "2026-11-15" };
-const free = cancellationLine("free_until_48_hours_before_check_in", stay.checkIn, "14:00");
-const nonRefundable = cancellationLine("non_refundable", stay.checkIn, "14:00");
+const now = "2026-11-10T08:00:00.000Z";
+const free = cancellationLine("free_until_48_hours_before_check_in", stay.checkIn, "14:00", now);
+const ended = cancellationLine(
+  "free_until_48_hours_before_check_in",
+  stay.checkIn,
+  "14:00",
+  "2026-11-12T08:00:00.000Z",
+);
+const nonRefundable = cancellationLine("non_refundable", stay.checkIn, "14:00", now);
 
 function renderSummary({
   lines = [{ roomTypeId: "std", name: "Standard Double", quantity: 1, lineTotalRand: 4900 }],
@@ -62,6 +69,15 @@ describe("BookingSummary", () => {
     renderSummary({ cancellation: nonRefundable });
 
     expect(screen.getByText("Non-refundable. This booking can't be cancelled.")).toBeInTheDocument();
+    expect(screen.queryByText("Free cancellation")).toBeNull();
+  });
+
+  it("says when free cancellation ended, with no Mint badge", () => {
+    renderSummary({ cancellation: ended });
+
+    expect(
+      screen.getByText("Free cancellation ended on Wed 11 Nov 2026, 14:00."),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Free cancellation")).toBeNull();
   });
 

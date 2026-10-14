@@ -4,6 +4,7 @@ import {
   clampSelection,
   loweredMessage,
   partyFitMessage,
+  ranOutLines,
   reserveBlock,
   roomRanOutMessage,
   roomCount,
@@ -152,15 +153,47 @@ describe("labels", () => {
   });
 });
 
+describe("ranOutLines", () => {
+  it("names only Room types in the notice that the selection over-asks", () => {
+    const selection = [
+      { roomTypeId: "std", quantity: 2 },
+      { roomTypeId: "fam", quantity: 1 },
+    ];
+    expect(ranOutLines(["std", "fam"], selection, rooms, { std: 1, fam: 3 })).toEqual([
+      { roomTypeId: "std", name: "Standard Double", left: 1 },
+    ]);
+  });
+
+  it("is empty when nothing is over-asked or nothing was selected", () => {
+    expect(ranOutLines(["std"], [{ roomTypeId: "std", quantity: 1 }], rooms, { std: 1 })).toEqual(
+      [],
+    );
+    expect(ranOutLines(["std"], null, rooms, { std: 0 })).toEqual([]);
+    expect(ranOutLines([], [{ roomTypeId: "std", quantity: 3 }], rooms, { std: 0 })).toEqual([]);
+  });
+});
+
 describe("roomRanOutMessage", () => {
-  it("names the Room type", () => {
-    expect(roomRanOutMessage(["Standard Double"])).toBe(
+  const std = { roomTypeId: "std", name: "Standard Double" };
+  const fam = { roomTypeId: "fam", name: "Family Room" };
+
+  it("names the Room type that sold out", () => {
+    expect(roomRanOutMessage([{ ...std, left: 0 }])).toBe(
       "Sorry, the last Standard Double was just booked. Pick another room.",
     );
   });
 
-  it("handles several Room types and none", () => {
-    expect(roomRanOutMessage(["Standard Double", "Family Room"])).toBe(
+  it("says how many are left when some are", () => {
+    expect(roomRanOutMessage([{ ...std, left: 1 }])).toBe(
+      "Sorry, the Standard Double now has only 1 left. Pick another room.",
+    );
+    expect(roomRanOutMessage([{ ...std, left: 0 }, { ...fam, left: 2 }])).toBe(
+      "Sorry, the last Standard Double was just booked and the Family Room now has only 2 left. Pick another room.",
+    );
+  });
+
+  it("handles several sold-out Room types and none", () => {
+    expect(roomRanOutMessage([{ ...std, left: 0 }, { ...fam, left: 0 }])).toBe(
       "Sorry, the last Standard Double and Family Room were just booked. Pick another room.",
     );
     expect(roomRanOutMessage([])).toBe(

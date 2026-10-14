@@ -27,6 +27,10 @@ vi.mock("@/domain/clock", () => ({
     mocks.calls.push("todayIn");
     return "2026-11-10";
   },
+  nowIso: () => {
+    mocks.calls.push("nowIso");
+    return "2026-11-10T08:00:00.000Z";
+  },
 }));
 vi.mock("@/features/hotels/queries", () => ({
   getHotelPage: mocks.getHotelPage,
@@ -88,6 +92,7 @@ const harbourlight: HotelPage = {
 
 const NO_DATES = {
   today: "2026-11-10",
+  now: "2026-11-10T08:00:00.000Z",
   stale: false,
   criteria: {
     q: "",
@@ -168,7 +173,7 @@ describe("HotelContent", () => {
       }),
     );
 
-    expect(mocks.calls).toEqual(["io", "todayIn"]);
+    expect(mocks.calls).toEqual(["io", "todayIn", "nowIso"]);
     expect(mocks.getHotelPage).toHaveBeenCalledWith("hotel-001");
     expect(
       screen.getByRole("heading", { level: 1, name: "Harbourlight Retreat" }),
@@ -198,6 +203,7 @@ describe("HotelContent", () => {
     });
     const { availability } = (page as ReactElement<{ availability: AvailabilityContext }>).props;
     expect(availability.today).toBe("2026-11-10");
+    expect(availability.now).toBe("2026-11-10T08:00:00.000Z");
     expect(availability.stale).toBe(false);
     const { stay } = availability.criteria;
     expect(stay).toEqual({ checkIn: "2026-11-13", checkOut: "2026-11-15" });
@@ -207,6 +213,7 @@ describe("HotelContent", () => {
         hotel: harbourlight,
         stay: stay!,
         today: availability.today,
+        now: availability.now,
         criteria: availability.criteria,
       }),
     );

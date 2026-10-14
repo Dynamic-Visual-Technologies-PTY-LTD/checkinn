@@ -6,13 +6,20 @@ import { DatesFieldProvider, StayPartyPicker } from "@/app/hotels/[hotelId]/stay
 import { Icon } from "@/components/icons/icons";
 import { STALE_LINK_MESSAGE } from "@/domain/criteria";
 import { availabilityHeadingId } from "@/domain/hotel";
-import { clampSelection, loweredMessage, roomRanOutMessage } from "@/domain/selection";
+import {
+  clampSelection,
+  loweredMessage,
+  ranOutLines,
+  roomRanOutMessage,
+} from "@/domain/selection";
 import type { HotelPage, IsoDate, SearchCriteria, Stay } from "@/domain/types";
 import { getAvailability } from "@/features/hotels/queries";
 
 /** What the Hotel page read from the URL, for the Availability section. */
 export type AvailabilityContext = {
   today: IsoDate;
+  /** The current instant, read at request time, for the cancellation deadline. */
+  now: string;
   criteria: SearchCriteria;
   /** The URL's dates or Party were rejected: show the stale-link message. */
   stale: boolean;
@@ -29,17 +36,12 @@ const STEPS = ["Your selection", "Your details", "Confirmation"];
  */
 export function AvailabilitySection({
   hotel,
-  context: { today, criteria, stale },
+  context: { today, now, criteria, stale },
 }: {
   hotel: HotelPage;
   context: AvailabilityContext;
 }) {
-  const { stay } = criteria;
-  const { notice } = criteria;
-  const ranOut =
-    notice?.type === "room-unavailable"
-      ? hotel.rooms.filter((room) => notice.roomTypeIds.includes(room.id)).map((room) => room.name)
-      : null;
+  const { stay, notice } = criteria;
 
   return (
     <section
@@ -47,7 +49,11 @@ export function AvailabilitySection({
       aria-labelledby={availabilityHeadingId(hotel.hotelId)}
       className="mt-section"
     >
-      {ranOut && <AvailabilityAlert message={roomRanOutMessage(ranOut)} />}
+      {stay && notice?.type === "room-unavailable" && (
+        <Suspense fallback={null}>
+          <RoomRanOutAlert hotel={hotel} stay={stay} today={today} criteria={criteria} />
+        </Suspense>
+      )}
       <ol aria-label="Booking steps" className="flex flex-wrap gap-x-space-lg gap-y-space-sm">
         {STEPS.map((step, index) => (
           <li
@@ -83,7 +89,13 @@ export function AvailabilitySection({
       </div>
       {stay ? (
         <Suspense key={`${stay.checkIn}/${stay.checkOut}`} fallback={<RoomTableSkeleton />}>
-          <AvailabilityResults hotel={hotel} stay={stay} today={today} criteria={criteria} />
+          <AvailabilityResults
+            hotel={hotel}
+            stay={stay}
+            today={today}
+            now={now}
+            criteria={criteria}
+          />
         </Suspense>
       ) : (
         <div className="mt-space-lg">
@@ -104,8 +116,22 @@ export function AvailabilitySection({
   );
 }
 
-/** Reads Availability at request time (AD-2, AD-4) and hands the room table its data. */
-export async function AvailabilityResults({
+/**
+ * The Room types the room-ran-out notice can name: those in `rt` that the
+ * URL's selection asks for more of than are left.
+ */
+function ranOutFor(hotel: HotelPage, criteria: SearchCriteria, availability: Map<string, number>) {
+  const { notice } = criteria;
+  if (notice?.type !== "room-unavailable") return [];
+  return ranOutLines(notice.roomTypeIds, criteria.sel, hotel.rooms, availability);
+}
+
+/**
+ * The room-ran-out alert (EXPERIENCE.md Room ran out at confirm). It reads
+ * Availability at request time to name only the Room types the guest asked
+ * for more of than are left; with nothing to name there is no alert.
+ */
+export async function RoomRanOutAlert({
   hotel,
   stay,
   today,
@@ -117,7 +143,31 @@ export async function AvailabilityResults({
   criteria: SearchCriteria;
 }) {
   const availability = await getAvailability(hotel.hotelId, stay);
+  const lines = ranOutFor(hotel, criteria, availability);
+  if (lines.length === 0) return null;
+  return <AvailabilityAlert message={roomRanOutMessage(lines)} today={today} />;
+}
+
+/** Reads Availability at request time (AD-2, AD-4) and hands the room table its data. */
+export async function AvailabilityResults({
+  hotel,
+  stay,
+  today,
+  now,
+  criteria,
+}: {
+  hotel: HotelPage;
+  stay: Stay;
+  today: IsoDate;
+  now: string;
+  criteria: SearchCriteria;
+}) {
+  const availability = await getAvailability(hotel.hotelId, stay);
   const { selection, lowered } = clampSelection(criteria.sel, hotel.rooms, availability);
+  // The room-ran-out alert already names its Room types; the live region
+  // announces only the other lowered lines.
+  const named = new Set(ranOutFor(hotel, criteria, availability).map((line) => line.roomTypeId));
+  const unnamed = lowered.filter((line) => !named.has(line.roomTypeId));
   return (
     <RoomSelectionPanel
       hotelId={hotel.hotelId}
@@ -126,12 +176,14 @@ export async function AvailabilityResults({
       cancellationPolicy={hotel.cancellationPolicy}
       checkInTime={hotel.checkInTime}
       today={today}
+      now={now}
       q={criteria.q}
       stay={stay}
       party={criteria.party}
       availability={Object.fromEntries(availability)}
       initialSelection={selection}
-      loweredNotice={loweredMessage(lowered)}
+      loweredNotice={loweredMessage(unnamed)}
+      selectionLowered={lowered.length > 0}
     />
   );
 }

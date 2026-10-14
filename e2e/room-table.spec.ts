@@ -193,15 +193,25 @@ test.describe("Room table, selection and Reserve", () => {
   });
 
   test("an alert names the Room type that ran out and takes focus", async ({ page }) => {
+    // The alert names a Room type only when the selection asks for more than
+    // is left: 11 Standard Doubles against Harbourlight's 10.
     await page.goto(
-      `${hotelHref("hotel-001", { stay: weekendStay(), party: COUPLE })}&notice=room-unavailable&rt=hotel-001-standard`,
+      hotelHref("hotel-001", {
+        stay: weekendStay(),
+        party: COUPLE,
+        sel: [{ roomTypeId: "hotel-001-standard", quantity: 11 }],
+        notice: { type: "room-unavailable", roomTypeIds: ["hotel-001-standard"] },
+      }),
     );
 
     const alert = page.getByRole("group", { name: "Room no longer available" });
     await expect(alert).toContainText(
-      "Sorry, the last Standard Double was just booked. Pick another room.",
+      "Sorry, the Standard Double now has only 10 left. Pick another room.",
     );
     await expect(alert).toBeFocused();
+    await expect(page.getByRole("combobox", { name: "Rooms of Standard Double" })).toHaveValue(
+      "10",
+    );
   });
 
   test("on a phone the rooms are cards with a fixed summary bar and a summary sheet", async ({

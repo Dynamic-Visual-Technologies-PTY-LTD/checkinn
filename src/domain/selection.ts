@@ -170,14 +170,43 @@ export function loweredMessage(lowered: readonly LoweredLine[]): string {
     .join(" ");
 }
 
+/** A Room type that ran out at confirm: the guest asked for more than `left`. */
+export type RanOutLine = { roomTypeId: string; name: string; left: number };
+
+/**
+ * The Room types the room-ran-out notice may name (EXPERIENCE.md Room ran out
+ * at confirm): those listed in the notice whose quantity in the selection is
+ * more than Availability now allows, in the Hotel's order. A Room type in the
+ * notice that the selection does not over-ask is left out.
+ */
+export function ranOutLines(
+  roomTypeIds: readonly string[],
+  selection: readonly RoomSelection[] | null,
+  rooms: readonly SelectableRoom[],
+  availability: AvailabilityCounts,
+): RanOutLine[] {
+  return rooms.flatMap((room) => {
+    if (!roomTypeIds.includes(room.id)) return [];
+    const asked = selection ? quantityOf(selection, room.id) : 0;
+    const left = countFor(availability, room.id);
+    return asked > left ? [{ roomTypeId: room.id, name: room.name, left }] : [];
+  });
+}
+
 /**
  * The room-ran-out alert text (EXPERIENCE.md Room ran out at confirm), naming
- * the Room types that were just booked.
+ * each Room type that ran out and how many are left of it.
  */
-export function roomRanOutMessage(names: readonly string[]): string {
-  if (names.length === 0) return "Sorry, a room you picked was just booked. Pick another room.";
-  if (names.length === 1) {
-    return `Sorry, the last ${names[0]} was just booked. Pick another room.`;
+export function roomRanOutMessage(lines: readonly RanOutLine[]): string {
+  if (lines.length === 0) return "Sorry, a room you picked was just booked. Pick another room.";
+  if (lines.every((line) => line.left === 0)) {
+    const names = lines.map((line) => line.name).join(" and ");
+    return `Sorry, the last ${names} ${lines.length === 1 ? "was" : "were"} just booked. Pick another room.`;
   }
-  return `Sorry, the last ${names.join(" and ")} were just booked. Pick another room.`;
+  const clauses = lines.map((line) =>
+    line.left === 0
+      ? `the last ${line.name} was just booked`
+      : `the ${line.name} now has only ${line.left} left`,
+  );
+  return `Sorry, ${clauses.join(" and ")}. Pick another room.`;
 }
