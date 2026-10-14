@@ -1,4 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
+import { todayIn } from "@/domain/clock";
+import { defaultCriteria, searchHref } from "@/domain/criteria";
 
 // Seed photos are the only remote requests (AD-17). Wikimedia's
 // Special:FilePath redirects to upload.wikimedia.org. These hosts can be slow
@@ -21,6 +23,15 @@ function isSeedPhoto(url: string | undefined): boolean {
 }
 
 const CITY_TILE_NAME = /^(.+), (\d+) hotels?$/;
+
+/** Home's default criteria: tomorrow for 1 night, 2 adults, 0 children, 1 room. */
+function homeDefaults() {
+  return defaultCriteria(todayIn());
+}
+
+function searchBar(page: Page) {
+  return page.getByRole("search", { name: "Search hotels" });
+}
 
 function cityTiles(page: Page) {
   return page
@@ -67,7 +78,7 @@ test.describe("Home page", () => {
       expect(city).toBeTruthy();
       total += Number(count);
       expect(await tile.getAttribute("href")).toBe(
-        `/search?${new URLSearchParams({ q: city })}`,
+        searchHref({ ...homeDefaults(), q: city }),
       );
     }
     expect(total).toBe(12);
@@ -281,4 +292,118 @@ test.describe("Home page", () => {
 
     await expect(page.getByRole("banner")).toHaveCSS("position", "static");
   });
+  test("shows the search bar with the default Stay and Party", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    const bar = searchBar(page);
+    await expect(bar).toBeVisible();
+    await expect(bar.getByRole("textbox", { name: "Destination" })).toHaveAttribute(
+      "placeholder",
+      "Where are you going?",
+    );
+    await expect(bar.getByRole("button", { name: /^Dates / })).toBeVisible();
+    await expect(
+      bar.getByRole("button", {
+        name: "Occupancy 2 adults · 0 children · 1 room",
+      }),
+    ).toBeVisible();
+    await expect(bar.getByRole("button", { name: "Search" })).toBeVisible();
+  });
+
+  test("searching puts every criterion in the URL and Back returns Home", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    const bar = searchBar(page);
+    await bar.getByRole("textbox", { name: "Destination" }).fill("Cape Town");
+    await bar.getByRole("button", { name: "Search" }).click();
+
+    const expected = searchHref({ ...homeDefaults(), q: "Cape Town" });
+    expect(expected).toMatch(
+      /^\/search\?q=Cape\+Town&checkIn=\d{4}-\d{2}-\d{2}&checkOut=\d{4}-\d{2}-\d{2}&adults=2&children=0&rooms=1$/,
+    );
+    await expect(page).toHaveURL(expected);
+
+    await page.goBack();
+    await expect(page).toHaveURL("/");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Find your stay." }),
+    ).toBeVisible();
+  });
+
+  test("an empty Destination searches anyway", async ({ page }) => {
+    await page.goto("/");
+
+    await searchBar(page).getByRole("button", { name: "Search" }).click();
+
+    await expect(page).toHaveURL(searchHref(homeDefaults()));
+  });
+
+  test("the Destination clear empties the field and keeps focus", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    const input = searchBar(page).getByRole("textbox", { name: "Destination" });
+    await input.fill("Durban");
+    await searchBar(page)
+      .getByRole("button", { name: "Clear destination" })
+      .click();
+
+    await expect(input).toHaveValue("");
+    await expect(input).toBeFocused();
+  });
+
+  test("City tiles carry the search bar's dates and party", async ({ page }) => {
+    await page.goto("/");
+
+    const tile = page.getByRole("link", { name: CITY_TILE_NAME }).first();
+    const city = ((await tile.getAttribute("aria-label")) ?? "").replace(
+      CITY_TILE_NAME,
+      "$1",
+    );
+    await expect(tile).toHaveAttribute(
+      "href",
+      searchHref({ ...homeDefaults(), q: city }),
+    );
+
+    // Change the Party without searching: the tiles follow.
+    await searchBar(page).getByRole("button", { name: /^Occupancy/ }).click();
+    await page.getByRole("button", { name: "Increase adults" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
+
+    const defaults = homeDefaults();
+    await expect(tile).toHaveAttribute(
+      "href",
+      searchHref({
+        ...defaults,
+        q: city,
+        party: { ...defaults.party, adults: 3 },
+      }),
+    );
+    await expect(page).toHaveURL("/");
+  });
+
+  for (const width of [768, 1024, 1280]) {
+    test(`the Dates popover fits a ${width}px viewport`, async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(isMobile, "Phones use a full-screen sheet.");
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+
+      await searchBar(page).getByRole("button", { name: /^Dates/ }).click();
+      const popover = page.getByRole("dialog", { name: "Dates" });
+      await expect(popover).toBeVisible();
+
+      const box = await popover.boundingBox();
+      if (!box) throw new Error("The Dates popover has no layout box.");
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+    });
+  }
 });

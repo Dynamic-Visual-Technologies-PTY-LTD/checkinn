@@ -1,12 +1,16 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { SearchBarSkeleton } from "@/components/search-bar";
 import Home from "./page";
 
-// The tiles read the database at request time. Here they stay loading, so
-// these tests cover the hero and the section around the Suspense boundary.
-vi.mock("@/features/search/queries", () => ({
-  getCityTiles: () => new Promise(() => {}),
-}));
+// Today is read after `io()`, and the tiles read the database. Both stay
+// loading here, so these tests cover the static shell. `home-search.test.tsx`
+// covers what renders once they resolve.
+const todayIn = vi.hoisted(() => vi.fn(() => "2026-11-10"));
+vi.mock("next/cache", () => ({ io: () => new Promise(() => {}) }));
+vi.mock("@/features/search/queries", () => ({ getCityTiles: () => new Promise(() => {}) }));
+vi.mock("@/domain/clock", () => ({ todayIn }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 describe("Home", () => {
   it("renders the Find your stay heading", () => {
@@ -39,5 +43,15 @@ describe("Home", () => {
     expect(section.querySelector('[aria-hidden="true"]')?.children).toHaveLength(
       6,
     );
+  });
+
+  it("shows a search bar skeleton and reads no clock until io() resolves", () => {
+    const skeleton = render(<SearchBarSkeleton />).container.innerHTML;
+    cleanup();
+    const { container } = render(<Home />);
+    expect(skeleton).not.toBe("");
+    expect(container.innerHTML).toContain(skeleton);
+    expect(screen.queryByRole("search")).not.toBeInTheDocument();
+    expect(todayIn).not.toHaveBeenCalled();
   });
 });

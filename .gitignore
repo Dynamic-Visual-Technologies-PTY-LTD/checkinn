@@ -40,3 +40,6 @@ npm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# vitest output
+/.vitest/

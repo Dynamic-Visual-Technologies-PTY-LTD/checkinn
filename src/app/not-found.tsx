@@ -19,8 +19,7 @@ export default function NotFound() {
           </Link>
         </li>
         <li>
-          {/* No prefetch until /search exists (a later story builds it). */}
-          <Link href="/search" prefetch={false} className="underline hover:text-tertiary">
+          <Link href="/search" className="underline hover:text-tertiary">
             Back to search
           </Link>
         </li>

@@ -1,0 +1,140 @@
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import type { ListingCard as ListingCardModel } from "@/domain/types";
+import { ListingCard, ListingCardSkeleton } from "./listing-card";
+
+const harbourlight: ListingCardModel = {
+  hotelId: "hotel-001",
+  name: "Harbourlight Retreat",
+  category: "luxury",
+  starRating: 5,
+  area: "V&A Waterfront",
+  cityName: "Cape Town",
+  reviewScore: 4.8,
+  reviewLabel: "Superb",
+  reviewCount: 248,
+  facilities: ["Swimming pool", "Spa", "Restaurant"],
+  cancellation: { policy: "non_refundable", label: "Non-refundable" },
+  firstImage: {
+    url: "https://images.unsplash.com/photo-1?w=1200",
+    alt: "Resort exterior and swimming pool",
+  },
+  nights: 2,
+  adults: 2,
+  totalRand: 4900,
+  nightlyRand: 2450,
+};
+
+const href =
+  "/hotels/hotel-001?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=0&rooms=1";
+
+function renderCard(card: Partial<ListingCardModel> = {}) {
+  return render(<ListingCard card={{ ...harbourlight, ...card }} href={href} />);
+}
+
+describe("ListingCard", () => {
+  it("has the hotel name as its only link, to the Hotel page with the criteria", () => {
+    renderCard();
+
+    const links = screen.getAllByRole("link");
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAccessibleName("Harbourlight Retreat");
+    expect(links[0]).toHaveAttribute("href", href);
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Harbourlight Retreat" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows See availability as a visual label hidden from screen readers", () => {
+    renderCard();
+
+    expect(screen.queryByRole("button", { name: "See availability" })).toBeNull();
+    expect(screen.getByText("See availability")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("shows the photo, category, stars, area and City", () => {
+    renderCard();
+
+    expect(
+      screen.getByRole("img", { name: "Resort exterior and swimming pool" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("luxury")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "5-star hotel" })).toBeInTheDocument();
+    expect(screen.getByText("V&A Waterfront, Cape Town")).toBeInTheDocument();
+  });
+
+  it("keeps the hotel name on the placeholder when the photo fails", () => {
+    renderCard();
+
+    fireEvent.error(screen.getByRole("img", { name: "Resort exterior and swimming pool" }));
+
+    const placeholder = screen.getByRole("img", { name: "Resort exterior and swimming pool" });
+    expect(placeholder.tagName).toBe("DIV");
+    expect(placeholder).toHaveTextContent("Harbourlight Retreat");
+  });
+
+  it("reads the score as a sentence", () => {
+    renderCard();
+
+    expect(screen.getByText("Rated 4.8 out of 5, Superb, 248 reviews")).toBeInTheDocument();
+    expect(screen.getByText("Superb · 248 reviews")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("leaves the label out of the score below 3.0", () => {
+    renderCard({ reviewScore: 2.9, reviewLabel: null, reviewCount: 1 });
+
+    expect(screen.getByText("Rated 2.9 out of 5, 1 review")).toBeInTheDocument();
+  });
+
+  it("lists up to 3 Facilities", () => {
+    renderCard();
+
+    const facilities = within(screen.getByRole("list", { name: "Facilities" }));
+    expect(facilities.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
+      "Swimming pool",
+      "Spa",
+      "Restaurant",
+    ]);
+  });
+
+  it("shows Non-refundable or Free cancellation", () => {
+    renderCard();
+    expect(screen.getByText("Non-refundable")).toBeInTheDocument();
+
+    renderCard({
+      cancellation: { policy: "free_until_48_hours_before_check_in", label: "Free cancellation" },
+    });
+    expect(screen.getByText("Free cancellation")).toBeInTheDocument();
+  });
+
+  it("shows the stay price and the nightly price, each with a spoken name", () => {
+    renderCard();
+
+    expect(screen.getByText("2 nights, 2 adults: from")).toBeInTheDocument();
+    expect(screen.getByText("R 4 900")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByText("4 900 rand")).toHaveClass("sr-only");
+    expect(screen.getByText("R 2 450")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByText("2 450 rand")).toHaveClass("sr-only");
+    expect(screen.getByText("R 2 450").parentElement).toHaveTextContent(/a night$/);
+  });
+
+  it("uses the singular for 1 night and 1 adult", () => {
+    renderCard({ nights: 1, adults: 1 });
+
+    expect(screen.getByText("1 night, 1 adult: from")).toBeInTheDocument();
+  });
+
+  it("shows a placeholder with the name when the Hotel has no photo", () => {
+    renderCard({ firstImage: null });
+
+    expect(screen.getByRole("img", { name: "Harbourlight Retreat" })).toBeInTheDocument();
+  });
+});
+
+describe("ListingCardSkeleton", () => {
+  it("is hidden from assistive technology", () => {
+    const { container } = render(<ListingCardSkeleton />);
+
+    expect(container.firstElementChild).toHaveAttribute("aria-hidden", "true");
+  });
+});

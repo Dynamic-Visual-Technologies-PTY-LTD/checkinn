@@ -14,6 +14,8 @@ type RemoteImageProps = {
   className?: string;
   /** Hotel or City name shown centred on the placeholder (DESIGN.md). */
   label?: string;
+  /** `cover` fills the box and crops; `contain` shows the whole photo. */
+  fit?: "cover" | "contain";
 };
 
 // Wikimedia's Special:FilePath serves the full original (one City photo is
@@ -42,7 +44,13 @@ export function sizedPhotoUrl(src: string): string {
  * Renders a seed photo, and swaps to the Night Blue image placeholder when
  * the photo fails to load (AD-14, FR-11).
  */
-export function RemoteImage({ src, alt, className = "", label }: RemoteImageProps) {
+export function RemoteImage({
+  src,
+  alt,
+  className = "",
+  label,
+  fit = "cover",
+}: RemoteImageProps) {
   const [failed, setFailed] = useState(false);
   const ref = useRef<HTMLImageElement>(null);
 
@@ -75,7 +83,7 @@ export function RemoteImage({ src, alt, className = "", label }: RemoteImageProp
       loading="lazy"
       decoding="async"
       onError={() => setFailed(true)}
-      className={`rounded-md object-cover ${className}`}
+      className={`rounded-md ${fit === "contain" ? "object-contain" : "object-cover"} ${className}`}
     />
   );
 }

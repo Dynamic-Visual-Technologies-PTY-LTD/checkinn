@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { sizedPhotoUrl } from "@/components/remote-image";
 import type { CityTile } from "@/domain/types";
 import { CityTiles, CityTilesSkeleton } from "./city-tiles";
+import { SearchStateProvider } from "./search-state";
 
 const tiles: CityTile[] = [
   {
@@ -28,15 +29,36 @@ const tiles: CityTile[] = [
 ];
 
 describe("CityTiles", () => {
-  it("links each tile to a search for its City, named with the count", () => {
+  it("links each tile to a search for its City with the current Stay and Party", () => {
+    render(
+      <SearchStateProvider
+        initialStay={{ checkIn: "2026-11-13", checkOut: "2026-11-15" }}
+        initialParty={{ adults: 2, children: 3, rooms: 2 }}
+      >
+        <CityTiles tiles={tiles} />
+      </SearchStateProvider>,
+    );
+
+    expect(
+      screen.getByRole("link", { name: "Cape Town, 2 hotels" }),
+    ).toHaveAttribute(
+      "href",
+      "/search?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=3&rooms=2",
+    );
+    expect(
+      screen.getByRole("link", { name: "Gqeberha, 1 hotel" }),
+    ).toHaveAttribute(
+      "href",
+      "/search?q=Gqeberha&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=3&rooms=2",
+    );
+  });
+
+  it("links with the default Party and no dates outside a search", () => {
     render(<CityTiles tiles={tiles} />);
 
     expect(
       screen.getByRole("link", { name: "Cape Town, 2 hotels" }),
-    ).toHaveAttribute("href", "/search?q=Cape+Town");
-    expect(
-      screen.getByRole("link", { name: "Gqeberha, 1 hotel" }),
-    ).toHaveAttribute("href", "/search?q=Gqeberha");
+    ).toHaveAttribute("href", "/search?q=Cape+Town&adults=2&children=0&rooms=1");
   });
 
   it("shows the City name, count and photo in the tile", () => {

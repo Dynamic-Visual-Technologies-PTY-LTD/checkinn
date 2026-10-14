@@ -8,6 +8,13 @@
       "when": 1791876100084,
       "tag": "0000_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791891206724,
+      "tag": "0001_bookings",
+      "breakpoints": true
     }
   ]
 }

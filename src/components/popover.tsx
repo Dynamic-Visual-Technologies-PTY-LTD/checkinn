@@ -23,6 +23,11 @@ type PopoverProps = {
   returnFocusRef: RefObject<HTMLElement | null>;
   children: ReactNode;
   id?: string;
+  /**
+   * Horizontal placement classes under the anchor, so a wide panel can stay
+   * inside the viewport. Defaults to the anchor's start edge.
+   */
+  placement?: string;
 };
 
 /**
@@ -38,6 +43,7 @@ export function Popover({
   returnFocusRef,
   children,
   id,
+  placement = "left-0",
 }: PopoverProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const close = useEffectEvent(onClose);
@@ -94,7 +100,7 @@ export function Popover({
       aria-label={label}
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className={`absolute top-full left-0 z-50 mt-space-sm rounded-md border border-primary bg-neutral p-space-lg text-on-surface ${overlayEnter}`}
+      className={`absolute top-full ${placement} z-50 mt-space-sm rounded-md border border-primary bg-neutral p-space-lg text-on-surface ${overlayEnter}`}
     >
       {children}
     </div>

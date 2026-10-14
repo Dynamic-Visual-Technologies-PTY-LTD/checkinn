@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
 import { loadSeed } from "@/db/seed";
 import { createTestDb } from "@/db/test-db";
-import { countHotels, listCityTiles } from "./catalog.repo";
+import { countHotels, listCityNames, listCityTiles } from "./catalog.repo";
 
 let db: Db;
 
@@ -46,5 +46,14 @@ describe("listCityTiles", () => {
         sourceUrl: seedCity.image.sourceUrl,
       },
     });
+  });
+});
+
+describe("listCityNames", () => {
+  it("lists each City's name and seed aliases in seed order", () => {
+    const seed = loadSeed();
+    expect(listCityNames(db)).toEqual(
+      seed.cities.map((city) => ({ name: city.name, aliases: city.aliases })),
+    );
   });
 });

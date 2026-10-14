@@ -1,5 +1,9 @@
 /* Shared Tailwind classes for the buttons overlays use (DESIGN.md Components). */
 
+/** Primary button: Deep Blue fill, Gold with Midnight text on hover. One per screen. */
+export const primaryButton =
+  "min-h-14 rounded-lg bg-primary-strong px-space-lg text-label-lg text-on-primary uppercase hover:bg-tertiary hover:text-on-tertiary";
+
 /** Secondary button: Midnight fill, 2px Brand Blue border, uppercase label. */
 export const secondaryButton =
   "min-h-14 rounded-lg border-2 border-primary bg-neutral px-space-lg text-label-lg text-on-surface uppercase hover:bg-primary-strong hover:text-on-primary";

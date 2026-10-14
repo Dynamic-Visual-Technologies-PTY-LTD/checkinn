@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   addDays,
   addMonths,
+  compactStayLabel,
   dayLabel,
   endOfMonth,
   endOfWeek,
@@ -131,5 +132,20 @@ describe("isUnavailable", () => {
     const range = { checkIn: "2026-11-13", checkOut: null };
     expect(isUnavailable("2026-12-13", today, range)).toBe(false);
     expect(isUnavailable("2026-12-14", today, range)).toBe(true);
+  });
+});
+
+describe("compactStayLabel", () => {
+  it("joins days in one month with an en dash", () => {
+    expect(compactStayLabel({ checkIn: "2026-11-13", checkOut: "2026-11-15" })).toBe("13–15 Nov");
+  });
+
+  it("names both months across a month or a year", () => {
+    expect(compactStayLabel({ checkIn: "2026-11-30", checkOut: "2026-12-02" })).toBe(
+      "30 Nov – 2 Dec",
+    );
+    expect(compactStayLabel({ checkIn: "2026-12-31", checkOut: "2027-01-02" })).toBe(
+      "31 Dec – 2 Jan",
+    );
   });
 });

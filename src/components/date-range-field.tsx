@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { secondaryButton } from "@/components/button-styles";
 import { Dialog } from "@/components/dialog";
 import { Icon } from "@/components/icons/icons";
@@ -21,6 +21,12 @@ type DateRangeFieldProps = {
   onOpenChange?: (open: boolean) => void;
   /** The visible field label, which also names the popover. */
   label?: string;
+  /** The trigger, so a form can move focus to an invalid field. */
+  triggerRef?: RefObject<HTMLButtonElement | null>;
+  /** Id of the error message under the field, which describes the trigger. */
+  errorId?: string;
+  /** Popover placement classes (see `Popover`). */
+  popoverPlacement?: string;
 };
 
 function toRange(stay: Stay | null): DateRange {
@@ -38,13 +44,17 @@ export function DateRangeField({
   open: openProp,
   onOpenChange,
   label = "Dates",
+  triggerRef: triggerRefProp,
+  errorId,
+  popoverPlacement,
 }: DateRangeFieldProps) {
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
   const [draft, setDraft] = useState<DateRange>(() => toRange(value));
   const [wasOpen, setWasOpen] = useState(open);
   const anchorRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const ownTriggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = triggerRefProp ?? ownTriggerRef;
   const panelId = useId();
   const desktop = useIsDesktop();
 
@@ -96,6 +106,7 @@ export function DateRangeField({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
+        aria-describedby={errorId}
         onClick={() => (open ? close() : setOpen(true))}
         onKeyDown={onTriggerKeyDown}
         className="relative flex min-h-11 w-full items-center gap-space-sm text-left"
@@ -118,6 +129,7 @@ export function DateRangeField({
           label={label}
           anchorRef={anchorRef}
           returnFocusRef={triggerRef}
+          placement={popoverPlacement}
         >
           <RangeCalendar
             today={today}

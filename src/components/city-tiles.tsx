@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { RemoteImage } from "@/components/remote-image";
+import { useSearchState } from "@/components/search-state";
+import { DEFAULT_PARTY, searchHref } from "@/domain/criteria";
 import type { CityTile } from "@/domain/types";
 
 const TILE_GRID = "grid grid-cols-1 gap-space-md md:grid-cols-2 lg:grid-cols-3";
@@ -8,8 +12,14 @@ function hotelCountLabel(count: number): string {
   return `${count} ${count === 1 ? "hotel" : "hotels"}`;
 }
 
-/** The City tiles on Home (DESIGN.md City tile, FR-27). */
+/**
+ * The City tiles on Home (DESIGN.md City tile, FR-27). Each links to a search
+ * for its City with the search bar's current Stay and Party.
+ */
 export function CityTiles({ tiles }: { tiles: CityTile[] }) {
+  const shared = useSearchState();
+  const stay = shared?.stay ?? null;
+  const party = shared?.party ?? DEFAULT_PARTY;
   return (
     <ul className={TILE_GRID}>
       {tiles.map((tile) => {
@@ -17,9 +27,7 @@ export function CityTiles({ tiles }: { tiles: CityTile[] }) {
         return (
           <li key={tile.id}>
             <Link
-              href={`/search?${new URLSearchParams({ q: tile.name })}`}
-              // No prefetch until /search exists (a later story builds it).
-              prefetch={false}
+              href={searchHref({ q: tile.name, stay, party })}
               aria-label={`${tile.name}, ${count}`}
               className="group relative block h-[220px] overflow-hidden rounded-md bg-primary-subtle"
             >

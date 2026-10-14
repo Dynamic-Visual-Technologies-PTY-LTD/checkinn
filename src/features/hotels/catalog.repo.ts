@@ -32,6 +32,15 @@ export function listCityTiles(db: Db): CityTile[] {
   }));
 }
 
+/** Every City's name and aliases, in seed order. */
+export function listCityNames(db: Db): { name: string; aliases: string[] }[] {
+  return db
+    .select({ name: cities.name, aliases: cities.aliases })
+    .from(cities)
+    .orderBy(asc(cities.sortOrder))
+    .all();
+}
+
 /** The number of Hotels in the catalog. */
 export function countHotels(db: Db): number {
   return db.select({ value: count() }).from(hotels).get()?.value ?? 0;
