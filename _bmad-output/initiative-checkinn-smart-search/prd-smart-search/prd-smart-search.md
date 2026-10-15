@@ -1,6 +1,6 @@
 ---
 title: CheckInn Smart Search PRD
-status: draft
+status: final
 created: 2026-10-15
 updated: 2026-10-15
 ---
@@ -48,7 +48,7 @@ All examples below were checked against the seed data (`data/seed/hotel-booking-
 
 - **UJ-1. Thandi finds a home for the family and the dog.**
   Thandi is planning a long weekend with her partner, two children and the family dog. On her phone she types *"pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night"* above the usual Search bar and submits.
-  - **What CheckInn understood:** the Search bar fills in Stellenbosch, the coming Friday to Sunday, 4 adults and 1 Room. Two chips appear under it: "Pets allowed" and "Max R 2 000 per night".
+  - **What CheckInn understood:** the Search bar fills in Stellenbosch, next weekend's Friday to Sunday, 4 adults and 1 Room. Two chips appear under it: "Max R 2 000 per night" and "Pets allowed".
   - **The result:** only Winelands Family Lodge allows pets, so it is the only result. Its card shows the Family Room (sleeps 4, R 2 000 a night) and the line *"Pets allowed, a children's play area and family rooms that sleep 4."*
   - **The booking:** she opens it, finds the Family Room already selected, and reserves.
   - **Edge case:** "for 4" with no split is read as 4 adults. Thandi changes the Party to 2 adults and 2 children in the Search bar. The results update without her retyping the Query.
@@ -150,9 +150,9 @@ The system extracts Destination, Stay, Party, Rooms, Max price and Policy criter
 **Consequences (testable):**
 - **The UJ-1 Query** (*"pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night"*) sets:
   - Destination "Stellenbosch"
-  - the coming Friday-to-Sunday Stay
+  - next weekend's Friday-to-Sunday Stay (Fri 23 to Sun 25 Oct 2026 when today is Thu 15 Oct)
   - 4 adults, 0 children, 1 Room
-  - chips "Pets allowed" and "Max R 2 000 per night"
+  - chips "Max R 2 000 per night" and "Pets allowed", in that order
 - **Destination:**
   - Destination is MVP Destination text, matched exactly as MVP FR-3 does: against City name, aliases and province, and Hotel area and name. "Gauteng", "Sandton" and "Winelands" are all valid Destinations.
   - **New, not MVP behaviour:** Query interpretation also maps common nicknames onto a seed City and puts the City's name in the Search bar. "Joburg" and "Jozi" become Johannesburg, "PE" becomes Gqeberha, "Cape" becomes Cape Town, and "Durbs" becomes Durban.
@@ -373,7 +373,7 @@ The presenter or a developer can run the evals with one command and get a scored
   - Each metric in §11 is given per Golden query and in total, with held-out Golden queries reported separately.
   - The report records the model deployments, the weights and the fixed "today" it ran with.
 - **Where it goes:** the report goes to a gitignored folder, with a one-line result per Golden query in the terminal.
-- **Candidate comparison:** the report scores all three Ranking blend candidates side by side on SM-1 and SM-C2, so the workshop can choose with evidence. Only the chosen Ranking blend counts towards the exit code. `[ASSUMPTION: inferred from the user's decision, confirm]`
+- **Candidate comparison:** the report scores all three Ranking blend candidates side by side on SM-1 and SM-C2, so the workshop can choose with evidence. Only the chosen Ranking blend counts towards the exit code (user decision).
 - **Exit code:** the command exits non-zero when a §11 target fails.
 - **Key and CI:** a run needs the Provider key and is not part of `npm test` or CI.
 - **Without a key:**

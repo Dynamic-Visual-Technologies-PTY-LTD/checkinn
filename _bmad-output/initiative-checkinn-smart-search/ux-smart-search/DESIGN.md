@@ -21,14 +21,14 @@ components:
     textColor: "{colors.on-surface}"
     typography: "{typography.body-md}"
     rounded: "{rounded.md}"
-    padding: "{spacing.sm}"
+    padding: "{spacing.xs}"
     height: 56px
   smart-search-box-mobile:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.on-surface}"
     typography: "{typography.input-mobile}"
     rounded: "{rounded.md}"
-    padding: "{spacing.sm}"
+    padding: "{spacing.xs}"
     height: 56px
   smart-search-box-border-start:
     backgroundColor: "{colors.primary}"
@@ -51,9 +51,6 @@ components:
   spinner:
     textColor: "{colors.on-surface}"
     size: 20px
-  home-hero-second-line:
-    textColor: "{colors.on-surface}"
-    typography: "{typography.headline-display}"
   criteria-chip:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.on-surface}"
@@ -93,22 +90,24 @@ components:
 
 # CheckInn Smart Search: Design delta
 
+Workshop defaults accepted by the user on 2026-10-15; tune freely during the build.
+
 ## Brand & Style
 
 This file extends the root `DESIGN.md` (`../../../DESIGN.md`). It does not restate it. Every token, rule and component in the root still applies, and **the root wins for anything this file does not state**. References such as `{colors.primary}` and `{typography.label-md}` resolve against the root tokens. Linted on its own, this file reports those references as broken; merged into the root frontmatter, it lints with no errors or warnings.
 
-Smart search should look like CheckInn, not like a bolted-on AI product. It keeps the flat blue-on-dark look, the Poppins type and the bordered surfaces. The one new visual signal is the blue-to-cyan gradient the brand already owns, moved from the Home headline onto the border of the Smart search box. There is no sparkle, glow, shimmer, robot or "AI" badge anywhere (user decision).
+Smart search should look like CheckInn, not like a bolted-on AI product. It keeps the flat blue-on-dark look, the Poppins type and the bordered surfaces. The one new visual signal is the blue-to-cyan gradient the brand already owns, used on the border of the Smart search box. There is no sparkle, glow, shimmer, robot or "AI" badge anywhere (user decision).
 
-When no Provider is configured, the Smart search box is not rendered and every screen looks exactly as the root `DESIGN.md` describes, including the Home hero gradient.
+When no Provider is configured, the Smart search box is not rendered and every screen looks exactly as the root `DESIGN.md` describes.
 
 ## Colors
 
 No new colors. The changes are in where the existing ones are used.
 
 - **The gradient moves to the Smart search box.** The box has a 2px border in the root gradient `linear-gradient(to right, #007FBA, #00D2D6)`, from `{colors.primary}` (`smart-search-box-border-start`) to `{colors.secondary}` (`smart-search-box-border-end`) (user decision). The linter has no gradient value, so the two stops are tokenised as two border components and the prose is the rule.
-- **One gradient per screen still holds.** On Home, when the Smart search box is shown, the hero headline's second line drops its gradient and is set in white `{colors.on-surface}` (`home-hero-second-line`) (user decision). Search results has no other gradient, so the box border is its one gradient.
+- **One gradient per screen still holds.** The shipped Home hero ("Find your stay." in Brand Blue, `src/app/page.tsx`) has no gradient line, even though the root `DESIGN.md` allows one, so the box border is Home's one gradient. If a gradient second line is ever added to the hero, it is set in white `{colors.on-surface}` whenever the Smart search box shows (user decision). Search results has no other gradient, so the box border is its one gradient.
 - **Contrast of the border.** Both stops pass the 3:1 non-text rule against Midnight: Brand Blue at 4.43:1, Cyan well above it. The border is legible along its whole length.
-- **Forced colours.** Gradients disappear in Windows forced-colours mode, so the box falls back to a solid 2px system border there. [ASSUMPTION: forced-colours fallback to a solid border]
+- **Forced colours.** Gradients disappear in Windows forced-colours mode, so the box falls back to a solid 2px system border there.
 - **Muted text for supporting Smart search copy.** The Match reason, the Best-fit room line, the counter and the status text use `{colors.on-surface-muted}`, so they never compete with the hotel name or price.
 - **No Gold at rest.** Gold `{colors.tertiary}` stays hover and focus only, including on Criteria chips.
 
@@ -117,26 +116,26 @@ No new colors. The changes are in where the existing ones are used.
 No new type tokens. Smart search uses existing roles:
 
 - The Smart search box text is `{typography.body-md}` on desktop and `{typography.input-mobile}` on phone, so the browser does not zoom on focus.
-- The label "Describe your stay" is `{typography.body-sm}` in white, like the Search bar field labels but outside the box. [ASSUMPTION: label sits above the box, in white body-sm]
+- The label "Describe your stay" is `{typography.body-sm}` in white, like the Search bar field labels but outside the box.
 - Criteria chips use `{typography.label-md}`, uppercase through CSS like every chip. The source string stays sentence case: "Max R 2 000 per night".
 - The "Why it matches" label is `{typography.label-sm}`, uppercase through CSS. The Match reason under it is `{typography.body-md}`.
-- The Best-fit room line and the score breakdown are `{typography.body-sm}`. The breakdown is not monospace. [ASSUMPTION: breakdown in body-sm, no monospace]
+- The Best-fit room line and the score breakdown are `{typography.body-sm}`. The breakdown is not monospace.
 
 ## Layout & Spacing
 
 Root scale and breakpoints unchanged. Smart search adds these placements:
 
-- **Home.** Inside the hero: headline, lead, then the label and Smart search box, then the Search bar, both across the full container width. `{spacing.md}` (15px) between the box and the Search bar. [ASSUMPTION: box sits inside the hero, directly above the Search bar]
-- **Search results, desktop and tablet.** Top to bottom: Smart search box, Search bar, the Criteria chip row, any notices, then the result-count headline and Listing cards. `{spacing.md}` between box, bar and chip row; `{spacing.sm}` (8px) between chips; `{spacing.lg}` (25px) above the headline. [ASSUMPTION: chip row under the Search bar, notices between chips and headline]
-- **Search results, phone.** The Smart search box is always visible, full width, at the top. The collapsed Search bar summary line sits under it, then the chips, which wrap onto more lines rather than scrolling sideways (user decision for the box, summary and chips order; [ASSUMPTION: chips wrap, no horizontal scroll]).
+- **Home.** Inside the hero: headline, lead, then the label and Smart search box, then the Search bar, both across the full container width. `{spacing.md}` (15px) between the box and the Search bar.
+- **Search results, desktop and tablet.** Top to bottom: Smart search box, Search bar, the Criteria chip row, any notices, then the result-count headline and Listing cards. `{spacing.md}` between box, bar and chip row; `{spacing.sm}` (8px) between chips; `{spacing.lg}` (25px) above the headline.
+- **Search results, phone.** The Smart search box is always visible, full width, at the top. The collapsed Search bar summary line sits under it, then the chips, which wrap onto more lines rather than scrolling sideways (user decision for the box, summary and chips order).
 - **Box height.** A minimum of 56px with one line, growing to two lines of text before it scrolls inside itself. Heights are minimums, as in the root.
-- **Listing card additions.** The Match reason block sits directly under the hotel name (user decision). The Best-fit room line sits in the price block, above the stay summary and total. The score breakdown, when on, sits at the bottom of the card across its full width. [ASSUMPTION: Best-fit room line placement at the top of the price block]
+- **Listing card additions.** The Match reason block sits directly under the hotel name (user decision). The Best-fit room line sits in the price block, above the stay summary and total. The score breakdown, when on, sits at the bottom of the card across its full width.
 
 ## Shapes
 
 - The Smart search box uses `{rounded.md}` (12px), matching the Search bar under it, so the two read as one search area.
 - Criteria chips are `{rounded.full}` pills like every chip.
-- The Match reason skeleton is a single line at `{rounded.sm}`, because a 12px radius on a 24px line reads as a pill. [ASSUMPTION: 4px radius on the one-line skeleton]
+- The Match reason skeleton is a single line at `{rounded.sm}`, because a 12px radius on a 24px line reads as a pill.
 - The score breakdown table uses `{rounded.sm}`, which marks it as a small tool rather than guest content.
 
 ## Components
@@ -149,15 +148,15 @@ Components not listed here are unchanged from the root. Behaviour for each is in
   - a clear (×) `icon-button`, shown only when there is text
   - the submit, an `icon-button` (44px circle, 2px Brand Blue border, white search icon). It is not a second primary button; the Search bar's Search stays the one primary on the screen.
 
-  The visible label "Describe your stay" sits above the box. The gradient is on the border only, never on the label or the text (user decision for the gradient border; [ASSUMPTION: anatomy of icon, clear, icon-button submit]). Focus: the root Gold `focus-ring` with its 2px offset goes around the whole box while the text area has focus, outside the gradient. Hover: no change; the gradient border does not turn Gold. [ASSUMPTION: whole-box focus ring, no hover change]
-- **Character counter.** "250 / 300" in `smart-search-counter`, right-aligned under the box. It appears only from 250 characters. [ASSUMPTION: counter shown from 250]
-- **Submitting.** The text turns read-only and keeps its colour. The submit `icon-button` swaps its search icon for a 20px `spinner`, a new icon in the root's line style (1.5px stroke, rounded caps, a three-quarter circle). "Reading your search…" shows under the box in `smart-search-status`. Under reduced motion the spinner does not rotate. The gradient border never animates. [ASSUMPTION: spinner icon and status line]
+  The visible label "Describe your stay" sits above the box. The gradient is on the border only, never on the label or the text (user decision for the gradient border). Focus: the root Gold `focus-ring` with its 2px offset goes around the whole box while the text area has focus, outside the gradient. Hover: no change; the gradient border does not turn Gold.
+- **Character counter.** "250 / 300" in `smart-search-counter`, right-aligned under the box. It appears only from 250 characters.
+- **Submitting.** The text turns read-only and keeps its colour. The submit `icon-button` swaps its search icon for a 20px `spinner`, a new icon in the root's line style (1.5px stroke, rounded caps, a three-quarter circle). "Reading your search…" shows under the box in `smart-search-status`. Under reduced motion the spinner does not rotate. The gradient border never animates.
 - **Criteria chip.** A new removable chip, distinct from the display-only Facility `chip` (user decision). A button styled as a pill: `{colors.surface}` fill, 1px Brand Blue border (`criteria-chip-border`), uppercase `label-md` text, then a 20px close (×) icon. Minimum height 44px, 15px horizontal padding. On hover the border turns Gold (`criteria-chip-border-hover`), like an icon button. Copy for price is "Max R 2 000 per night" with non-breaking spaces, so the amount never wraps (user decision).
-- **Notices.** Smart search uses the root `notice` unchanged: Midnight card, 1px Brand Blue border, info icon, not dismissible. At most two stack, `{spacing.sm}` apart. [ASSUMPTION: stack of at most two]
+- **Notices.** Smart search uses the root `notice` unchanged: Midnight card, 1px Brand Blue border, info icon, not dismissible. At most two stack, `{spacing.sm}` apart. A weak match is not a notice; the Search results heading itself says it, in the root heading style.
 - **Match reason.** Under the hotel name on a Listing card: the label "Why it matches" in `match-reason-label`, then one line in `match-reason`. No icon and no AI label (user decision). While it loads, a single `match-reason-skeleton` line holds its place under the label, using the root skeleton pulse, off under reduced motion (user decision).
-- **Best-fit room line.** "Family Room · 1 room · sleeps 4" in `best-fit-room`, at the top of the price block. Under Smart search the price below it is the Best-fit room's price. [ASSUMPTION: line copy and position]
-- **Best fit chip (Hotel page).** The pre-selected row in the room table shows the root display-only `chip` reading "Best fit for your search" beside the Room type name. No new token. [ASSUMPTION: reuse display chip on the room row]
-- **Score breakdown.** Shown only with the server debug flag. A small table at the bottom of each Listing card: `score-breakdown` fill and text, a 1px Outline border (`score-breakdown-border`), `{rounded.sm}` corners, rows divided by the root `divider`. Outline rather than Brand Blue keeps it visually apart from guest content. [ASSUMPTION: bordered table in Outline, body-sm]
+- **Best-fit room line.** "Family Room · 1 room · sleeps 4" in `best-fit-room`, at the top of the price block. Under Smart search the price below it is the Best-fit room's price.
+- **Best fit chip (Hotel page).** The pre-selected row in the room table shows the root display-only `chip` reading "Best fit for your search" beside the Room type name. It stays on that row if the Guest changes the selection (user decision). No new token.
+- **Score breakdown.** Shown only with the server debug flag. A small table at the bottom of each Listing card: `score-breakdown` fill and text, a 1px Outline border (`score-breakdown-border`), `{rounded.sm}` corners, rows divided by the root `divider`. Outline rather than Brand Blue keeps it visually apart from guest content.
 
 ## Do's and Don'ts
 
