@@ -42,7 +42,7 @@ The bet is that a Guest who can say what they want, see that they were understoo
 ### 2.3 Key User Journeys
 
 - **UJ-1. Thandi finds a home for the family and the dog.**
-  Thandi, a mother of two planning a long weekend with the family dog, opens CheckInn on her phone. Above the usual Search bar she types *"pet friendly family place in Stellenbosch for 4 next weekend under R2000 a night"* and submits. The Search bar fills itself in: Stellenbosch, Friday to Sunday, 2 adults, 2 children, max R2,000 per night. The results are in **Best match** order. The top Listing card is Winelands Family Lodge, with the Family Room shown and the line *"Pets allowed, children's play area, family rooms that sleep 4"*. She opens it and reserves. **Edge case:** Thandi meant 2 adults and 2 children, but "for 4" was read as 4 adults. She changes it in the Search bar and the results update without retyping her query.
+  Thandi, a mother of two planning a long weekend with the family dog, opens CheckInn on her phone. Above the usual Search bar she types *"pet friendly family place in Stellenbosch for 4 next weekend under R2000 a night"* and submits. The Search bar fills itself in with Stellenbosch, Friday to Sunday, 2 adults and 2 children, and a "Max R2,000 / night" chip appears under it. The results are in **Best match** order. The top Listing card is Winelands Family Lodge, with the Family Room shown and the line *"Pets allowed, children's play area, family rooms that sleep 4"*. She opens it and reserves. **Edge case:** Thandi meant 2 adults and 2 children, but "for 4" was read as 4 adults. She changes it in the Search bar and the results update without retyping her query.
 
 - **UJ-2. Sipho trades reviews for value.**
   Sipho, a consultant booking his own work trips, types *"quiet business hotel in Joburg with a gym and meeting rooms"* with dates already in the Search bar. **Best match** puts the strongest fit first. He switches to **Best value** and a cheaper Hotel that still has a gym moves up. He switches to **Top rated** to compare, then books the Best value pick. **Edge case:** neither Johannesburg Hotel is described as quiet. The Match reasons mention the gym and meeting rooms and do not claim "quiet".
@@ -57,9 +57,10 @@ New terms only. MVP terms keep their MVP meaning.
 - **Smart search**: the feature as a whole. The Smart search box plus Query interpretation, Retrieval, Smart ranking and Match reasons.
 - **Smart search box**: the single free-text field above the Search bar where the Guest types a Query.
 - **Query**: the free text the Guest submits in the Smart search box.
-- **Search bar**: the MVP Search bar (Destination, Stay, Party). In Smart search it acts as the filter. Smart search adds one field to it: Max price.
+- **Search bar**: the MVP Search bar (Destination, Stay, Party), unchanged. In Smart search it acts as the filter.
 - **Hard criteria**: the parts of a Query that are rules, not preferences: Destination, Stay, Party and Max price. Hard criteria are never broken in Search results.
-- **Max price**: an upper limit on Nightly price, in ZAR. A new Hard criterion. `[ASSUMPTION: shown as a field in the Search bar]`
+- **Max price**: an upper limit on Nightly price, in ZAR. A new Hard criterion, shown as a Max price chip.
+- **Max price chip**: a small removable chip under the Search bar showing the Max price (e.g. "Max R2,000 / night"). Removing it clears Max price.
 - **Preferences**: everything in a Query that is not a Hard criterion, e.g. "quiet", "pool", "near the beach", "romantic". Preferences rank Hotels and do not exclude them.
 - **Query interpretation**: turning a Query into Hard criteria (pre-filled into the Search bar) and Preferences.
 - **Search knowledge**: everything Smart search may know about a Hotel: its seed data plus its Enrichment.
@@ -111,10 +112,11 @@ A Guest can share, reload or go back to a Smart search and get the same Search r
 
 #### FR-4: Extract Hard criteria into the Search bar
 
-The system extracts Destination, Stay, Party and Max price from a Query and pre-fills the Search bar with them. Realizes UJ-1.
+The system extracts Destination, Stay, Party and Max price from a Query. It pre-fills the Search bar with the first three and shows Max price as a Max price chip. Realizes UJ-1.
 
 **Consequences (testable):**
-- *"Stellenbosch for 4 next weekend under R2000"* sets Destination Stellenbosch, a Friday-to-Sunday Stay for the coming weekend, Party of 4 Guests, and Max price R2,000.
+- *"Stellenbosch for 4 next weekend under R2000"* sets Destination Stellenbosch, a Friday-to-Sunday Stay for the coming weekend, and a Party of 4 Guests, and shows a "Max R2,000 / night" chip.
+- A place that is not one of the 6 Cities (e.g. "Kruger") leaves Destination empty and shows a short note, e.g. "We don't have hotels in Kruger, so we're showing all cities". The place's words still count as Preferences.
 - Relative dates ("this weekend", "next Friday", "for 3 nights from the 12th") resolve against today's date in the app's time zone.
 - A Hard criterion the Query does not mention keeps its current Search bar value, or its MVP default when there is none.
 - Values that can't be valid (a past date, a Stay longer than the MVP maximum, 0 Guests) are not applied. The Search bar keeps its previous value for that field.
@@ -125,10 +127,11 @@ The system extracts Destination, Stay, Party and Max price from a Query and pre-
 
 #### FR-5: Guest corrects the interpretation
 
-A Guest can change any pre-filled Hard criterion in the Search bar, and the Search results update while keeping the Query's Preferences. Realizes UJ-1 edge case.
+A Guest can change any pre-filled Hard criterion in the Search bar, or remove the Max price chip. The Search results update and keep the Query's Preferences. Realizes UJ-1 edge case.
 
 **Consequences (testable):**
 - Changing the Party from 4 adults to 2 adults and 2 children re-runs the search with the same Query, without retyping it.
+- Removing the Max price chip re-runs the search with no Max price.
 - Submitting a new Query replaces the previous Preferences and re-extracts Hard criteria.
 
 #### FR-6: Hard criteria are never broken
@@ -139,7 +142,7 @@ Every Hotel in Smart search results meets every Hard criterion.
 - No Hotel outside the Destination appears.
 - A Hotel appears only if a Room type is available for every Night of the Stay (MVP FR-5).
 - A Hotel appears only if it has a Room type whose Nightly price is at or below Max price, when Max price is set.
-- A Hotel appears only if it can sleep the Party. `[ASSUMPTION: unlike MVP FR-5, Smart search filters by Party, using Room type capacity × Rooms requested]`
+- A Hotel appears only if it can sleep the Party with the Rooms requested, using Room type capacity. Unlike MVP FR-5, Smart search filters by Party.
 - These checks are made by CheckInn against the catalog, never left to the Provider.
 
 ### 4.3 Search knowledge and Retrieval
@@ -225,7 +228,7 @@ Each Listing card shows the Room type that best fits the Query and sleeps the Pa
 - The Best-fit room is available for the Stay, sleeps the Party, and is within Max price when Max price is set.
 - When several Room types qualify, the one that best matches the Preferences is shown. Ties go to the lower Nightly price.
 - The card's prices are for the Best-fit room, using the MVP price rules (MVP FR-20).
-- Opening the Hotel page from the card keeps the search criteria (MVP behaviour). `[ASSUMPTION: the Best-fit room is not pre-selected on the Hotel page in v1]`
+- Opening the Hotel page from the card keeps the search criteria, and the Best-fit room is already selected in the room table, with enough Rooms for the Party. The Guest can change the selection before reserving. `[ASSUMPTION: Room quantity is the fewest Rooms of that Room type that sleep the Party]`
 
 #### FR-15: Match reason
 
@@ -272,10 +275,10 @@ A Match reason never claims something CheckInn does not know about the Hotel. Re
 ### 7.1 In Scope
 
 - The Smart search box, hidden without a Provider (FR-1 to FR-3).
-- Query interpretation into a visible, editable Search bar with a new Max price field (FR-4 to FR-6).
+- Query interpretation into a visible, editable Search bar plus a removable Max price chip (FR-4 to FR-6).
 - The Enrichment file and Retrieval over Search knowledge (FR-7 to FR-10).
 - Three Ranking modes with instant switching (FR-11 to FR-13).
-- Listing cards with the Best-fit room and a grounded Match reason (FR-14 to FR-16).
+- Listing cards with the Best-fit room, pre-selected on the Hotel page, and a grounded Match reason (FR-14 to FR-16).
 
 ### 7.2 Out of Scope for v1
 
@@ -304,24 +307,19 @@ This is a workshop build, so success is judged against a fixed set of test Queri
 ## 9. Open Questions
 
 1. Which Provider? Embeddings and text generation may come from different providers. This is an "ask first" change under AGENTS.md. Recommendation goes in the architecture.
-2. How should Max price appear in the Search bar on mobile without crowding it?
-3. When the Query names a place outside the 6 Cities (e.g. "Kruger"), should Smart search say so, or ignore the place and search all Cities?
-4. Should the Best-fit room be pre-selected on the Hotel page (FR-14)?
-5. Should Smart search apply to the Home page box only, or also re-rank a plain Search bar search when a Query is present?
+2. Should Smart search apply to the Home page box only, or also re-rank a plain Search bar search when a Query is present?
 
 ## 10. Assumptions Index
 
-- §3: Max price is shown as a new field in the Search bar.
 - FR-2: Provider availability is checked per page render. A mid-search Provider failure falls back to MVP-ordered results with a notice.
 - FR-3: Match reasons may be re-generated on reload with different wording.
 - FR-4: The Provider normalises City nicknames. Only Destination, Stay, Party and Max price are Hard criteria.
-- FR-6: Smart search filters by Party capacity, unlike MVP FR-5.
 - FR-7: Enrichment sizes (80–150-word description, 3–5 reviews, 2–4 highlights).
 - FR-9: Hotel embeddings are built ahead of time and rebuilt by `npm run db:reset`.
 - FR-10: The weak-match threshold is tuned against the golden Queries.
 - FR-11: Starting weights are 0.6 / 0.2 / 0.2, with the lead signal rotating by mode.
 - FR-13: Relevance for a given Query is deterministic or cached.
-- FR-14: The Best-fit room is not pre-selected on the Hotel page.
+- FR-14: The pre-selected Room quantity is the fewest Rooms of the Best-fit room that sleep the Party.
 - FR-15: Match reasons are at most about 120 characters and stream in after the results.
 - §5: Speed targets of 3 s for results and a further 3 s for Match reasons. A bounded number of Provider calls per Query.
 - §8: A golden set of about 10 Queries and its targets.
