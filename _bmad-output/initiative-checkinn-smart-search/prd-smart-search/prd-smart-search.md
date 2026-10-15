@@ -1,6 +1,6 @@
 ---
 title: CheckInn Smart Search PRD
-status: final
+status: draft
 created: 2026-10-15
 updated: 2026-10-15
 ---
@@ -48,17 +48,16 @@ All examples below were checked against the seed data (`data/seed/hotel-booking-
 
 - **UJ-1. Thandi finds a home for the family and the dog.**
   Thandi is planning a long weekend with her partner, two children and the family dog. On her phone she types *"pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night"* above the usual Search bar and submits.
-  - **What CheckInn understood:** the Search bar fills in Stellenbosch, the coming Friday to Sunday, 4 adults and 1 Room. Two chips appear under it: "Pets allowed" and "Max R2,000 / night".
-  - **The result:** only Winelands Family Lodge allows pets, so it is the only result. Its card shows the Family Room (sleeps 4, R2,000 a night) and the line *"Pets allowed, a children's play area and family rooms that sleep 4."*
+  - **What CheckInn understood:** the Search bar fills in Stellenbosch, the coming Friday to Sunday, 4 adults and 1 Room. Two chips appear under it: "Pets allowed" and "Max R 2 000 per night".
+  - **The result:** only Winelands Family Lodge allows pets, so it is the only result. Its card shows the Family Room (sleeps 4, R 2 000 a night) and the line *"Pets allowed, a children's play area and family rooms that sleep 4."*
   - **The booking:** she opens it, finds the Family Room already selected, and reserves.
   - **Edge case:** "for 4" with no split is read as 4 adults. Thandi changes the Party to 2 adults and 2 children in the Search bar. The results update without her retyping the Query.
 
-- **UJ-2. Sipho weighs fit against reviews.**
+- **UJ-2. Sipho finds a quiet place to work.**
   Sipho is a consultant booking his own work trips. He types *"quiet business hotel in Gauteng with a gym and meeting rooms"*, with dates already in the Search bar.
   - **The candidates:** Gauteng matches four Hotels, the same set the Search bar would return for "Gauteng".
-  - **Best match:** Jacaranda Garden Hotel (Pretoria) is first: *"Quiet workspaces, a gym and meeting rooms."* Goldleaf Business Hotel (Johannesburg) is second.
-  - **Top rated:** Goldleaf moves to the top, with a higher Review score of 4.6 against 4.4.
-  - **Best value:** Jacaranda is back on top, at R1,200 against R1,650 for Goldleaf.
+  - **The order:** Jacaranda Garden Hotel (Pretoria) is first: *"Quiet workspaces, a gym and meeting rooms."* Goldleaf Business Hotel (Johannesburg) is second, and the two Hotels without a gym follow.
+  - **Why the order is right:** under any of the three Ranking blend candidates (FR-11), Jacaranda fits best. Only the Top rated candidate would put Goldleaf first, with a Review score of 4.6 against 4.4.
   - **The booking:** he books Jacaranda.
   - **Edge case:** Goldleaf's Match reason mentions the gym and meeting rooms but does not claim "quiet", because nothing CheckInn knows about Goldleaf says it is quiet.
 
@@ -81,9 +80,9 @@ New terms only. MVP terms keep their MVP meaning.
   - Policy criteria
 
   No Hotel in Search results ever breaks a Hard criterion.
-- **Max price**: an upper limit on the Nightly price of the Best-fit room, in ZAR, inclusive. "Under R2000" and "up to R2000" both mean at or below R2,000.
+- **Max price**: an upper limit on the Nightly price of the Best-fit room, in ZAR, inclusive. "Under R2000" and "up to R2000" both mean at or below R 2 000.
 - **Policy criteria**: house-rule needs taken from a Query and matched against a Hotel's policies: *Pets allowed*, *Children allowed* and *Smoking allowed*.
-- **Criteria chip**: a small removable chip under the Search bar showing one Max price or Policy criterion, e.g. "Max R2,000 / night" or "Pets allowed". Removing it clears that criterion.
+- **Criteria chip**: a small removable chip under the Search bar showing one Max price or Policy criterion, e.g. "Max R 2 000 per night" or "Pets allowed". Removing it clears that criterion.
 - **Preferences**: everything in a Query that is not a Hard criterion, kept as short text, e.g. "quiet", "pool", "near the beach", "romantic". Preferences rank Hotels and never exclude them. Facilities such as pool or gym are Preferences.
 - **Search knowledge**: everything Smart search may know about a Hotel: its seed data plus its Enrichment.
 - **Enrichment**: extra fictional text per Hotel: a longer description, guest reviews and nearby highlights. It is held in a new committed file next to the seed file, and the seed file stays unchanged.
@@ -92,7 +91,8 @@ New terms only. MVP terms keep their MVP meaning.
 - **Relevance**: an *absolute* 0-to-1 score of how well a Hotel's Search knowledge matches the Preferences. It is comparable across Queries and is not rescaled within a result set. It is one of the three ranking signals.
 - **Strong-match threshold**: the absolute Relevance value at or above which a Hotel counts as a Strong match (FR-10).
 - **Strong match**: a Hotel whose Relevance is at or above the Strong-match threshold.
-- **Ranking mode**: one of three named blends of Relevance, Review score and Nightly price: **Best match** (default), **Best value** and **Top rated**.
+- **Ranking blend**: the single weighting of Relevance, Review score and Nightly price that orders Smart search results. Guests never choose it.
+- **Ranking blend candidate**: one of three blends considered for the Ranking blend: **Best match**, **Best value** and **Top rated**. The workshop chooses one, and only that one is built (user decision).
 - **Best-fit room**: the Room type, and the number of Rooms of it, shown on a Listing card. It is the Room type that meets every Hard criterion and best matches the Preferences.
 - **Match reason**: one short sentence on a Listing card saying why that Hotel matched. The Provider writes it only from that Hotel's Search knowledge.
 - **Provider**: the hosted AI service Smart search calls for Query interpretation, embeddings and Match reasons. It is Azure AI Foundry; models and deployment details are in `addendum.md`. It requires network access and an API key.
@@ -132,7 +132,7 @@ A Guest can reload, share or go back to a Smart search and see the same Search r
 - Submitting a Query runs Query interpretation once. CheckInn then moves to a Search results URL that holds the interpreted state:
   - the MVP search criteria (Destination, Stay, Party)
   - Rooms, Max price and Policy criteria
-  - the Preferences and the Ranking mode
+  - the Preferences
   - the original Query text, used only to show it in the box
 - Reloading, sharing or opening that URL never re-runs Query interpretation. The URL is the only source of truth, so the Guest's edits are never overwritten.
 - The MVP `q` parameter keeps its MVP meaning (Destination). Smart search adds its own parameters for the rest.
@@ -152,7 +152,7 @@ The system extracts Destination, Stay, Party, Rooms, Max price and Policy criter
   - Destination "Stellenbosch"
   - the coming Friday-to-Sunday Stay
   - 4 adults, 0 children, 1 Room
-  - chips "Pets allowed" and "Max R2,000 / night"
+  - chips "Pets allowed" and "Max R 2 000 per night"
 - **Destination:**
   - Destination is MVP Destination text, matched exactly as MVP FR-3 does: against City name, aliases and province, and Hotel area and name. "Gauteng", "Sandton" and "Winelands" are all valid Destinations.
   - **New, not MVP behaviour:** Query interpretation also maps common nicknames onto a seed City and puts the City's name in the Search bar. "Joburg" and "Jozi" become Johannesburg, "PE" becomes Gqeberha, "Cape" becomes Cape Town, and "Durbs" becomes Durban.
@@ -230,8 +230,8 @@ The system gives every candidate Hotel an absolute Relevance between 0 and 1 aga
 
 **Consequences (testable):**
 - **Meaning match:** *"cosy weekend retreat"* ranks highly the Hotels whose Search knowledge describes retreats or relaxed stays, even where "cosy" appears nowhere.
-- **Exact-word match:** a Query that names a Hotel ("Oak & Vine") puts that Hotel first in Best match.
-- **Place only:** a Query that is only a place ("Durban") gives the same Hotels as the MVP search for "Durban", in Best match order.
+- **Exact-word match:** a Query that names a Hotel ("Oak & Vine") gives that Hotel the highest Relevance of all candidates.
+- **Place only:** a Query that is only a place ("Durban") gives the same Hotels as the MVP search for "Durban", in Ranking blend order.
 - **Absolute score:** Relevance does not depend on how many candidates there are. With 1 or 2 candidates it is well defined, and the same Hotel and Preferences give the same Relevance whatever else is in the set.
 - **Prepared ahead:** Search knowledge is prepared ahead of time into the Prepared index.
   - `npm run db:reset` and a fresh clone load it and never call the Provider.
@@ -243,45 +243,46 @@ The system gives every candidate Hotel an absolute Relevance between 0 and 1 aga
 When no Hotel is a Strong match, the Guest is told so and still sees the closest Hotels. Realizes UJ-3.
 
 **Consequences (testable):**
-- If no candidate is a Strong match, the Search results heading says no strong matches were found and suggests rephrasing. The candidates are still listed in the current Ranking mode.
+- If no candidate is a Strong match, the Search results heading says no strong matches were found and suggests rephrasing. The candidates are still listed in Ranking blend order.
 - The Strong-match threshold is an absolute Relevance value. Its starting value is set so that the UJ-3 "ski chalet" Query has no Strong match and every Golden query with a correct answer does.
 - A Query with no Preferences, only Hard criteria, gives every Hotel equal Relevance. It shows no weak-match notice and no Match reasons, and ranking falls back to Review score and Nightly price.
 - If no Hotel meets the Hard criteria, the MVP no-results behaviour applies (MVP FR-8), naming the Hard criteria in force.
 
 ### 4.4 Smart ranking
 
-**Description:** Search results are ordered by a blend of three signals: Relevance, Review score and the Nightly price of the Best-fit room. The Guest picks one of three Ranking modes, and each mode uses all three signals with different weights. Switching modes reorders the same results. Realizes UJ-2.
+**Description:** Search results are ordered by one Ranking blend of three signals: Relevance, Review score and the Nightly price of the Best-fit room. There are three Ranking blend candidates. The workshop compares them with the eval report and builds only the one it chooses (user decision). Guests see one order and no sort control. Realizes UJ-2.
 
-#### FR-11: Three Ranking modes
+#### FR-11: One Ranking blend, chosen from three candidates
 
-A Guest can order Smart search results by Best match, Best value or Top rated. Realizes UJ-2.
+Smart search results are ordered by one Ranking blend, chosen in the workshop from Best match, Best value and Top rated. Realizes UJ-2.
 
 **Consequences (testable):**
-- **Mode weights:** starting weights, tuned in the workshop:
+- **Candidate weights:** starting weights, tuned in the workshop:
 
-  | Mode | Relevance | Review score | Price |
+  | Candidate | Relevance | Review score | Price |
   |---|---|---|---|
-  | **Best match** (default) | 0.7 | 0.15 | 0.15 |
+  | **Best match** | 0.7 | 0.15 | 0.15 |
   | **Best value** | 0.15 | 0.15 | 0.7 |
   | **Top rated** | 0.15 | 0.7 | 0.15 |
 
 - **Signals:** Review score and price are put on a fixed 0-to-1 scale (not rescaled within the result set):
   - Review score: 3.0 maps to 0, and 5.0 maps to 1.
   - Price: the Best-fit room's Nightly price, where R500 maps to 1 and R3,500 maps to 0.
-- **All three count:** every mode includes all three signals, and no mode is a plain sort on one field.
-- **UJ-2 check:** with the seed and the starting weights, UJ-2 holds whenever Jacaranda's Relevance lead over Goldleaf is between 0.01 and 0.2:
+- **All three count:** every candidate includes all three signals, and none is a plain sort on one field.
+- **UJ-2 check:** with the seed and the starting weights, whenever Jacaranda's Relevance lead over Goldleaf is between 0.01 and 0.2:
   - Best match ranks Jacaranda above Goldleaf.
-  - Top rated ranks Goldleaf first.
   - Best value ranks Jacaranda first.
-- **Control:** the Ranking mode control sits above the Search results. The selected mode is visibly marked and reachable by keyboard.
+  - Top rated ranks Goldleaf first.
+- **No guest control:** Search results show no sort or ranking control.
 
-#### FR-12: Switching Ranking mode
+#### FR-12: The Ranking blend is one setting
 
-A Guest can switch Ranking mode and see the same Hotels in a new order.
+The workshop can change the Ranking blend in one place.
 
 **Consequences (testable):**
-- Switching mode updates the URL but does not change which Hotels appear, the Best-fit rooms, the Search bar or the Criteria chips.
-- Switching mode does not call the Provider again for Preferences already used in this server process. Relevance and Match reasons are reused.
+- The chosen candidate and its weights live in a single constant in domain code.
+- Changing that constant changes the order everywhere and needs no other code change.
+- The two candidates not chosen stay only in the eval runner (FR-18), so they can still be compared. Guests never see them.
 
 #### FR-13: Stable order
 
@@ -372,6 +373,7 @@ The presenter or a developer can run the evals with one command and get a scored
   - Each metric in §11 is given per Golden query and in total, with held-out Golden queries reported separately.
   - The report records the model deployments, the weights and the fixed "today" it ran with.
 - **Where it goes:** the report goes to a gitignored folder, with a one-line result per Golden query in the terminal.
+- **Candidate comparison:** the report scores all three Ranking blend candidates side by side on SM-1 and SM-C2, so the workshop can choose with evidence. Only the chosen Ranking blend counts towards the exit code. `[ASSUMPTION: inferred from the user's decision, confirm]`
 - **Exit code:** the command exits non-zero when a §11 target fails.
 - **Key and CI:** a run needs the Provider key and is not part of `npm test` or CI.
 - **Without a key:**
@@ -395,7 +397,7 @@ The presenter can see why each Hotel is where it is.
 - With the debug flag set in the server environment, each Listing card shows:
   - Relevance, split into its meaning and exact-word parts
   - the Review score and price signals
-  - the blended score for the current Ranking mode
+  - the score under the Ranking blend
 - Without the flag, nobody sees this. A URL cannot turn it on.
 
 ## 5. Non-Goals (Explicit)
@@ -416,7 +418,7 @@ The presenter can see why each Hotel is where it is.
 - **Smart search box (FR-1 to FR-3):** hidden without a Provider, with its state in the URL.
 - **Query interpretation (FR-4 to FR-6):** into the Search bar and Criteria chips. Rooms are raised automatically to fit the Party, and Policy criteria are strict.
 - **Enrichment, Prepared index and hybrid Retrieval (FR-7 to FR-10).**
-- **Three Ranking modes (FR-11 to FR-13).**
+- **One Ranking blend (FR-11 to FR-13):** chosen in the workshop from three candidates, with no guest-facing control.
 - **Listing cards (FR-14 to FR-16):** each shows the Best-fit room, which is pre-selected on the Hotel page, and a cited, grounded Match reason.
 - **Evals (FR-17 to FR-20):** Golden queries, a one-command eval report with a calibrated grounding check, and a presenter score breakdown.
 
@@ -442,15 +444,15 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
 
 | MVP rule | Change under Smart search |
 |---|---|
-| Non-goal "no filters, sort controls or natural-language search" | Lifted for Smart search: Criteria chips, Ranking modes and the Smart search box. |
+| Non-goal "no filters, sort controls or natural-language search" | Lifted for Smart search: Criteria chips and the Smart search box. There is still no sort control. |
 | MVP FR-5: Party does not filter | Party (with Rooms) filters Hotels (FR-6). |
 | MVP FR-6: card price line is the cheapest Room type | Card shows the Best-fit room and its prices (FR-14). |
-| MVP FR-7: order by Review score, then price | Order is the selected Ranking mode (FR-11). |
+| MVP FR-7: order by Review score, then price | Order is the Ranking blend (FR-11). |
 | MVP FR-18: Hotel page opens with nothing selected | Hotel page opens with the Best-fit room pre-selected (FR-14). |
 | MVP FR-25: everything shown comes from the seed | Search knowledge also comes from the Enrichment file, and Match reasons are generated (FR-7, FR-15). |
 | MVP §5: no API key or external service, works offline | Smart search needs the Provider and network (§7, §9). The rest of CheckInn still works offline. |
 | MVP §5: renders within 1 s | Smart search results within 3 s, and Match reasons within a further 3 s (§9). Everything else keeps the 1 s target. |
-| Architecture AD-7: `searchHotels(criteria)` signature | Search criteria gain Rooms, Max price, Policy criteria, Preferences and Ranking mode. The result gains the Best-fit room, Relevance and Match reason. Smart search still enters through this one function. |
+| Architecture AD-7: `searchHotels(criteria)` signature | Search criteria gain Rooms, Max price, Policy criteria, and Preferences. The result gains the Best-fit room, Relevance and Match reason. Smart search still enters through this one function. |
 
 ## 9. Cross-Cutting NFRs
 
@@ -460,7 +462,6 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
 - **Speed.** On a laptop with a normal connection:
   - Search results for a Query appear within 3 s. Query interpretation times out at 2.5 s and then falls back as in FR-2.
   - Match reasons follow within a further 3 s. A reason that times out at 5 s is left off.
-  - Switching Ranking mode needs no new Provider call (FR-12).
 - **Cost and abuse.**
   - A new Query makes at most 3 Provider calls: interpretation, the Preferences embedding, and one batched call for Match reasons.
   - Repeat Preferences hit the in-process cache.
@@ -473,8 +474,8 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
   - Match reasons are validated as in FR-16.
   - A Golden query covers an injection attempt (FR-17).
 - **Swappable.** Smart search enters through the existing search seam (architecture AD-7), so the MVP search remains the fallback and the two can be compared side by side.
-- **Testable without a key.** The end-to-end tests run with a fake Provider that returns fixed answers for the e2e Queries. Guest flows (box, chips, Ranking modes, Best-fit room pre-selection, fallback) are tested offline in `npm run test:e2e`.
-- **Accessibility.** WCAG 2.1 AA, as in the MVP. Criteria chips are buttons with an accessible name ("Remove Pets allowed"). The Ranking mode control is a labelled radio group.
+- **Testable without a key.** The end-to-end tests run with a fake Provider that returns fixed answers for the e2e Queries. Guest flows (box, chips, ordering, Best-fit room pre-selection, fallback) are tested offline in `npm run test:e2e`.
+- **Accessibility.** WCAG 2.1 AA, as in the MVP. Criteria chips are buttons with an accessible name ("Remove Pets allowed").
 
 ## 10. Approvals ("ask first" under AGENTS.md)
 
@@ -492,9 +493,9 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
 The user's own test: *"it returns the most relevant rooms / hotels for me."* This is a workshop build, so success is measured by the eval report (FR-18) over the Golden queries (FR-17), not by live traffic.
 
 **Primary**
-- **SM-1: Right Hotel first.** In Best match, an acceptable Hotel ranks first for at least 85% of the Golden queries that have a correct answer and at least 4 candidates. Validates FR-8, FR-9, FR-11.
+- **SM-1: Right Hotel first.** Under the Ranking blend, an acceptable Hotel ranks first for at least 85% of the Golden queries that have a correct answer and at least 4 candidates. Validates FR-8, FR-9, FR-11.
 - **SM-2: Right Room.** The Best-fit room and number of Rooms match the expected answer for at least 90% of the Golden queries that have a correct answer. Validates FR-14.
-- **SM-3: Zero Hard-criteria breaches.** Across all Golden queries and all three Ranking modes, no Hotel shown breaks a Hard criterion. Validates FR-6.
+- **SM-3: Zero Hard-criteria breaches.** Across all Golden queries and all three Ranking blend candidates, no Hotel shown breaks a Hard criterion. Validates FR-6.
 
 **Secondary**
 - **SM-4: Grounded Match reasons.** Zero confirmed *not grounded* Match reasons across the Golden queries (FR-19). Validates FR-15, FR-16.
@@ -503,7 +504,7 @@ The user's own test: *"it returns the most relevant rooms / hotels for me."* Thi
 
 **Counter-metrics (do not optimize)**
 - **SM-C1: Held-out gap.** Held-out Golden queries must score within 15 points of the rest on SM-1. A bigger gap means the weights or Enrichment were tuned to the test. Counterbalances SM-1.
-- **SM-C2: Relevance swamping value.** In Best match, the most expensive candidate ranks first in no more than half of the Golden queries with 4 or more candidates. Counterbalances SM-1.
+- **SM-C2: Relevance swamping value.** Under the Ranking blend, the most expensive candidate ranks first in no more than half of the Golden queries with 4 or more candidates. Counterbalances SM-1.
 
 ## 12. Open Questions
 
