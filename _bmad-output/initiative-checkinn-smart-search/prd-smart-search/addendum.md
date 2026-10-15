@@ -48,9 +48,15 @@ These are proposed patterns, not decisions. Each maps to the FRs it supports.
 4. **Hybrid retrieval with Reciprocal Rank Fusion (FR-9).**
    - *Meaning match:* cosine similarity between the Preferences embedding and the chunk vectors.
    - *Exact-word match:* BM25 over the same chunks with SQLite FTS5, which is built into SQLite with no new dependency. Check that the better-sqlite3 build has FTS5 enabled.
-   - *Fusion:* the two rankings are merged with RRF (k≈60) at chunk level, then rolled up to the Hotel with the max or the mean of the top 2. The result is min-max normalised to 0–1 to give Relevance.
+   - *Fusion (revised after review, 2026-10-15):* do **not** min-max normalise within the result set. With 2 Hotels per City that always gives 1.0 and 0.0, divides by zero for 1 candidate, and means the weak-match threshold (FR-10) can never fire. Relevance must be *absolute*. Starting proposal:
+     - meaning part: the Hotel's best chunk cosine, mapped through fixed bounds (e.g. 0.20 maps to 0 and 0.60 maps to 1, clamped)
+     - exact-word part: a saturating BM25 score, e.g. `bm25 / (bm25 + k)`
+     - `Relevance = 0.75·meaning + 0.25·exactWord`
+     - Strong-match threshold: starts around 0.45, tuned against the Golden queries
+
+     RRF can still order chunks for the Match reason step, but it is not Relevance.
    - *Vector store:* fewer than 100 vectors means brute-force comparison in TypeScript is enough. `sqlite-vec` (listed as agreed in AGENTS.md) is optional at this size and adds a native extension. It's the architecture's call, and adding it is an ask-first change.
-5. **Blended ranking as pure domain code (FR-11 to FR-13).** `score = wR·Relevance + wS·ratingNorm + wP·priceNorm`, with the weights set per Ranking mode. The rating and price signals are normalised within the candidate set. This lives in `src/domain/` with no Provider calls, so switching modes is instant and fully unit-testable.
+5. **Blended ranking as pure domain code (FR-11 to FR-13).** `score = wR·Relevance + wS·ratingNorm + wP·priceNorm`, with the weights set per Ranking mode (PRD FR-11 table). The rating and price signals use *fixed* scales (rating 3.0–5.0, Best-fit room price R3,500–R500), not the candidate set, for the same reason as Relevance. With the seed, Jacaranda against Goldleaf for UJ-2 holds for any Jacaranda Relevance lead between 0 and 0.2. This lives in `src/domain/` with no Provider calls, so switching modes is instant and fully unit-testable.
 6. **Grounded generation with citations (FR-15, FR-16).** One batched gpt-6-luna call for the top N Hotels. Its input is each Hotel's retrieved chunks with their ids. It returns JSON `{hotelId, reason, citedChunkIds}`. CheckInn drops a Match reason if it cites a chunk that doesn't belong to that Hotel, or cites nothing. The instructions forbid prices, dates and availability in reasons. The call streams in behind the results (React Suspense), so a slow reason never holds up the list.
 7. **Caching for determinism and cost (FR-13, §5 Cost).** Interpretation and the Query embedding are cached in memory, keyed on the normalised Query plus today's date. Hotel vectors are precomputed.
 8. **Prepared Search knowledge is committed (FR-9).**
@@ -58,6 +64,10 @@ These are proposed patterns, not decisions. Each maps to the FRs it supports.
    - `npm run db:reset` loads that file and never calls the Provider.
    - A Vitest test compares the content hashes with the current seed and Enrichment and fails with "run search:index" if they are stale.
 9. **Security.** Key, endpoint and deployment names come from environment variables, with `.env.example` committed and `.env` never committed. The client is the `openai` SDK pointed at the Foundry `/openai/v1/` endpoint, which supports the Responses API and embeddings. Adding that SDK is an ask-first dependency.
+
+10. **URL is the state (FR-3).** Interpretation runs only in the submit action. The action redirects to `/search?…` carrying the MVP params plus Rooms, Max price, Policy criteria, Preferences, mode and the display Query. The page never re-interprets. The Relevance and Match-reason caches are keyed by Preferences text plus the Hotel id.
+11. **Fake Provider for e2e (§9).** A `PROVIDER=fake` switch returns fixed interpretation, embeddings and reasons for the e2e Queries, so Playwright runs offline and deterministically.
+12. **Policy criteria in SQL (FR-6).** `petsAllowed`, `childrenAllowed` and `smokingAllowed` live in the seed's policies JSON. Seed facts: only hotel-010 allows pets, every Hotel allows children, and none allows smoking.
 
 ## Eval design to carry into architecture
 
