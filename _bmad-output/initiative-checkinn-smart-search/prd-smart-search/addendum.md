@@ -2,6 +2,18 @@
 
 Material that informs downstream work (UX, architecture) but does not belong in the PRD itself.
 
+## Provider decision (2026-10-15)
+
+The user decided that smart search uses **Azure AI Foundry**, with the **gpt-6-luna** model for query interpretation and match reasons. The user typed "gpt-luna-6". A previous project used Azure deployment `gpt-6-luna`, so the exact deployment name needs confirming.
+
+This is the user's approval of the AI-provider "ask first" item in AGENTS.md.
+
+**For architecture:**
+
+- **Embeddings.** gpt-6-luna is a generation model. Retrieval needs an embedding model as well, such as a `text-embedding-3-*` deployment on the same Foundry resource. Still to be picked.
+- **API shape.** On other projects the user wants Azure OpenAI calls made through the **Responses API**, not chat completions; gpt-6-luna rejects function tools with reasoning on chat completions. Assume the same here unless the user says otherwise.
+- **Configuration.** The endpoint, key and deployment names come from local environment variables that are never committed. With no key set, the Smart search box is hidden (FR-2).
+
 ## Starting point in the repo (2026-10-15)
 
 Source: a repo-extraction subagent.

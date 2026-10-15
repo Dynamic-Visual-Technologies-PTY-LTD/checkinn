@@ -70,7 +70,7 @@ New terms only. MVP terms keep their MVP meaning.
 - **Ranking mode**: one of three named blends of Relevance, Review score and Nightly price: **Best match** (default), **Best value** and **Top rated**.
 - **Best-fit room**: the Room type on a Listing card that best fits the Query and sleeps the Party.
 - **Match reason**: one short sentence on a Listing card saying why that Hotel matched. It is written by the Provider only from that Hotel's Search knowledge.
-- **Provider**: the hosted AI service Smart search calls for Query interpretation, Relevance and Match reasons. Requires network access and an API key.
+- **Provider**: the hosted AI service Smart search calls for Query interpretation, Relevance and Match reasons: Azure AI Foundry. Requires network access and an API key. The model and deployment details are in `addendum.md`.
 
 ## 4. Features
 
@@ -306,8 +306,7 @@ This is a workshop build, so success is judged against a fixed set of test Queri
 
 ## 9. Open Questions
 
-1. Which Provider? Embeddings and text generation may come from different providers. This is an "ask first" change under AGENTS.md. Recommendation goes in the architecture.
-2. Should Smart search apply to the Home page box only, or also re-rank a plain Search bar search when a Query is present?
+1. Should Smart search apply to the Home page box only, or also re-rank a plain Search bar search when a Query is present?
 
 ## 10. Assumptions Index
 
