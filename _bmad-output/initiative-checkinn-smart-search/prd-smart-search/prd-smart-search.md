@@ -1,6 +1,6 @@
 ---
 title: CheckInn Smart Search PRD
-status: draft
+status: final
 created: 2026-10-15
 updated: 2026-10-15
 ---
@@ -13,9 +13,9 @@ This PRD defines the base functional requirements for Smart search. Smart search
 
 **Readers.** The workshop presenter, and the people who will turn this PRD into UX, architecture and tickets during the workshop. This document is the output of the workshop **pre-run**: it settles as many decisions as possible up front so the live build can move quickly. Values meant to be tuned live are given a concrete starting point, so they never block the build.
 
-**Relationship to the MVP PRD.** It builds on the MVP PRD (`_bmad-output/initiative-checkinn-mvp/prd-checkinn/prd-checkinn.md`). Every MVP Glossary term (Guest, Destination, Hotel, Room type, Room, Stay, Party, Search bar, Search results, Listing card, Facility, Review score, Nightly price) keeps its MVP meaning. FR IDs here are local to this document, and MVP requirements are referenced as "MVP FR-n". §8 lists every MVP behaviour this PRD changes.
+**Relationship to the MVP PRD.** This PRD builds on the MVP PRD (`_bmad-output/initiative-checkinn-mvp/prd-checkinn/prd-checkinn.md`). Every MVP Glossary term (Guest, Destination, Hotel, Room type, Room, Stay, Party, Search bar, Search results, Listing card, Facility, Review score, Nightly price) keeps its MVP meaning. FR IDs here are local to this document, and MVP requirements are referenced as "MVP FR-n". §8 lists every MVP behaviour this PRD changes.
 
-**Conventions.** Remaining guesses are tagged `[ASSUMPTION]` and indexed in §13. Research, the repo starting point, the model choice, RAG patterns and eval design are in `addendum.md`.
+**Conventions.** There are no open guesses left. Starting values the user accepted for tuning are listed in §13. Research, the repo starting point, the model choice, RAG patterns and eval design are in `addendum.md`.
 
 **Branch rule (user decision).** All Smart search work stays on the branch `docs/rag-search-planning`, separate from `main`. Nothing is merged into `main` without the user's explicit permission.
 
@@ -90,6 +90,7 @@ New terms only. MVP terms keep their MVP meaning.
 - **Prepared index**: the Search knowledge split into chunks with their embeddings, in a committed file built by its own command.
 - **Retrieval**: scoring the candidate Hotels by how well their Search knowledge matches the Preferences.
 - **Relevance**: an *absolute* 0-to-1 score of how well a Hotel's Search knowledge matches the Preferences. It is comparable across Queries and is not rescaled within a result set. It is one of the three ranking signals.
+- **Strong-match threshold**: the absolute Relevance value at or above which a Hotel counts as a Strong match (FR-10).
 - **Strong match**: a Hotel whose Relevance is at or above the Strong-match threshold.
 - **Ranking mode**: one of three named blends of Relevance, Review score and Nightly price: **Best match** (default), **Best value** and **Top rated**.
 - **Best-fit room**: the Room type, and the number of Rooms of it, shown on a Listing card. It is the Room type that meets every Hard criterion and best matches the Preferences.
@@ -121,7 +122,7 @@ A Guest never sees the Smart search box when Smart search is not configured. Rea
 **Consequences (testable):**
 - With no Provider configuration (key, endpoint, deployments) in the environment, the Smart search box is not rendered, no error is shown, and every page behaves exactly like the MVP.
 - A fresh clone with no `.env` runs with `npm install && npm run dev` and behaves exactly like the MVP.
-- If the Provider fails or times out after a Query is submitted, the Guest still gets Search results. The results still apply every Hard criterion that was already known, in the MVP order. A short notice says smart ranking is unavailable right now. Match reasons are not shown.
+- If the Provider fails or times out after a Query is submitted, the Guest still gets Search results. The results still apply every Hard criterion that was already known, in the MVP order. A short notice says Smart ranking is unavailable right now. Match reasons are not shown.
 
 #### FR-3: Smart search state lives in the URL
 
@@ -161,8 +162,8 @@ The system extracts Destination, Stay, Party, Rooms, Max price and Policy criter
   - "next weekend" is the Friday-to-Sunday after that.
   - "tonight" is today until tomorrow.
 - **Party:** a guest count with no adult/child split is all adults. Children are counted only when the Query says so ("2 kids", "with 2 children").
-- **Rooms:** if the Query states Rooms, that number is used. Otherwise Rooms is the fewest that can sleep the Party in one Room type. The MVP rule applies: no more Rooms than adults.
-- **Values left unchanged:** values the Query does not mention keep their current Search bar values for Stay and Party. Destination, Max price and Policy criteria start empty for every new Query.
+- **Rooms:** if the Query states Rooms, that number is used. Otherwise Rooms is the fewest Rooms of one Room type that can sleep the Party. The MVP rule applies: no more Rooms than adults.
+- **Values left unchanged:** Stay and Party keep their current Search bar values when the Query does not mention them. Destination, Max price and Policy criteria start empty for every new Query.
 - **Invalid values:** a value that can't be valid (a past date, a Stay longer than the MVP maximum, 0 adults) is not applied. A short note names what was ignored, e.g. "We couldn't use 'last Tuesday', so check your dates."
 - **Validation:** CheckInn validates the Provider's output against the allowed fields and values before using any of it (§9, Untrusted Query).
 
@@ -228,7 +229,7 @@ Relevance considers each Hotel's structured facts as well as its text, so a Pref
 The system gives every candidate Hotel an absolute Relevance between 0 and 1 against the Query's Preferences. Relevance combines a match on meaning with a match on exact words.
 
 **Consequences (testable):**
-- **Meaning match:** *"cosy weekend retreat"* ranks Hotels whose Search knowledge describes retreats or relaxed stays highly, even where "cosy" appears nowhere.
+- **Meaning match:** *"cosy weekend retreat"* ranks highly the Hotels whose Search knowledge describes retreats or relaxed stays, even where "cosy" appears nowhere.
 - **Exact-word match:** a Query that names a Hotel ("Oak & Vine") puts that Hotel first in Best match.
 - **Place only:** a Query that is only a place ("Durban") gives the same Hotels as the MVP search for "Durban", in Best match order.
 - **Absolute score:** Relevance does not depend on how many candidates there are. With 1 or 2 candidates it is well defined, and the same Hotel and Preferences give the same Relevance whatever else is in the set.
@@ -243,7 +244,7 @@ When no Hotel is a Strong match, the Guest is told so and still sees the closest
 
 **Consequences (testable):**
 - If no candidate is a Strong match, the Search results heading says no strong matches were found and suggests rephrasing. The candidates are still listed in the current Ranking mode.
-- The threshold is an absolute Relevance value. Its starting value is set so that the UJ-3 "ski chalet" Query has no Strong match and every Golden query with a correct answer does.
+- The Strong-match threshold is an absolute Relevance value. Its starting value is set so that the UJ-3 "ski chalet" Query has no Strong match and every Golden query with a correct answer does.
 - A Query with no Preferences, only Hard criteria, gives every Hotel equal Relevance. It shows no weak-match notice and no Match reasons, and ranking falls back to Review score and Nightly price.
 - If no Hotel meets the Hard criteria, the MVP no-results behaviour applies (MVP FR-8), naming the Hard criteria in force.
 
@@ -256,7 +257,7 @@ When no Hotel is a Strong match, the Guest is told so and still sees the closest
 A Guest can order Smart search results by Best match, Best value or Top rated. Realizes UJ-2.
 
 **Consequences (testable):**
-- **Mode weights.** Starting weights, tuned in the workshop:
+- **Mode weights:** starting weights, tuned in the workshop:
 
   | Mode | Relevance | Review score | Price |
   |---|---|---|---|
@@ -264,15 +265,15 @@ A Guest can order Smart search results by Best match, Best value or Top rated. R
   | **Best value** | 0.15 | 0.15 | 0.7 |
   | **Top rated** | 0.15 | 0.7 | 0.15 |
 
-- **Signals.** Review score and price are put on a fixed 0-to-1 scale (not rescaled within the result set):
+- **Signals:** Review score and price are put on a fixed 0-to-1 scale (not rescaled within the result set):
   - Review score: 3.0 maps to 0, and 5.0 maps to 1.
   - Price: the Best-fit room's Nightly price, where R500 maps to 1 and R3,500 maps to 0.
-- **All three count.** Every mode includes all three signals, and no mode is a plain sort on one field.
-- **UJ-2 check.** With the seed and the starting weights, UJ-2 holds whenever Jacaranda's Relevance lead over Goldleaf is between 0.01 and 0.2:
+- **All three count:** every mode includes all three signals, and no mode is a plain sort on one field.
+- **UJ-2 check:** with the seed and the starting weights, UJ-2 holds whenever Jacaranda's Relevance lead over Goldleaf is between 0.01 and 0.2:
   - Best match ranks Jacaranda above Goldleaf.
   - Top rated ranks Goldleaf first.
   - Best value ranks Jacaranda first.
-- **Control.** The Ranking mode control sits above the Search results. The selected mode is visibly marked and reachable by keyboard.
+- **Control:** the Ranking mode control sits above the Search results. The selected mode is visibly marked and reachable by keyboard.
 
 #### FR-12: Switching Ranking mode
 
@@ -288,7 +289,7 @@ The same URL gives the same order.
 
 **Consequences (testable):**
 - Ties break by Review score, then lower Nightly price, then Hotel name.
-- Relevance for given Preferences is cached by Preferences text, so repeat searches are identical and cost no new Provider call.
+- Relevance is cached by Preferences text, so repeat searches are identical and cost no new Provider call.
 
 ### 4.5 Smart search results
 
@@ -315,7 +316,7 @@ Each Listing card shows a Match reason: one short sentence saying why the Hotel 
 
 **Consequences (testable):**
 - **Length:** the Match reason is at most 120 characters. Longer output is rejected, not truncated.
-- **Loading:** Search results appear first, and Match reasons stream in after them. A slow or failed Match reason never holds up or breaks a card; the card simply shows no reason.
+- **Loading:** Search results appear first, and Match reasons stream in after them. A slow or failed Match reason never holds up or breaks a card; the card shows no reason.
 - **Screen readers:** Match reasons arriving after the results are announced politely, not as interruptions.
 
 #### FR-16: Match reasons stay grounded
@@ -428,14 +429,14 @@ The presenter can see why each Hotel is where it is.
 - **Splitting a Party across different Room types.**
 - **Non-English Queries.**
 
-## 7. Workshop and venue
+## 7. Workshop and Venue
 
 - **Network.** Smart search needs network access at the venue (user decision). It is a stated dependency, not something the app works around.
 - **Pre-flight check.** A pre-flight npm command calls each Provider deployment once and reports OK or the failure. The presenter runs it before going on stage.
 - **Presenter's machine.** The presenter's machine has the Provider configuration in a local `.env`. The repo commits a `.env.example` with the variable names and no values.
 - **Attendees.** Attendees on a fresh clone without a key see the MVP. They need a key from the presenter to see Smart search.
 
-## 8. Changes to MVP behaviour
+## 8. Changes to MVP Behaviour
 
 These MVP rules change *only when a Query is present*. With no Query, or with no Provider configured, every MVP rule applies unchanged.
 
@@ -443,8 +444,8 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
 |---|---|
 | Non-goal "no filters, sort controls or natural-language search" | Lifted for Smart search: Criteria chips, Ranking modes and the Smart search box. |
 | MVP FR-5: Party does not filter | Party (with Rooms) filters Hotels (FR-6). |
-| MVP FR-7: order by Review score, then price | Order is the selected Ranking mode (FR-11). |
 | MVP FR-6: card price line is the cheapest Room type | Card shows the Best-fit room and its prices (FR-14). |
+| MVP FR-7: order by Review score, then price | Order is the selected Ranking mode (FR-11). |
 | MVP FR-18: Hotel page opens with nothing selected | Hotel page opens with the Best-fit room pre-selected (FR-14). |
 | MVP FR-25: everything shown comes from the seed | Search knowledge also comes from the Enrichment file, and Match reasons are generated (FR-7, FR-15). |
 | MVP §5: no API key or external service, works offline | Smart search needs the Provider and network (§7, §9). The rest of CheckInn still works offline. |
@@ -461,7 +462,7 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
   - Match reasons follow within a further 3 s. A reason that times out at 5 s is left off.
   - Switching Ranking mode needs no new Provider call (FR-12).
 - **Cost and abuse.**
-  - A new Query makes at most 3 Provider calls: interpretation, the Query embedding, and one batched call for Match reasons.
+  - A new Query makes at most 3 Provider calls: interpretation, the Preferences embedding, and one batched call for Match reasons.
   - Repeat Preferences hit the in-process cache.
   - Queries are capped at 300 characters.
   - A Provider rate-limit or error response triggers the FR-2 fallback.
@@ -483,7 +484,7 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
 | Enrichment file next to the seed (seed unchanged) | Approved by the user, 2026-10-15 |
 | Database schema change: tables for chunks, embeddings and full-text search | **Ask before build** |
 | `openai` npm SDK, for the Foundry endpoint | **Ask before build** |
-| `sqlite-vec`. Optional: fewer than 100 vectors are fine without it | **Ask before build, if architecture wants it** |
+| `sqlite-vec`. Optional: about 150 vectors are fine without it | **Ask before build, if architecture wants it** |
 | Running evals in CI (`.github/workflows/`) | Not planned. Ask if wanted |
 
 ## 11. Success Metrics
@@ -492,12 +493,12 @@ The user's own test: *"it returns the most relevant rooms / hotels for me."* Thi
 
 **Primary**
 - **SM-1: Right Hotel first.** In Best match, an acceptable Hotel ranks first for at least 85% of the Golden queries that have a correct answer and at least 4 candidates. Validates FR-8, FR-9, FR-11.
-- **SM-2: Right Room.** The Best-fit room and number of Rooms match the expected answer for at least 90% of Golden queries. Validates FR-14.
+- **SM-2: Right Room.** The Best-fit room and number of Rooms match the expected answer for at least 90% of the Golden queries that have a correct answer. Validates FR-14.
 - **SM-3: Zero Hard-criteria breaches.** Across all Golden queries and all three Ranking modes, no Hotel shown breaks a Hard criterion. Validates FR-6.
 
 **Secondary**
 - **SM-4: Grounded Match reasons.** Zero confirmed *not grounded* Match reasons across the Golden queries (FR-19). Validates FR-15, FR-16.
-- **SM-5: Interpretation accuracy.** For at least 90% of Golden queries, the Search bar, Rooms and Criteria chips match the expected Hard criteria. Validates FR-4.
+- **SM-5: Interpretation accuracy.** For at least 90% of all Golden queries, including those where nothing fits, the Search bar, Rooms and Criteria chips match the expected Hard criteria. Validates FR-4.
 - **SM-6: Honest weak matches.** The weak-match notice appears for every "nothing fits" Golden query and for no Golden query with a correct answer. Validates FR-10.
 
 **Counter-metrics (do not optimize)**
@@ -508,15 +509,22 @@ The user's own test: *"it returns the most relevant rooms / hotels for me."* Thi
 
 None blocking. The architecture step settles the mechanisms in `addendum.md`: chunking, how exact-word and meaning matches are fused into absolute Relevance, the starting Strong-match threshold, and caching.
 
-## 13. Assumptions Index
+## 13. Starting Values
 
-Remaining guesses, to be confirmed or changed in the workshop:
+The user accepted every starting value as a workshop default on 2026-10-15. Each one can be tuned live with the eval report. Changing one is an ordinary edit, not a scope change.
 
-- FR-4: the nickname list (Joburg, Jozi, PE, Cape, Durbs), and the "this weekend" / "next weekend" rules.
-- FR-4: a new Query resets Destination, Max price and Policy criteria, and keeps Stay and Party.
-- FR-7: Enrichment sizes (80–150-word description, 4 reviews, 3 highlights).
-- FR-11: starting weights and the fixed scales for Review score (3.0–5.0) and price (R500–R3,500).
-- FR-15: the 120-character Match reason limit.
-- FR-17: a Golden set of 24 queries with 4 held out.
-- §9: speed targets and timeouts (3 s, 2.5 s, 3 s, 5 s), and at most 3 Provider calls per Query.
-- §11: metric targets (85%, 90%, 15-point held-out gap).
+- **FR-4:**
+  - nicknames: Joburg, Jozi, PE, Cape, Durbs
+  - date rules: "this weekend", "next weekend" and "tonight"
+  - a new Query resets Destination, Max price and Policy criteria, and keeps Stay and Party (user decision)
+- **FR-7:** Enrichment of an 80–150-word description, 4 reviews and 3 highlights per Hotel.
+- **FR-11:** weights of 0.7 / 0.15 / 0.15. Fixed scales: Review score 3.0–5.0, price R500–R3,500.
+- **FR-15:** Match reasons up to 120 characters.
+- **FR-17:** 24 Golden queries, 4 of them held out.
+- **§9:**
+  - 3 s for results
+  - 2.5 s interpretation timeout
+  - 3 s for Match reasons
+  - 5 s Match reason timeout
+  - at most 3 Provider calls per Query
+- **§11:** targets of 85% (right Hotel), 90% (right Room, interpretation) and a 15-point held-out gap.

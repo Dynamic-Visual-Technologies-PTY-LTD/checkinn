@@ -10,17 +10,17 @@ This is the user's approval of the AI-provider "ask first" item in AGENTS.md.
 
 **For architecture:**
 
-- **Embeddings.** gpt-6-luna is a generation model. Retrieval needs an embedding model as well, such as a `text-embedding-3-*` deployment on the same Foundry resource. Still to be picked.
-- **API shape.** On other projects the user wants Azure OpenAI calls made through the **Responses API**, not chat completions; gpt-6-luna rejects function tools with reasoning on chat completions. Assume the same here unless the user says otherwise.
+- **Embeddings.** gpt-6-luna is a generation model. Retrieval needs an embedding model as well, such as a `text-embedding-3-*` deployment on the same Foundry resource. Picked in the next section: `text-embedding-3-large` (revised 2026-10-15).
+- **API shape.** On other projects the user wants Azure OpenAI calls made through the **Responses API**, not chat completions, because gpt-6-luna rejects function tools with reasoning on chat completions. Assume the same here unless the user says otherwise.
 - **Configuration.** The endpoint, key and deployment names come from local environment variables that are never committed. With no key set, the Smart search box is hidden (FR-2).
 
 ## Embedding model choice (2026-10-15)
 
 The user asked for the best model in the `text-embedding-3` family. Recommendation: **`text-embedding-3-large`**, called with **`dimensions: 1024`**.
 
-- **Quality.** It is the stronger of the two models; OpenAI's published MTEB average is about 64.6 for large and 62.3 for small. Quality is what the workshop demonstrates, and the corpus is tiny: 12 Hotels × about 8 chunks, under 100 vectors. That makes the cost difference between the models negligible.
-- **Size.** `text-embedding-3` vectors can be shortened with the `dimensions` parameter, with only a small loss in quality. At 1024 dimensions the committed vectors stay small, around 400 KB as float32, and comparisons stay fast. The architecture step can test 3072 against 1024 with the eval if it wants.
-- **Query latency.** At query time only the Query is embedded, a single short input, and latency is similar for both models.
+- **Quality.** It is the stronger of the two models; OpenAI's published MTEB average is about 64.6 for large and 62.3 for small. Quality is what the workshop demonstrates, and the corpus is tiny: 12 Hotels × about 11 chunks (overview, Facilities, 2 Room types, 4 reviews, 3 highlights), about 132 vectors, plus the Golden queries' Preferences, so about 150 in all (revised 2026-10-15). That makes the cost difference between the models negligible.
+- **Size.** `text-embedding-3` vectors can be shortened with the `dimensions` parameter, with only a small loss in quality. At 1024 dimensions the committed vectors stay small, around 600 KB as float32 (store it base64-encoded or binary rather than as JSON number arrays), and comparisons stay fast. The architecture step can test 3072 against 1024 with the eval if it wants.
+- **Query latency.** At query time only the Preferences text is embedded, a single short input, and latency is similar for both models.
 
 To verify: that `text-embedding-3-large` can be deployed in the Foundry resource's region.
 
@@ -28,45 +28,45 @@ To verify: that `text-embedding-3-large` can be deployed in the Foundry resource
 
 These are proposed patterns, not decisions. Each maps to the FRs it supports.
 
-1. **Query understanding with structured output (FR-4, FR-6, Untrusted Query).** One gpt-6-luna call through the Responses API with a strict JSON schema returns:
+1. **Query understanding with structured output (FR-4, FR-6, PRD §9 Untrusted Query).** One gpt-6-luna call through the Responses API with a strict JSON schema returns:
    - `destination`, `outOfCatalogPlace`
    - `checkIn`, `checkOut`
    - `adults`, `children`, `rooms`
    - `maxPrice`
-   - `preferences`, a cleaned-up restatement of the non-hard parts of the Query
+   - `petsAllowed`, `childrenAllowed`, `smokingAllowed` (Policy criteria: `true` when asked for, `null` otherwise) (revised 2026-10-15)
+   - `preferences`, a cleaned-up restatement of the parts of the Query that are not Hard criteria
 
    Today's date and the 6 City names (with aliases) go into the instructions. The output is validated by the existing criteria code (`src/domain/criteria.ts`) before it is used, and anything invalid is dropped field by field. The Query goes only in the user input, never in the instructions. No tools are exposed.
-2. **Filter first, then retrieve (FR-6, FR-9).** Hard criteria are applied in SQL (Destination, Availability, Party capacity, Max price) before Retrieval, so ranking only ever sees eligible Hotels. This is the metadata pre-filtering pattern.
-3. **Facet chunking (FR-8).** Each Hotel's Search knowledge is split into small, labelled chunks:
+2. **Filter first, then retrieve (FR-6, FR-9).** Hard criteria are applied in SQL (Destination, Availability, Party capacity, Max price) before Retrieval, with Policy criteria as in pattern 12, so ranking only ever sees eligible Hotels. This is the metadata pre-filtering pattern.
+3. **Facet chunking (FR-8).** Each Hotel's Search knowledge is split into small, labelled chunks, which together form the Prepared index:
    - an overview
-   - facilities and house rules, *written out as sentences from the structured seed data*, so "pet friendly" can match `petsAllowed: true`
+   - Facilities and house rules, *written out as sentences from the structured seed data*, so "pet friendly" can match `petsAllowed: true`
    - one chunk per Room type, with its capacity and beds
    - one chunk per review
    - one chunk per nearby highlight
 
    Each chunk carries `hotelId`, `facet` and a content hash.
-4. **Hybrid retrieval with Reciprocal Rank Fusion (FR-9).**
+4. **Hybrid retrieval with absolute fusion (FR-9; revised 2026-10-15).**
    - *Meaning match:* cosine similarity between the Preferences embedding and the chunk vectors.
    - *Exact-word match:* BM25 over the same chunks with SQLite FTS5, which is built into SQLite with no new dependency. Check that the better-sqlite3 build has FTS5 enabled.
-   - *Fusion (revised after review, 2026-10-15):* do **not** min-max normalise within the result set. With 2 Hotels per City that always gives 1.0 and 0.0, divides by zero for 1 candidate, and means the weak-match threshold (FR-10) can never fire. Relevance must be *absolute*. Starting proposal:
+   - *Fusion (revised after review, 2026-10-15):* do **not** min-max normalise within the result set. With 2 Hotels per City that always gives 1.0 and 0.0, divides by zero for 1 candidate, and means the Strong-match threshold (FR-10) can never fire. Relevance must be *absolute*. Starting proposal:
      - meaning part: the Hotel's best chunk cosine, mapped through fixed bounds (e.g. 0.20 maps to 0 and 0.60 maps to 1, clamped)
      - exact-word part: a saturating BM25 score, e.g. `bm25 / (bm25 + k)`
      - `Relevance = 0.75·meaning + 0.25·exactWord`
      - Strong-match threshold: starts around 0.45, tuned against the Golden queries
 
      RRF can still order chunks for the Match reason step, but it is not Relevance.
-   - *Vector store:* fewer than 100 vectors means brute-force comparison in TypeScript is enough. `sqlite-vec` (listed as agreed in AGENTS.md) is optional at this size and adds a native extension. It's the architecture's call, and adding it is an ask-first change.
-5. **Blended ranking as pure domain code (FR-11 to FR-13).** `score = wR·Relevance + wS·ratingNorm + wP·priceNorm`, with the weights set per Ranking mode (PRD FR-11 table). The rating and price signals use *fixed* scales (rating 3.0–5.0, Best-fit room price R3,500–R500), not the candidate set, for the same reason as Relevance. With the seed, Jacaranda against Goldleaf for UJ-2 holds for any Jacaranda Relevance lead between 0 and 0.2. This lives in `src/domain/` with no Provider calls, so switching modes is instant and fully unit-testable.
+   - *Vector store:* about 150 vectors means brute-force comparison in TypeScript is enough. `sqlite-vec` (listed as agreed in AGENTS.md) is optional at this size and adds a native extension. It is the architecture's call, and adding it is an ask-first change.
+5. **Blended ranking as pure domain code (FR-11 to FR-13).** `score = wR·Relevance + wS·ratingNorm + wP·priceNorm`, with the weights set per Ranking mode (PRD FR-11 table). The rating and price signals use *fixed* scales (Review score 3.0–5.0; Best-fit room Nightly price R500–R3,500, where R500 maps to 1), not the candidate set, for the same reason as Relevance. With the seed, Jacaranda against Goldleaf for UJ-2 holds for any Jacaranda Relevance lead over Goldleaf between 0.01 and 0.2 (revised 2026-10-15, PRD FR-11). This lives in `src/domain/` with no Provider calls, so switching modes is instant and fully unit-testable.
 6. **Grounded generation with citations (FR-15, FR-16).** One batched gpt-6-luna call for the top N Hotels. Its input is each Hotel's retrieved chunks with their ids. It returns JSON `{hotelId, reason, citedChunkIds}`. CheckInn drops a Match reason if it cites a chunk that doesn't belong to that Hotel, or cites nothing. The instructions forbid prices, dates and availability in reasons. The call streams in behind the results (React Suspense), so a slow reason never holds up the list.
-7. **Caching for determinism and cost (FR-13, §5 Cost).** Interpretation and the Query embedding are cached in memory, keyed on the normalised Query plus today's date. Hotel vectors are precomputed.
-8. **Prepared Search knowledge is committed (FR-9).**
+7. **Caching for determinism and cost (FR-13, PRD §9 Cost and abuse).** There are two in-memory caches. (a) Query interpretation, keyed on the normalised Query plus today's date. (b) The Preferences embedding, Relevance and Match reasons, keyed on the Preferences text (plus the Hotel id for reasons), which is what FR-13 and pattern 10 rely on. Hotel vectors are precomputed (revised 2026-10-15).
+8. **The Prepared index is committed (FR-9).**
    - `npm run search:index` (needs the key) writes the chunks and vectors to a committed file next to the Enrichment. The seed file is untouched.
    - `npm run db:reset` loads that file and never calls the Provider.
-   - A Vitest test compares the content hashes with the current seed and Enrichment and fails with "run search:index" if they are stale.
+   - A Vitest test compares the content hashes with the current seed, Enrichment and chunking rules (revised 2026-10-15) and fails with "run search:index" if they are stale.
 9. **Security.** Key, endpoint and deployment names come from environment variables, with `.env.example` committed and `.env` never committed. The client is the `openai` SDK pointed at the Foundry `/openai/v1/` endpoint, which supports the Responses API and embeddings. Adding that SDK is an ask-first dependency.
-
-10. **URL is the state (FR-3).** Interpretation runs only in the submit action. The action redirects to `/search?…` carrying the MVP params plus Rooms, Max price, Policy criteria, Preferences, mode and the display Query. The page never re-interprets. The Relevance and Match-reason caches are keyed by Preferences text plus the Hotel id.
-11. **Fake Provider for e2e (§9).** A `PROVIDER=fake` switch returns fixed interpretation, embeddings and reasons for the e2e Queries, so Playwright runs offline and deterministically.
+10. **URL is the state (FR-3).** Interpretation runs only in the submit action. The action redirects to `/search?…` carrying the MVP params plus Rooms, Max price, Policy criteria, Preferences, Ranking mode and the display Query. The page never re-interprets. The Relevance and Match reason caches are keyed by Preferences text plus the Hotel id.
+11. **Fake Provider for e2e (§9).** A `PROVIDER=fake` switch returns fixed interpretations, embeddings and Match reasons for the e2e Queries, so Playwright runs offline and deterministically.
 12. **Policy criteria in SQL (FR-6).** `petsAllowed`, `childrenAllowed` and `smokingAllowed` live in the seed's policies JSON. Seed facts: only hotel-010 allows pets, every Hotel allows children, and none allows smoking.
 
 ## Eval design to carry into architecture
@@ -76,11 +76,11 @@ These are proposed patterns, not decisions. Each maps to the FRs it supports.
   2. *End-to-end evals* score the Listing cards the Guest would actually see.
 
   Separating the layers shows *which* stage regressed.
-- **Offline retrieval evals.** The embeddings of the Golden queries' Preferences are committed alongside the hotel vectors. Retrieval and ranking evals can then run in plain Vitest with no key, and could go in CI if the user approves that change. Only interpretation and grounding need live calls.
+- **Offline retrieval evals.** The embeddings of the Golden queries' Preferences are committed alongside the hotel vectors. Retrieval and ranking evals then run in `npm test` with no key (revised 2026-10-15, PRD FR-18). Only interpretation and grounding need live calls, and that keyed eval run stays out of CI (PRD §10).
 - **Ablation for the workshop.** The eval runner can score keyword-only, vector-only and hybrid retrieval side by side. Showing "hybrid beats either alone on these Queries" is a strong teaching moment.
-- **LLM-as-judge for grounding (FR-19).** gpt-6-luna gets a separate, strict prompt and gives a binary verdict naming any unsupported claim. The judge is calibrated against planted false reasons before its scores are trusted. Its temperature or reasoning is fixed, and each Query runs about 3 times so variance shows up in the report.
-- **Held-out Queries (SM-C1).** A few Golden queries are marked held-out. They are reported but never tuned against.
-- **Outputs.** A JSON and Markdown report goes to an ignored `.eval-results/` folder, with a short table in the terminal. The run exits non-zero when an SM threshold fails, so it can gate later if the user wants.
+- **LLM-as-judge for grounding (FR-19).** gpt-6-luna gets a separate, strict prompt and gives a binary verdict naming any unsupported claim. The judge is calibrated against planted false and true Match reasons before its scores are trusted (revised 2026-10-15, PRD FR-19). Its temperature or reasoning is fixed, and each Query runs about 3 times so variance shows up in the report.
+- **Held-out Queries (SM-C1).** 4 of the 24 Golden queries are marked held-out (revised 2026-10-15, PRD FR-17). They are reported but never tuned against.
+- **Outputs.** A JSON and Markdown report goes to an ignored `.eval-results/` folder, with a short table in the terminal. The run exits non-zero when a §11 target fails, so it can gate later if the user wants.
 
 ## Starting point in the repo (2026-10-15)
 
@@ -100,17 +100,17 @@ AGENTS.md makes each of these "ask first": a new dependency (sqlite-vec, an embe
 **Today's search.**
 
 - *Matching*: a case-insensitive substring match of `q` against city, alias, province, area and hotel name.
-- *Filtering*: a hotel is kept only if a room type is available every night. Party size does not filter.
-- *Ranking*: review score, then lowest price.
+- *Filtering*: a Hotel is kept only if a Room type is available every night. Party size does not filter.
+- *Ranking*: Review score, then lowest Nightly price.
 - *Output*: `SearchResult { heading, cards }`, with no relevance score or match reason.
 
 **Corpus.**
 
-- *Size*: 6 cities and 12 fictional hotels, with 2 room types each.
-- *Structured fields*: category, stars, review score, price (690–2450 ZAR), 11 amenity keys, policies (children, pets, smoking, cancellation) and room capacity.
-- *Free text*: thin. Each hotel description is one sentence of about 70 characters, and each city has a one-liner. There is no review text, no coordinates and no landmarks.
+- *Size*: 6 cities and 12 fictional Hotels, with 2 Room types each.
+- *Structured fields*: category, stars, Review score, Nightly price (690–2450 ZAR), 11 Facility keys, policies (children, pets, smoking, cancellation) and room capacity.
+- *Free text*: thin. Each Hotel description is one sentence of about 70 characters, and each city has a one-liner. There is no review text, no coordinates and no landmarks.
 
-The subagent's inference: semantic ranking has little text to work with unless the seed is enriched, and enriching it is an ask-first change.
+The subagent's inference: semantic ranking has little text to work with unless the seed is enriched, and enriching it is an ask-first change. (Revised 2026-10-15: the user approved an Enrichment file next to the unchanged seed; see PRD FR-7 and §10.)
 
 ## Landscape research (2026-10-15)
 
@@ -118,16 +118,16 @@ Source: a web-research subagent. Confidence is medium; most sources are 2024–2
 
 **Two product shapes exist.**
 
-- *Natural-language box that sets filters*, results stay a normal list: Booking.com Smart Filter maps "hotels in Amsterdam with a great gym and canal views" onto its existing filters.
+- *Natural-language box that sets filters*, where results stay a normal list: Booking.com Smart Filter maps "hotels in Amsterdam with a great gym and canal views" onto its existing filters.
 - *Chat that returns a list or itinerary*: Expedia Romie, Kayak AI Mode (Oct 2025), Google AI Mode with in-flow booking (Aug 2026).
 
-Both shapes parse dates, guests and location into structured fields and match the rest by meaning. No source found on how any of them shows *why* a result matched, so that is an open UX gap.
+Both shapes parse dates, guests and location into structured fields and match the rest by meaning. No source shows how any of them explains *why* a result matched, so that is an open UX gap.
 
 **Guest-facing failure modes.**
 
-- A Sept 2026 traveller survey found 1 in 6 AI users were sent to something that does not exist. The commonest errors were wrong prices or details (27%) and unavailable options (21%). Trust drops sharply after an error.
+- A September 2026 traveller survey found 1 in 6 AI users were sent to something that does not exist. The most common errors were wrong prices or details (27%) and unavailable options (21%). Trust drops sharply after an error.
 - Hard pre-filters can empty the candidate set and produce zero results. A known mitigation is to expand the query before search and verify relevance after.
-- Mitigations suggested by the subagent (not sourced): only quote catalog data and never generate amenity claims; validate extracted filters against the schema; show the interpreted filters to the guest in editable form.
+- Mitigations suggested by the subagent (not sourced): only quote catalog data and never generate Facility claims; validate extracted filters against the schema; show the interpreted filters to the guest in editable form.
 
 **Technical notes (for architecture).**
 
