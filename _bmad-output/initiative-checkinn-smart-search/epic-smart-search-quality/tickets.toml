@@ -1,0 +1,117 @@
+# epic-smart-search-quality — planned entries in build order. Table order is the build order; ids are never reused.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Golden query set"
+description = "Adds the GoldenQuery type and parser in src/domain/golden.ts and data/eval/golden-queries.json: 24 Golden queries, 4 held out, each with a fixed today, the expected Hard criteria, hand-written expected Preferences, acceptable Hotels, Best-fit room and Rooms, and the Hotel that must not rank first, written from the seed before the Enrichment exists (FR-17, AD-32). It includes the e2e Queries (UJ-1 to UJ-3, Kruger, the fallback Query), whose expected Preferences are the fixture Preferences strings 1.1, 1.3 and 1.7 already wrote, so the two match, and updates any fixture string in data/eval/fake-provider.json that differs (AD-30). The presenter confirms the expected answers match their intent."
+verify = "A unit test parses the file and checks the size, the held-out count, the half with an empty Destination or a province or coast, and one Golden query of each FR-17 coverage kind; the presenter signs off the expected answers."
+covers = ["FR-17"]
+after = ["1.1"]
+hitl = true
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-32 golden.ts"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Enrichment file"
+description = "Writes data/seed/hotel-enrichment.json: for each of the 12 Hotels an 80 to 150 word description, 4 fictional reviews and 3 nearby highlights, keyed by seed Hotel id, with the seed file unchanged (FR-7, AD-24). Adds the Enrichment loader and its checks in src/domain/chunks.test.ts, which entry 3 extends: no Facility or policy the Hotel lacks, at least 4 Hotels never quiet, and the word counts."
+verify = "The Enrichment tests pass; only Winelands Family Lodge mentions pets; git shows data/seed/hotel-booking-demo.json unchanged; the Golden queries' expected answers were not edited."
+covers = ["FR-7"]
+after = [1]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Chunking and Prepared index build"
+description = "Adds buildChunks and CHUNKING_VERSION in src/domain/chunks.ts (AD-24 Chunking) and npm run search:index, which embeds every chunk and every Golden query's expected Preferences through 1.2's adapter and writes data/seed/search-index.json and data/eval/golden-embeddings.json (AD-32). Adds the pre-flight check against the index's model, and the drift test that fails with 'run npm run search:index' when a chunk, hash, version, model or dimensions differ. The presenter runs the command with the key and commits both files."
+verify = "Unit tests check chunk ids, facets and hashes for one Hotel; the drift test passes against the committed index and fails after an Enrichment edit; both committed files hold 1024-dimension vectors from text-embedding-3-large."
+covers = ["FR-8", "FR-9", "FR-17"]
+after = ["1.2", 2]
+hitl = true
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-24 Files, Chunking and Tests, AD-26 Vectors"]
+
+[[entry]]
+id = 4
+type = "story"
+title = "Prepared index tables, load, reset and exact-word scores"
+description = "Adds the approved schema change: two Drizzle migrations for search_chunks, search_chunk_vectors, the content-storing FTS5 search_chunks_fts and search_meta (AD-24 Database copy). The seed and reset load the committed index, openDb reloads it when indexHash differs, and resetDb walks PRAGMA table_list and skips shadow tables. Adds index.repo.ts with FTS joins and exact-word scores, ftsQuery, and the test database loading the real index."
+verify = "A reset test runs FTS5 integrity-check and a MATCH query after db:reset; the existing reset.test.ts and reset e2e spec pass unchanged; an existing database with an old indexHash reloads on start; db:reset runs with the Provider off and makes no outbound request; a repo test gives 'Oak & Vine' its Hotel's highest exact score; npm run build succeeds with no database file and no Provider configuration."
+covers = ["FR-9"]
+after = [3]
+hitl = false
+risk = "high"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-24 Database copy, AD-26 Preferences"]
+
+[[entry]]
+id = 5
+type = "story"
+title = "Hybrid Relevance in the ranking and the weak-match heading"
+description = "Adds meaning and exact parts, chunkScore, Hotel Relevance, topChunks and the Strong-match threshold in src/domain/relevance.ts (AD-26), the Preferences embedding at submit and render with its cache map and the embed-failure fallback into 1.7's fallback mode (AD-22, AD-28), and the fake's embed from golden embeddings. Feeds Relevance into 1.5's RANKING_BLEND and Room-type meanings into bestFit, and renders the Weak-match heading with its rephrase line (FR-10). Fills the meaning and exact rows of 1.5's Score breakdown, handles the No-Preferences state (equal Relevance, no heading, no reasons), re-baselines the order-asserting specs from 1.4 and 1.5, and adds the Golden-query Retrieval and ranking tests to npm test with the test that every fake fixture Preferences string has a golden embedding (FR-18, AD-30)."
+verify = "npm test with committed embeddings and no Provider: 'with a pool' ranks pool Hotels higher, 'ski chalet with a fireplace' has no Strong match, every Golden query with an answer has one, 'Durban' alone gives the MVP Durban Hotels, and a Hotel's Relevance is the same whatever else is in the set. The UJ-2 e2e lists Jacaranda Garden Hotel first and UJ-3 shows 'No strong matches for ‘ski chalet with a fireplace’'."
+covers = ["FR-8", "FR-9", "FR-10", "FR-13", "FR-14", "FR-18", "FR-20"]
+after = ["1.7", 4]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 weakMatch, AD-26, AD-28, AD-30 The fake", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-weak.html"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Grounded Match reasons, streamed into the cards"
+description = "Adds generateReasons with one batched call over each Hotel's topChunks, validateReason in src/domain/match-reason.ts (120 characters, valid citations, no prices, dates, links or contact details), getMatchReasons with cached reasons inline and misses streamed in their own Suspense, and the reasons cache map (AD-27, AD-28). Renders the Match reason block with its two-line skeleton and the polite 'Match reasons added' announcement, and adds fake reasons fixtures citing the first sent chunk (AD-30)."
+verify = "Unit tests drop over-long, uncited, wrong-Hotel and price-bearing reasons and check every fixture reason passes validateReason. The UJ-1 e2e shows the Match reason after the cards; a reason the fake fails leaves the card with no reason and no message."
+covers = ["FR-15", "FR-16"]
+after = [5]
+hitl = false
+risk = "high"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 Match reasons, AD-27, AD-28", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-thandi.html"]
+
+[[entry]]
+id = 7
+type = "story"
+title = "Eval runner and grounding judge"
+description = "Adds npm run search:eval, which resets a temp database and runs every Golden query through interpretQuery, runSmartSearch and generateReasons at its fixed today, scores SM-1 to SM-6 and SM-C1 and SM-C2 per query and in total with held-out queries apart, and scores all three Ranking blend candidates side by side (AD-32). Adds the judge with data/eval/judge-calibration.json, the not-grounded list for a person, and reports in a gitignored .eval-results/ recording the deployments, weights and today, with one terminal line per query. The presenter runs it with the key and confirms each not-grounded verdict."
+verify = "A unit test of the scoring on a fixture run, including the UJ-2 check that Best value ranks Jacaranda first and Top rated ranks Goldleaf first; the presenter's run writes the JSON and Markdown report with all three candidates, passes judge calibration, and exits non-zero when the current RANKING_BLEND misses a target."
+covers = ["FR-11", "FR-17", "FR-18", "FR-19"]
+after = [6]
+hitl = true
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-32", "_bmad-output/initiative-checkinn-smart-search/prd-smart-search/prd-smart-search.md, §11 Success Metrics", "_bmad-output/initiative-checkinn-smart-search/prd-smart-search/addendum.md, Eval design"]
+
+[[entry]]
+id = 8
+type = "story"
+title = "Workshop decision: choose the Ranking blend"
+description = "The workshop reads entry 7's report, chooses Best match, Best value or Top rated on SM-1 and SM-C2, and sets RANKING_BLEND to that candidate's weights only, the one-place change FR-12 promises. Re-baselines the order-asserting tests and specs to the chosen blend and records the choice as a dated Decision in the epic's Notes. Applies the interpretation tuning step from 1.3 when the report shows misreads on SM-5; at a 4 s timeout the submit-time embed budget min(1.5 s, 3 s − elapsed) is gone, so the embed moves to render only and 1.7's fallback timing is re-checked."
+verify = "npm run search:eval exits zero with the chosen blend; npm test and the Smart e2e specs pass; the app has no code for the two candidates not chosen."
+covers = ["FR-4", "FR-11", "FR-12"]
+after = [7]
+hitl = true
+risk = "low"
+
+[[entry]]
+id = 9
+type = "story"
+title = "Refactor sweep"
+description = "Cleanup, scoped when it starts from the plans and the review findings deferred during the epic, including a review of the AD-1 layering rule and the provider import guard. No new scope."
+verify = "Lint, typecheck, test, build and the existing e2e specs are green with no behaviour change, and npm run search:eval still exits zero."
+covers = []
+after = ["1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", 1, 2, 3, 4, 5, 6, 7, 8]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 10
+type = "story"
+title = "Smart search e2e suite and workshop dry run"
+description = "Adds the serial e2e/smart-booking project on 3101 with the UJ-1 booking through to a reference, and cross-cutting specs for reload, share and Back on Smart URLs, the mobile viewport and the no-Provider fresh-clone behaviour (AD-30). Then the workshop dry run on the presenter laptop with the presenter's key: search:preflight, the three UJs on the projector within the speed targets, and the fallback with the network cut."
+verify = "npm run test:e2e is green in CI against npm start, and the dry-run checklist passes on the presenter laptop over the venue network."
+covers = ["FR-1", "FR-2", "FR-3", "FR-5", "FR-6", "FR-10", "FR-14", "FR-15"]
+after = [9]
+hitl = true
+risk = "medium"

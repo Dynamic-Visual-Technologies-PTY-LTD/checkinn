@@ -30,15 +30,16 @@ A workshop audience watches a RAG pipeline answer UJ-1 to UJ-3 end to end, and t
 
 One Next.js app, owned by the presenter with agent lanes, extending the MVP through the existing search seam (MVP AD-7). See the PRD §5 Non-goals and §6.2 Out of scope. Tracer path: the Smart search box on Home submits a Query, the fake Provider interprets it, and `/search` shows the interpreted Search bar and Hotels.
 
-- Touch point: Azure AI Foundry (`gpt-6-luna`, `text-embedding-3-large`) — consumed over HTTPS with a key in `.env.local`; owner: epic-smart-search
-- Touch point: `playwright.config.ts`, `e2e/support/db.ts` and `vitest.config.mts` — a second e2e server on port 3101 and `CHECKINN_PROVIDER=off` for unit tests (AD-29, AD-30); owner: epic-smart-search
+- Touch point: Azure AI Foundry (`gpt-6-luna`, `text-embedding-3-large`) — consumed over HTTPS with a key in `.env.local` through the adapter in entry 1.2; owner: epic-smart-search
+- Touch point: `playwright.config.ts`, `e2e/support/db.ts` and `vitest.config.mts` — a second e2e server on port 3101 and `CHECKINN_PROVIDER=off` for unit tests (AD-29, AD-30); owner: epic-smart-search; the serial `e2e/smart-booking/` project: epic-smart-search-quality
 - Touch point: `package.json` — the `openai` 7.28.0 dependency (approved 2026-10-19); owner: epic-smart-search
-- Touch point: `.gitignore` (`.eval-results/`) and `.env.example` (names only); owner: epic-smart-search
+- Touch point: `.env.example` (names only); owner: epic-smart-search
+- Touch point: `.gitignore` (`.eval-results/`); owner: epic-smart-search-quality
 - Touch point: `.github/workflows/ci.yml` — consumed, no change needed (AD-30); owner: epic-smart-search
 
-Built here, not touch points: the Prepared index schema and migrations in `src/db` (approved 2026-10-19, AD-24) and the `search:preflight`, `search:index` and `search:eval` scripts, all in epic-smart-search.
+Built here, not touch points (`package.json` scripts): the `search:preflight` script (epic-smart-search), and the Prepared index schema and migrations in `src/db` (approved 2026-10-19, AD-24) and the `search:index` and `search:eval` scripts (epic-smart-search-quality).
 
-Prerequisite: the finished CheckInn MVP (initiative-checkinn-mvp). Its 15 entries are built and in review; Smart search extends its search seam, Hotel page and booking flow.
+Prerequisite: the finished CheckInn MVP (initiative-checkinn-mvp). All 15 of its entries are done; Smart search extends its search seam, Hotel page and booking flow.
 
 ## References
 
@@ -53,8 +54,11 @@ Prerequisite: the finished CheckInn MVP (initiative-checkinn-mvp). Its 15 entrie
 
 - Decision: all Smart search work stays on the branch `docs/rag-search-planning` and is never merged into `main` without the user's explicit permission. (User, PRD §0, 2026-10-15)
 - Decision: workshop material. Planning answers are settled before the workshop so the live build moves fast; stories are sized for one workshop sitting each, with guest-visible slices first where the architecture allows. (User, 2026-10-19)
-- Assumption: one epic, not a separate platform-baseline epic. It is one app with one owner, the MVP baseline (scaffold, CI, environments) already exists, and the new environments (port 3101 server, Provider config) are stories of epic-smart-search. Mirrors the MVP initiative's decision; user to confirm, then this becomes a Decision line. (Headless run, 2026-10-19)
-- Open question: the MVP entries are built and in review, not marked done; the user confirms the MVP is done before Smart search entry 1 starts.
+- Decision: two epics, split at the original entries 7/8. epic-smart-search holds the guest-facing Smart search on the fake Provider plus the Azure adapter; epic-smart-search-quality holds retrieval quality: Golden queries, Enrichment, index, Relevance, Match reasons, eval, the blend decision, the refactor sweep and the e2e suite and dry run. (User, 2026-10-19)
+- Decision: no separate platform-baseline epic. The MVP baseline (scaffold, CI, environments) already exists, and the new environments (port 3101 server, Provider config) are entries 1.1 and 1.2. This follows the user's two-epic split. (User's split, 2026-10-19)
+- Decision: the MVP is done. All MVP PRs are merged into `main` with none open, and its 15 entries are marked done. (User, 2026-10-19)
+- Decision: no plan or done checkpoints. Each story is built live with `bmad-build` in one sitting. (User, 2026-10-19)
+- Waits on epic-smart-search because: epic-smart-search-quality needs the tracer's types (1.1), the Azure adapter (1.2) and the smart pipeline with fallback, Ranking blend and Best-fit (1.7).
 - Decision: the database schema change for the Prepared index tables (chunks, embeddings, FTS5) is approved; the database copy in AD-24 is built and the in-memory alternative is not. (User, 2026-10-19)
 - Decision: the `openai` npm SDK 7.28.0 is approved; the `fetch` alternative in AD-25 is not built. (User, 2026-10-19)
 - Decision: Azure is confirmed: deployment `gpt-6-luna` and `text-embedding-3-large` in the same Foundry resource and region, with GPT-6 quota available. (User, 2026-10-19)
