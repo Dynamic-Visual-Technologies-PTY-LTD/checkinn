@@ -2,7 +2,7 @@
 title: CheckInn Smart Search PRD
 status: final
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # PRD: CheckInn Smart Search
@@ -113,7 +113,7 @@ A Guest sees the Smart search box above the Search bar on the Home page and the 
 - Pressing Enter or the search button submits the Query.
 - An empty or whitespace-only Query cannot be submitted.
 - Input stops at 300 characters.
-- Three example Queries, the exact Queries from UJ-1, UJ-2 and UJ-3, sit under the box. One click fills the box and submits, so the workshop demo needs no typing (user decision).
+- On the Home page, three example Queries (the exact Queries from UJ-1, UJ-2 and UJ-3) sit under the box. One click fills the box and submits, so the workshop demo needs no typing (user decision).
 - While Query interpretation runs, the Smart search box and the Search bar are read-only (user decision; see §8).
 - The box works on mobile and desktop viewports and meets WCAG 2.1 AA, as in the MVP.
 

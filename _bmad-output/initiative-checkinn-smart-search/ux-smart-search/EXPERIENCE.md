@@ -1,5 +1,5 @@
 ---
-status: draft
+status: final
 updated: 2026-10-19
 name: CheckInn Smart Search
 sources:
@@ -28,11 +28,11 @@ This spine extends the MVP `EXPERIENCE.md` (`../../initiative-checkinn-mvp/ux-ch
 
 ### Changes to MVP behaviour
 
-PRD §8 lists the product-rule changes. These are the UX rules this delta changes on purpose. Each applies only while a Query is present.
+This table lists the MVP UX rules this delta changes on purpose; PRD §8 lists the product-rule changes. Each change applies only while a Query is present.
 
 | MVP rule (MVP `EXPERIENCE.md`) | Change under Smart search | Why |
 |---|---|---|
-| State Patterns, Loading results: "The search bar stays usable." | The Search bar is read-only while Query interpretation runs, for up to 2.5 s (see Submitting). | It cannot race the Query (user decision, FR-1). |
+| State Patterns, Loading results: "The search bar stays usable." | The Search bar is read-only while Query interpretation runs, for up to 2.5 s (see Submitting). | The Search bar cannot race the Query (user decision, FR-1). |
 | Interaction Primitives: focus goes to the main headline after every URL change; live regions are only for updates in place. | After a Criteria chip is removed, focus stays in the chip row and the new result count is announced once through a polite live region. The headline is not focused. | The Guest is likely to remove another chip (user decision). |
 
 ## Information Architecture
@@ -72,7 +72,7 @@ The MVP voice applies: warm, plain South African English, what happened and then
 | "Family Room · 1 room · sleeps 4" | "Recommended room for you!" |
 | "Family Room picked for your search. Change it in the table." (booking summary) | "We chose this for you!" |
 
-The notice copy above for unknown place, ignored value and fallback, and the weak-match heading copy, are decided. The unknown-place and ignored-value lines follow the PRD examples (FR-4).
+The copy above for the unknown-place, ignored-value and fallback notices and for the weak-match heading is decided. The unknown-place and ignored-value lines follow the PRD examples (FR-4).
 
 **Formats.** As the MVP: "R 2 000" with non-breaking spaces, "Fri 23 Oct 2026" dates. The MVP spoken-price rule does not apply to control names: a Criteria chip's name keeps its visible text, so it reads "Remove Max R 2 000 per night" (see Criteria chip).
 
@@ -82,7 +82,7 @@ Behavioural. Visual specs live in `DESIGN.md` Components under the same names.
 
 | Component | Used on | Behavioural rules |
 |---|---|---|
-| Smart search box | Home, Search results | A native `<textarea rows="1" maxlength="300" enterkeyhint="search">` with a `<label for>` reading "Describe your stay". It grows from one line to two, then scrolls inside itself. Enter on `keydown` submits and calls `preventDefault`, so it never adds a new line; Enter during IME composition (`event.isComposing`) is left alone. The field is described by `aria-describedby="ss-hint ss-counter ss-status"`: a visually hidden "Press Enter to search", the Character counter and the Submitting status, all present in the DOM from page load. Input stops at 300 characters (FR-1); a longer paste is cut at 300. An empty or whitespace-only Query cannot be submitted: Enter does nothing, focus stays in the field. While submitting the field has the `readonly` attribute (not `aria-readonly`). On Search results the box shows the submitted Query from the URL. Stay and Party keep their Search bar values unless the Query states them; Destination, Max price and Policy criteria start empty for each new Query (FR-4). [Mock](mockups/key-home-smart.html) |
+| Smart search box | Home, Search results | A native `<textarea rows="1" maxlength="300" enterkeyhint="search">` with a `<label for>` reading "Describe your stay". It grows from one line to two, then scrolls inside itself. Enter on `keydown` submits and calls `preventDefault`, so it never adds a new line; Enter during IME composition (`event.isComposing`) is left alone. The field is described by `aria-describedby="ss-hint ss-counter ss-status"`: a visually hidden "Press Enter to search", the Character counter and the Submitting status, all present in the DOM from page load. Input stops at 300 characters (FR-1); a longer paste is cut at 300. An empty or whitespace-only Query cannot be submitted: Enter does nothing, focus stays in the field. While submitting, the field has the `readonly` attribute (not `aria-readonly`). On Search results the box shows the submitted Query from the URL. [Mock](mockups/key-home-smart.html) |
 | Smart search submit | Smart search box | An `icon-button` named "Search by description", so it is not confused with the Search bar's Search. Pressing it is the same as Enter. `aria-disabled="true"` while the box is empty and while submitting; it keeps its name and stays focusable, and a second Enter or press while submitting is ignored. The spinner inside it is `aria-hidden`. |
 | Smart search clear | Smart search box | The × appears only when there is text. Named "Clear description". It empties the box and keeps focus in it. It does not re-run the search. `aria-disabled` while submitting. |
 | Character counter | Smart search box | Always in the DOM with a stable `id`, empty below 250 characters. From 250 it shows "250 / 300" with a visually hidden reading, "250 of 300 characters used". On reaching 300, by typing or by a cut paste, a polite announcement says "300 of 300 characters, the limit", once. |
@@ -110,8 +110,8 @@ MVP states apply unchanged. Smart search adds these.
 | Provider not configured | Home, Search results | The box and the Example queries are absent. No message. The Home hero is as shipped. Every page is the MVP page (FR-2). |
 | Idle | Home, Search results | The label, the placeholder (Home) or the submitted Query (Search results), and the search icon. The submit is `aria-disabled` while the box is empty. The live regions exist and are empty. [Mock](mockups/key-home-smart.html) |
 | Typing | Smart search box | The × appears. The submit becomes enabled once there is non-space text. The counter shows from 250 characters. Nothing runs until submit. |
-| Submitting | Smart search box, Search results | Triggered by Enter, the submit, an Example query or Try again. The field is `readonly`, the submit shows the spinner, and "Reading your search…" is set in the Submitting status and announced once. The clear, the Example queries, Try again and the Search bar are `aria-disabled` for those up to 2.5 s, so nothing can race the Query (a declared change to the MVP, see Foundation). On Search results the listing is replaced by the MVP's three skeleton cards with `aria-busy="true"` on the list. On Home the page stays as it is until navigation. [Mock](mockups/key-home-smart.html) |
-| Results | Search results | CheckInn navigates to the Search results URL (FR-3). The Search bar shows the interpreted Destination, Stay and Party, the chips show Max price and Policy criteria, and the box shows the Query. Focus goes to the result-count headline, as in the MVP. Cards are in Ranking blend order (FR-11). [Mock](mockups/key-results-thandi.html) |
+| Submitting | Smart search box, Search results | Triggered by Enter, the submit, an Example query or Try again. The field is `readonly`, the submit shows the spinner, and "Reading your search…" is set in the Submitting status and announced once. The clear, the Example queries, Try again and the Search bar are `aria-disabled` for up to 2.5 s, so nothing can race the Query (a declared change to the MVP, see Foundation). On Search results the listing is replaced by the MVP's three skeleton cards with `aria-busy="true"` on the list. On Home the page stays as it is until navigation. [Mock](mockups/key-home-smart.html) |
+| Results | Search results | CheckInn navigates to the Search results URL (FR-3). The Search bar shows the interpreted Destination, Stay and Party, the chips show Max price and Policy criteria, and the box shows the Query. Stay and Party keep their Search bar values unless the Query states them; Destination, Max price and Policy criteria start empty for each new Query (FR-4). Focus goes to the result-count headline, as in the MVP. Cards are in Ranking blend order (FR-11). [Mock](mockups/key-results-thandi.html) |
 | Results with notices | Search results | As Results, with up to two notices after the heading. Unknown place: Destination stays empty, the headline is "All destinations: N properties found", and the notice names the place (FR-4). Ignored value: the value is not applied and the notice names it (FR-4). [Mock](mockups/key-results-weak.html) |
 | Weak match | Search results | No Hotel is a Strong match. The Weak-match heading says so: "No strong matches for ‘ski chalet with a fireplace’", with "Try describing it another way." under it. The closest Hotels are listed below in Ranking blend order, each with an honest Match reason (FR-10). There is no weak-match notice; PRD SM-6's "weak-match notice" means this heading. Focus goes to the heading after navigation, as in the MVP (user decision). [Mock](mockups/key-results-weak.html) |
 | No Preferences | Search results | A Query with only Hard criteria. No Weak-match heading, no Match reason label or skeleton. The Best-fit room line still shows (FR-10). |
@@ -131,10 +131,10 @@ MVP states apply unchanged. Smart search adds these.
 - **Navigation.** Submitting a Query pushes a new Search results URL. Back returns to the previous Search results state, with its Query in the box (FR-3). Removing a chip and changing a Search bar field each push a new URL, as MVP criteria changes do.
 - **Focus.**
   - After a Query is submitted: the result heading (the result count, or the Weak-match heading), as in the MVP.
-  - After a chip is removed: stays in the chip row, the next chip, then the previous one, otherwise the Smart search box, restored by chip key if the update drops it. **Exception to the MVP focus-after-navigation rule** (user decision, see Foundation).
+  - After a chip is removed: stays in the chip row, on the next chip, or the previous one if the removed chip was last, otherwise on the Smart search box; restored by chip key if the update drops it. **Exception to the MVP focus-after-navigation rule** (user decision, see Foundation).
   - After the × clear: stays in the box.
   - After an Example query is clicked: stays on it until navigation, then the result heading.
-- **Tab order** on Search results: Smart search box, its clear and submit, the Search bar, the Criteria chips, the result heading's Notices (Try again), then the results.
+- **Tab order** on Search results: Smart search box, its clear and submit, the Search bar, the Criteria chips, Try again in the fallback notice, then the Listing cards. The result heading takes programmatic focus (`tabindex="-1"`) after navigation but is not a Tab stop.
 - **Streaming.** Match reasons fill in place after the results. Nothing reorders or moves above a card when they arrive.
 - **Motion.** The spinner rotates; the skeleton pulses; both stop under reduced motion. The gradient border never animates.
 - **Banned (adds to the MVP list):**
@@ -149,7 +149,7 @@ MVP states apply unchanged. Smart search adds these.
 The MVP floor applies in full: WCAG 2.1 AA, visible labels, 44px targets, the Gold focus ring, reflow at 320px, no meaning by colour alone. Smart search adds:
 
 - **Label.** "Describe your stay" is a real `<label for>` on the textarea. The placeholder is an example, never the label (FR-1).
-- **Live regions start empty.** The Submitting status, the results status (chip removal count) and the "Match reasons added" region all exist, empty, at page load; text is set on the event. "Match reasons added" is not fired if the Guest has left the page.
+- **Live regions start empty.** The Submitting status, the results status (chip removal count) and the "Match reasons added" region all exist, empty, at page load; each gets its text when its event happens. "Match reasons added" is not fired if the Guest has left the page.
 - **Status while submitting.** "Reading your search…" is announced once. Focus does not move until navigation.
 - **Heading after navigation.** Focus goes to the result heading. Notices and the rephrase line follow it in the DOM and are its accessible description, so a screen reader reads "Stellenbosch: 1 property found" followed by any notice, and reading on reaches them too.
 - **Criteria chips.** Real buttons, named by a visually hidden "Remove " plus the visible text, never by `aria-label` (2.5.3). At least 44 × 44px including the ×. The × icon is decorative. The row is a list with the visually hidden label "Your filters".
@@ -217,7 +217,7 @@ Steps 1–3: [Home mock](mockups/key-home-smart.html). Steps 4–5: [results moc
 2. Results: "Gauteng: 4 properties found". No chips, because the Query has no Max price or Policy criteria.
 3. Jacaranda Garden Hotel is first: "Why it matches: Quiet workspaces, a gym and meeting rooms." Goldleaf Business Hotel is second. Its reason mentions the gym and meeting rooms and does not claim "quiet" (FR-16).
 4. A screen-reader user would hear "Match reasons added" once, when the last reason settles.
-5. **Climax:** he can see why the order is right without a sort control. The reasons tell him Jacaranda is the quiet one, and he opens it and books.
+5. **Climax:** he can see the reasons for the order without a sort control. The reasons tell him Jacaranda is the quiet one, and he opens it and books.
 
 **Edge case: presenter view.** With the debug flag on, each card ends with the Score breakdown, so the presenter can show that Relevance put Jacaranda first despite Goldleaf's higher Review score.
 
@@ -231,6 +231,6 @@ Step 2: [weak-match mock](mockups/key-results-weak.html).
 2. Results: the heading reads "No strong matches for ‘ski chalet with a fireplace’", with "Try describing it another way." under it and the closest Hotels listed below. Focus lands on the heading, and a screen reader reads the rephrase line with it.
 3. Each card has an honest Match reason that says what does fit and does not stretch to "ski" (FR-16).
 4. She selects the box, which still holds her Query, clears it with ×, and types "cosy weekend retreat in the winelands".
-5. **Climax:** the new results come back under a normal result-count heading, and the Winelands Hotels show reasons about relaxed stays. CheckInn told her the truth the first time and helped her find the right words the second.
+5. **Climax:** the new results come back under a normal result-count heading, and the Winelands Hotels show reasons about relaxed stays. The first results said plainly that nothing matched well, and the rephrase line helped her word the second Query.
 
 **Failure: no results.** Had she added "under R500 a night", no Hotel would meet the Hard criteria. She would see "Nothing matches that search." naming the Max price, with the "Max R 500 per night" chip ready to remove.
