@@ -6,12 +6,12 @@
 <title>CheckInn key screen: Hotel page with Best-fit room</title>
 <style>
 /*
-  CheckInn Smart search key-screen mock. Illustrates the spine; the spine is the contract.
+  CheckInn Smart search key-screen mock. Illustrates the spines; the spines win on conflict with this mock.
   Spines: ux-smart-search/DESIGN.md and EXPERIENCE.md (the Smart search delta, wins on conflict),
   on top of the root DESIGN.md and the MVP ux-checkinn/EXPERIENCE.md.
   Governing spine sections:
-   - delta EXPERIENCE.md Information Architecture (Hotel page change), Component Patterns > Best fit chip, Room table (changed: Best-fit room and its Rooms pre-selected, summary filled, Reserve enabled)
-   - delta DESIGN.md Components > Best fit chip (root display-only chip on the pre-selected row, no new token)
+   - delta EXPERIENCE.md Information Architecture (Hotel page change), Component Patterns > Best-fit chip, Room table (changed: Best-fit room and its Rooms pre-selected, row header, select described by the chip, Reserve enabled), Booking summary (changed); IA > Hotel page URL (bestFit)
+   - delta DESIGN.md Components > Best-fit chip (root display-only chip on the pre-selected row, wraps, no new token), Booking summary (changed)
    - delta EXPERIENCE.md Key Flows > Flow 1 step 6 (bottom bar '1 room · R 4 000,00 · Reserve'); PRD FR-14
    - root DESIGN.md Room table, Booking summary; MVP EXPERIENCE.md Responsive (< 768px: room rows become cards, summary becomes the fixed bottom bar)
    - Seed: Winelands Family Lodge, Standard Double R 1 450 and Family Room R 2 000 a night, pets allowed, non-refundable
@@ -149,7 +149,7 @@ select.input{width:auto}
 .m select.input{height:44px}
 
 /* ---- Smart search additions (ux-smart-search/DESIGN.md delta) ---- */
-.ss-label{display:block;font-size:14px;line-height:1.56;color:#FFFFFF;margin-bottom:4px}
+.ss-label{display:block;font-size:14px;line-height:1.56;color:#E5E7E8;margin-bottom:4px}
 .ss{display:flex;align-items:center;gap:8px;min-height:56px;padding:4px 4px 4px 15px;border:2px solid transparent;border-radius:12px;background:linear-gradient(#070C14,#070C14) padding-box,linear-gradient(to right,#007FBA,#00D2D6) border-box}
 .ss>svg{flex:none;color:#E5E7E8}
 .ss-t{flex:1;min-width:0;font-size:15px;line-height:1.56;color:#FFFFFF;max-height:3.12em;overflow:hidden;padding:4px 0}
@@ -171,8 +171,44 @@ select.input{width:auto}
 .summ{display:flex;align-items:center;gap:8px;width:100%;min-height:56px;padding:8px 15px;border:1px solid #007FBA;border-radius:12px;background:#070C14;color:#FFFFFF;font:inherit;font-size:15px;line-height:1.56;text-align:left}
 .summ svg{flex:none;color:#E5E7E8}
 .rt-name{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+/* review fixes 2026-10-19: native textarea, wrapping chips, notices after the heading, two-line skeleton */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.ss{padding:6px 6px 6px 15px}
+.ss:has(.ss-t:focus-visible){outline:2px solid #FFC300;outline-offset:2px}
+.ss-t{flex:1;min-width:0;display:block;font:inherit;font-size:15px;line-height:1.56;color:#FFFFFF;background:transparent;border:0;margin:0;padding:4px 0;resize:none;field-sizing:content;min-height:1.56em;max-height:3.12em;overflow-y:auto}
+.ss-t:focus{outline:none}
+.ss-t::placeholder{color:#E5E7E8;opacity:1}
+.ss-t[readonly]{cursor:default}
+.ss-btn[aria-disabled="true"]{border-color:#7A828C;color:#7A828C;cursor:default}
+.ss-btn.busy[aria-disabled="true"]{color:#FFFFFF}
+.ss-counter{font-size:14px;line-height:1.56;color:#E5E7E8;text-align:right;margin:0}
+.ss-counter:empty,.ss-status:empty{display:none}
+.crit{white-space:normal;text-align:start;max-width:100%;min-width:0;padding:8px 15px;font-size:.875rem}
+.crit svg{flex:none}
+.rt-name .chip{white-space:normal}
+.ex{margin-top:8px}
+.ex-lead{font-size:14px;line-height:1.56;color:#E5E7E8;margin:0}
+.ex-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;column-gap:15px}
+.ex-q{min-height:44px;padding:0;border:0;background:none;font:inherit;font-size:14px;line-height:1.56;color:#FFFFFF;text-decoration:underline;text-align:start;cursor:pointer}
+.ex-q:hover{color:#FFC300}
+.ex-q[aria-disabled="true"]{color:#E5E7E8;cursor:default}
+.notice-b{flex:1;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.notice-b .btn{flex:none}
+.hint{font-size:24px;font-weight:300;line-height:32px;margin-top:8px}
+.lc{position:relative}
+.stretch{color:inherit;text-decoration:none}
+.stretch::after{content:"";position:absolute;inset:0;border-radius:12px}
+p.mr-block{margin:0}
+.mr-block .mr-l,.mr-block .mr{display:block}
+.mr-sk+.mr-sk{margin-top:4px}
+.mr-sk-2{width:60%}
+.rt tbody th{text-align:left;font-size:inherit;font-weight:inherit;text-transform:none;color:#FFFFFF;padding:25px;border-top:1px solid #CED4DA;vertical-align:top}
 /* phone additions */
-.m .ss-t{font-size:16px;line-height:1.5;max-height:3em}
+.m .ss-t{font-size:16px;line-height:1.5;min-height:1.5em;max-height:3em}
+.m .notice-b{flex-direction:column;align-items:flex-start}
+.m .notice-b .btn{width:100%}
+.m .hint{font-size:20px;line-height:28px}
+
 .m .lc{grid-template-columns:1fr;gap:15px;padding:15px}
 .m .lc .ph{height:190px}
 .m .lc-price{align-items:flex-start;text-align:left}
@@ -180,7 +216,7 @@ select.input{width:auto}
 </style>
 </head>
 <body>
-<section class="mock-section"><p class="mock-label">HOTEL PAGE · Desktop 1280 · opened from the UJ-1 card · Winelands Family Lodge, Fri 23 – Sun 25 Oct 2026, 4 adults · Family Room ×1 pre-selected with 'Best fit for your search'</p>
+<section class="mock-section"><p class="mock-label">HOTEL PAGE · Desktop 1280 · opened from the UJ-1 card · Winelands Family Lodge, Fri 23 – Sun 25 Oct 2026, 4 adults · Family Room ×1 pre-selected with the Best-fit chip · bestFit in the URL so reload, Back and share keep it · room name is the row header, the Rooms select is described by the chip, the summary explains the pick</p>
 <div class="browser"><div class="chrome"><i></i><i></i><i></i><div class="url">localhost:3000/hotels/winelands-family-lodge?checkIn=2026-10-23&amp;checkOut=2026-10-25&amp;adults=4&amp;children=0&amp;rooms=1&amp;bestFit=hotel-010-family</div></div><div class="page"><header class="hdr"><div class="wrap hdr-in"><a href="#"><img class="logo" src="../../../../public/logo/checkinn-logo-on-dark.webp" alt="CheckInn" height="40"></a><nav><a class="nav" href="#">Manage booking</a></nav></div></header><main class="wrap">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:25px">
     <div class="stack-sm">
@@ -233,17 +269,17 @@ select.input{width:auto}
     <div style="margin-top:25px"><p class="cancel-line ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg><span>Non-refundable. This booking can't be cancelled.</span></p></div>
     <div style="display:grid;grid-template-columns:1fr 380px;gap:25px;margin-top:25px;align-items:start">
       <div class="rt"><table><thead><tr><th scope="col">Room type</th><th scope="col">Sleeps</th><th scope="col">Price for 2 nights</th><th scope="col">Rooms</th></tr></thead><tbody><tr>
-  <td><div class="rt-name"><h3 class="h-sm">Standard Double</h3></div>
-    <div class="feat"><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.5"/></svg><span>1 double bed</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/></svg><span>Private bathroom</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></p></div></td>
+  <th scope="row"><div class="rt-name"><h3 class="h-sm">Standard Double</h3></div>
+    <div class="feat"><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.5"/></svg><span>1 double bed</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/></svg><span>Private bathroom</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></p></div></th>
   <td><span class="sleeps" role="img" aria-label="Sleeps 2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span><p class="sm muted">Sleeps 2</p></td>
   <td><p class="price">R 2 900</p><p class="sm muted">R 1 450 a night</p></td>
   <td><select class="input" aria-label="Standard Double rooms"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></td>
 </tr><tr>
-  <td><div class="rt-name"><h3 class="h-sm">Family Room</h3><span class="chip">Best fit for your search</span></div>
-    <div class="feat"><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.5"/></svg><span>1 double bed, 2 single beds</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/></svg><span>Private bathroom</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></p></div></td>
+  <th scope="row"><div class="rt-name"><h3 class="h-sm">Family Room</h3><span class="chip" id="bestfit-chip-1">Best fit for your search</span></div>
+    <div class="feat"><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.5"/></svg><span>1 double bed, 2 single beds</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/></svg><span>Private bathroom</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></p></div></th>
   <td><span class="sleeps" role="img" aria-label="Sleeps 4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span><p class="sm muted">Sleeps 4</p></td>
   <td><p class="price">R 4 000</p><p class="sm muted">R 2 000 a night</p></td>
-  <td><select class="input" aria-label="Family Room rooms"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></td>
+  <td><select class="input" aria-label="Family Room rooms" aria-describedby="bestfit-chip-1"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></td>
 </tr></tbody></table></div>
       <div class="sticky"><aside class="sum" aria-label="Booking summary">
   <h2 class="h-sm">Winelands Family Lodge</h2>
@@ -256,6 +292,7 @@ select.input{width:auto}
   <div class="stack-sm" style="margin-top:4px">
     <p class="sum-line"><span>1 × Family Room</span><span>R 4 000,00</span></p>
   </div>
+  <p class="sm muted" style="margin-top:8px">Family Room picked for your search. Change it in the table.</p>
   <hr class="divider">
   <p class="sum-line" aria-live="polite"><span class="h-sm">Total</span><span class="price">R 4 000,00</span></p>
   <p class="sm muted" style="margin-top:4px">Includes taxes. No extra fees.</p>
@@ -265,7 +302,7 @@ select.input{width:auto}
     </div>
   </section>
 </main><footer class="ftr"><div class="wrap"><p>CheckInn is a demo. Hotels, prices and reviews are fictional. Photos are illustrative. No payment is taken.</p><p><a href="#">Photo credits</a></p></div></footer></div></div></section>
-<section class="mock-section"><p class="mock-label">PHONE 375 · Availability · room table as stacked cards, Family Room card carries the chip and Rooms = 1, fixed bottom summary bar ready to Reserve</p>
+<section class="mock-section"><p class="mock-label">PHONE 375 · Availability · room table as stacked cards, Family Room card carries the chip and Rooms = 1, Rooms select described by the chip · fixed bottom summary bar ready to Reserve; its full summary carries the 'picked for your search' line</p>
 <div class="phone m"><div class="screen page fixed"><header class="hdr"><div class="wrap hdr-in"><a href="#"><img class="logo" src="../../../../public/logo/checkinn-icon.png" alt="CheckInn" height="40"></a><nav><a class="nav" href="#">Manage booking</a></nav></div></header><main class="wrap" style="padding-top:25px;padding-bottom:110px">
   <ol class="steps" style="gap:15px" aria-label="Booking steps"><li class="on" aria-current="step">Your selection</li><li>Your details</li><li>Confirmation</li></ol>
   <h2 class="h-lg" style="margin-top:25px">Availability</h2>
@@ -282,14 +319,14 @@ select.input{width:auto}
     <label class="sm" style="display:block">Rooms<br><select class="input" aria-label="Standard Double rooms"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label>
   </div>
 </div><div class="card" style="padding:15px">
-  <div class="rt-name"><h3 class="h-sm">Family Room</h3><span class="chip">Best fit for your search</span></div>
+  <div class="rt-name"><h3 class="h-sm">Family Room</h3><span class="chip" id="bestfit-chip-2">Best fit for your search</span></div>
   <div class="feat sm" style="margin-top:8px">
     <p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.5"/></svg><span>1 double bed, 2 single beds</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/></svg><span>Private bathroom</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></p>
     <p class="ico"><span class="sleeps" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span><span>Sleeps 4</span></p>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:15px">
     <div><p class="eyebrow">Price for 2 nights</p><p class="price">R 4 000</p><p class="sm muted">R 2 000 a night</p></div>
-    <label class="sm" style="display:block">Rooms<br><select class="input" aria-label="Family Room rooms"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></label>
+    <label class="sm" style="display:block">Rooms<br><select class="input" aria-label="Family Room rooms" aria-describedby="bestfit-chip-2"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></label>
   </div>
 </div></div>
 </main>

@@ -113,6 +113,8 @@ A Guest sees the Smart search box above the Search bar on the Home page and the 
 - Pressing Enter or the search button submits the Query.
 - An empty or whitespace-only Query cannot be submitted.
 - Input stops at 300 characters.
+- Three example Queries, the exact Queries from UJ-1, UJ-2 and UJ-3, sit under the box. One click fills the box and submits, so the workshop demo needs no typing (user decision).
+- While Query interpretation runs, the Smart search box and the Search bar are read-only (user decision; see §8).
 - The box works on mobile and desktop viewports and meets WCAG 2.1 AA, as in the MVP.
 
 #### FR-2: Hidden without a Provider
@@ -122,7 +124,7 @@ A Guest never sees the Smart search box when Smart search is not configured. Rea
 **Consequences (testable):**
 - With no Provider configuration (key, endpoint, deployments) in the environment, the Smart search box is not rendered, no error is shown, and every page behaves exactly like the MVP.
 - A fresh clone with no `.env` runs with `npm install && npm run dev` and behaves exactly like the MVP.
-- If the Provider fails or times out after a Query is submitted, the Guest still gets Search results. The results still apply every Hard criterion that was already known, in the MVP order. A short notice says Smart ranking is unavailable right now. Match reasons are not shown.
+- If the Provider fails or times out after a Query is submitted, the Guest still gets Search results. The results still apply every Hard criterion that was already known, in the MVP order. A short notice says Smart search is unavailable right now, with a **Try again** button that resubmits the same Query. The Query stays in the Smart search box. Match reasons are not shown (user decision).
 
 #### FR-3: Smart search state lives in the URL
 
@@ -245,7 +247,7 @@ When no Hotel is a Strong match, the Guest is told so and still sees the closest
 **Consequences (testable):**
 - If no candidate is a Strong match, the Search results heading says no strong matches were found and suggests rephrasing. The candidates are still listed in Ranking blend order.
 - The Strong-match threshold is an absolute Relevance value. Its starting value is set so that the UJ-3 "ski chalet" Query has no Strong match and every Golden query with a correct answer does.
-- A Query with no Preferences, only Hard criteria, gives every Hotel equal Relevance. It shows no weak-match notice and no Match reasons, and ranking falls back to Review score and Nightly price.
+- A Query with no Preferences, only Hard criteria, gives every Hotel equal Relevance. It shows no weak-match heading and no Match reasons, and ranking falls back to Review score and Nightly price.
 - If no Hotel meets the Hard criteria, the MVP no-results behaviour applies (MVP FR-8), naming the Hard criteria in force.
 
 ### 4.4 Smart ranking
@@ -451,6 +453,8 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
 | MVP FR-18: Hotel page opens with nothing selected | Hotel page opens with the Best-fit room pre-selected (FR-14). |
 | MVP FR-25: everything shown comes from the seed | Search knowledge also comes from the Enrichment file, and Match reasons are generated (FR-7, FR-15). |
 | MVP §5: no API key or external service, works offline | Smart search needs the Provider and network (§7, §9). The rest of CheckInn still works offline. |
+| MVP: the Search bar stays usable while results load | The Search bar is read-only while Query interpretation runs, for up to 2.5 s (FR-1). |
+| MVP: focus goes to the results headline after every URL change | After a Criteria chip is removed, focus stays in the chip row (UX spine). |
 | MVP §5: renders within 1 s | Smart search results within 3 s, and Match reasons within a further 3 s (§9). Everything else keeps the 1 s target. |
 | Architecture AD-7: `searchHotels(criteria)` signature | Search criteria gain Rooms, Max price, Policy criteria, and Preferences. The result gains the Best-fit room, Relevance and Match reason. Smart search still enters through this one function. |
 
@@ -500,7 +504,7 @@ The user's own test: *"it returns the most relevant rooms / hotels for me."* Thi
 **Secondary**
 - **SM-4: Grounded Match reasons.** Zero confirmed *not grounded* Match reasons across the Golden queries (FR-19). Validates FR-15, FR-16.
 - **SM-5: Interpretation accuracy.** For at least 90% of all Golden queries, including those where nothing fits, the Search bar, Rooms and Criteria chips match the expected Hard criteria. Validates FR-4.
-- **SM-6: Honest weak matches.** The weak-match notice appears for every "nothing fits" Golden query and for no Golden query with a correct answer. Validates FR-10.
+- **SM-6: Honest weak matches.** The weak-match heading appears for every "nothing fits" Golden query and for no Golden query with a correct answer. Validates FR-10.
 
 **Counter-metrics (do not optimize)**
 - **SM-C1: Held-out gap.** Held-out Golden queries must score within 15 points of the rest on SM-1. A bigger gap means the weights or Enrichment were tuned to the test. Counterbalances SM-1.
