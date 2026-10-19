@@ -16,6 +16,12 @@
    - delta EXPERIENCE.md Responsive & Platform (< 768px: box full width on top, collapsed summary, chips wrap); Key Flows > Flow 1 steps 4-5
    - PRD FR-4 dates: today Thu 15 Oct 2026, 'next weekend' = the Friday-to-Sunday after the coming one = Fri 23 – Sun 25 Oct 2026
    - Seed: Winelands Family Lodge, pets allowed, play_area, Family Room R 2 000 a night, maxGuests 4, non-refundable
+   - Fallback alternate: delta EXPERIENCE.md Smart search states > Fallback; Component Patterns > Notice (Smart search), Smart search box
+     (Destination, Max price and Policy criteria start empty per Query), Match reason (absent under fallback); Key Flows > Flow 1 Failure: fallback.
+     Pre-Query Search bar = MVP Home defaults (MVP EXPERIENCE.md Search bar): empty Destination, tomorrow to the day after
+     (Fri 16 – Sat 17 Oct 2026), 2 adults · 0 children · 1 room. MVP order (MVP PRD FR-7): Review score, then lowest Nightly price.
+     Free-cancellation hotels: deadline Wed 14 Oct 2026 14:00 has passed, so the card shows the MVP "ended" line.
+     The fallback=1 URL marker is illustrative (the spine only says reload does not retry the Provider).
   Markup and CSS reuse the MVP mocks (ux-checkinn/mockups) so the screens read as one product.
   Tokens: root DESIGN.md front matter; Smart search components from the delta DESIGN.md.
   Offline: no web font load (Poppins falls back to system-ui), no JS, no network.
@@ -299,5 +305,111 @@ select.input{width:auto}
   </div>
 </a></div>
 </main></div></div></section>
+<section class="mock-section"><p class="mock-label">ALTERNATE · Desktop 1280 · Fallback (Smart search states: Fallback) · interpretation timed out at 2.5 s · Query kept in the box to submit again · Search bar keeps only its pre-Query values (Home defaults: empty Destination, Fri 16 – Sat 17 Oct 2026, 2 adults, 1 room) · no chips · MVP order: Review score, then lowest Nightly price · no Match reasons (first 3 of 12 shown)</p>
+<div class="browser"><div class="chrome"><i></i><i></i><i></i><div class="url">localhost:3000/search?q=pet+friendly+family+place+in+Stellenbosch+for+4+next+weekend%2C+up+to+R2000+a+night&amp;checkIn=2026-10-16&amp;checkOut=2026-10-17&amp;adults=2&amp;children=0&amp;rooms=1&amp;fallback=1</div></div><div class="page"><header class="hdr"><div class="wrap hdr-in"><a href="#"><img class="logo" src="../../../../public/logo/checkinn-logo-on-dark.webp" alt="CheckInn" height="40"></a><nav><a class="nav" href="#">Manage booking</a></nav></div></header><main class="wrap">
+  <form role="search" aria-label="Smart search"><span class="ss-label" id="ss11-l">Describe your stay</span><div class="ss"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><span class="ss-t" id="ss11" role="textbox" aria-multiline="true" aria-labelledby="ss11-l" enterkeyhint="search">pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night</span><button class="ss-btn" type="button" aria-label="Clear description"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><button class="ss-btn" type="submit" aria-label="Search by description"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></button></div></form>
+  <div style="margin-top:15px"><form class="sb" role="search" aria-label="Search hotels"><div class="sb-f"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span><span class="sb-l">Destination</span><span class="sb-v ph-text">Where are you going?</span></span></div><div class="sb-f"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span><span class="sb-l">Dates</span><span class="sb-v">Fri 16 Oct – Sat 17 Oct 2026</span></span></div><div class="sb-f"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2A5 5 0 0 1 21.5 19"/></svg><span><span class="sb-l">Occupancy</span><span class="sb-v">2 adults · 0 children · 1 room</span></span></div><button class="btn btn-primary" type="submit">Search</button></form></div>
+  <div class="stack-sm" style="margin-top:15px"><div class="notice" id="n11"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.01"/></svg><p>Smart search isn’t available right now, so these results are in the usual order.</p></div></div>
+  <h1 class="h-lg" style="margin-top:25px" tabindex="-1" aria-describedby="n11">All destinations: 12 properties found</h1>
+  <div class="stack" style="margin-top:25px"><a class="card lc" href="#">
+  <div class="ph" role="img" aria-label="Hotel building exterior">Oak &amp; Vine Manor</div>
+  <div class="stack-sm">
+    <p class="eyebrow">boutique</p>
+    <h3 class="h-sm">Oak &amp; Vine Manor</h3>
+    <p><span class="stars" role="img" aria-label="4-star hotel"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></span></p>
+    <p class="sm muted">Town Centre, Stellenbosch</p>
+    <div style="padding-top:11px"><p class="score-row"><span class="score">4.8</span><span class="sm muted">Superb · 142&nbsp;reviews</span></p></div>
+    <div class="chips" style="padding-top:11px"><span class="chip">Swimming pool</span><span class="chip">Restaurant</span><span class="chip">Free parking</span></div>
+    <div style="padding-top:11px"><p class="sm">Free cancellation ended on Wed 14 Oct 2026, 14:00.</p></div>
+  </div>
+  <div class="lc-price">
+    <p class="sm muted">1&nbsp;night, 2 adults: from</p>
+    <p class="price">R&nbsp;1&nbsp;950</p>
+    <p class="sm muted">R&nbsp;1&nbsp;950 a night</p>
+    <span class="btn">See availability</span>
+  </div>
+</a>
+<a class="card lc" href="#">
+  <div class="ph" role="img" aria-label="Resort exterior and swimming pool">Harbourlight Retreat</div>
+  <div class="stack-sm">
+    <p class="eyebrow">luxury</p>
+    <h3 class="h-sm">Harbourlight Retreat</h3>
+    <p><span class="stars" role="img" aria-label="5-star hotel"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></span></p>
+    <p class="sm muted">V&amp;A Waterfront, Cape Town</p>
+    <div style="padding-top:11px"><p class="score-row"><span class="score">4.8</span><span class="sm muted">Superb · 248&nbsp;reviews</span></p></div>
+    <div class="chips" style="padding-top:11px"><span class="chip">Swimming pool</span><span class="chip">Spa</span><span class="chip">Restaurant</span></div>
+    <div style="padding-top:11px"><p class="cancel-line ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg><span>Non-refundable</span></p></div>
+  </div>
+  <div class="lc-price">
+    <p class="sm muted">1&nbsp;night, 2 adults: from</p>
+    <p class="price">R&nbsp;2&nbsp;450</p>
+    <p class="sm muted">R&nbsp;2&nbsp;450 a night</p>
+    <span class="btn">See availability</span>
+  </div>
+</a>
+<a class="card lc" href="#">
+  <div class="ph" role="img" aria-label="Hotel bedroom">Coral Coast Resort</div>
+  <div class="stack-sm">
+    <p class="eyebrow">luxury</p>
+    <h3 class="h-sm">Coral Coast Resort</h3>
+    <p><span class="stars" role="img" aria-label="5-star hotel"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></span></p>
+    <p class="sm muted">Umhlanga, Durban</p>
+    <div style="padding-top:11px"><p class="score-row"><span class="score">4.7</span><span class="sm muted">Superb · 286&nbsp;reviews</span></p></div>
+    <div class="chips" style="padding-top:11px"><span class="chip">Swimming pool</span><span class="chip">Spa</span><span class="chip">Restaurant</span></div>
+    <div style="padding-top:11px"><p class="sm">Free cancellation ended on Wed 14 Oct 2026, 14:00.</p></div>
+  </div>
+  <div class="lc-price">
+    <p class="sm muted">1&nbsp;night, 2 adults: from</p>
+    <p class="price">R&nbsp;2&nbsp;200</p>
+    <p class="sm muted">R&nbsp;2&nbsp;200 a night</p>
+    <span class="btn">See availability</span>
+  </div>
+</a></div>
+</main><footer class="ftr"><div class="wrap"><p>CheckInn is a demo. Hotels, prices and reviews are fictional. Photos are illustrative. No payment is taken.</p><p><a href="#">Photo credits</a></p></div></footer></div></div></section>
+<section class="mock-section"><div class="row">
+<div><p class="mock-label">ALTERNATE · Phone 375 · Fallback · Query kept in the box, summary shows the pre-Query Search bar, no chips, notice above the headline (first 2 of 12 shown)</p>
+<div class="phone m"><div class="screen page"><header class="hdr"><div class="wrap hdr-in"><a href="#"><img class="logo" src="../../../../public/logo/checkinn-icon.png" alt="CheckInn" height="40"></a><nav><a class="nav" href="#">Manage booking</a></nav></div></header><main class="wrap" style="padding-top:25px">
+  <form role="search" aria-label="Smart search"><span class="ss-label" id="ss12-l">Describe your stay</span><div class="ss"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><span class="ss-t" id="ss12" role="textbox" aria-multiline="true" aria-labelledby="ss12-l" enterkeyhint="search">pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night</span><button class="ss-btn" type="button" aria-label="Clear description"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><button class="ss-btn" type="submit" aria-label="Search by description"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></button></div></form>
+  <div style="margin-top:15px"><button class="summ" type="button" aria-expanded="false" aria-label="Change search: All destinations · 16–17 Oct · 2 adults"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><span>All destinations · 16–17 Oct · 2 adults</span></button></div>
+  <div class="stack-sm" style="margin-top:15px"><div class="notice" id="n12"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.01"/></svg><p>Smart search isn’t available right now, so these results are in the usual order.</p></div></div>
+  <h1 class="h-lg" style="margin-top:25px" tabindex="-1" aria-describedby="n12">All destinations: 12 properties found</h1>
+  <div class="stack" style="margin-top:25px"><a class="card lc" href="#">
+  <div class="ph" role="img" aria-label="Hotel building exterior">Oak &amp; Vine Manor</div>
+  <div class="stack-sm">
+    <p class="eyebrow">boutique</p>
+    <h3 class="h-sm">Oak &amp; Vine Manor</h3>
+    <p><span class="stars" role="img" aria-label="4-star hotel"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></span></p>
+    <p class="sm muted">Town Centre, Stellenbosch</p>
+    <div style="padding-top:11px"><p class="score-row"><span class="score">4.8</span><span class="sm muted">Superb · 142&nbsp;reviews</span></p></div>
+    <div class="chips" style="padding-top:11px"><span class="chip">Swimming pool</span><span class="chip">Restaurant</span><span class="chip">Free parking</span></div>
+    <div style="padding-top:11px"><p class="sm">Free cancellation ended on Wed 14 Oct 2026, 14:00.</p></div>
+  </div>
+  <div class="lc-price">
+    <p class="sm muted">1&nbsp;night, 2 adults: from</p>
+    <p class="price">R&nbsp;1&nbsp;950</p>
+    <p class="sm muted">R&nbsp;1&nbsp;950 a night</p>
+    <span class="btn">See availability</span>
+  </div>
+</a>
+<a class="card lc" href="#">
+  <div class="ph" role="img" aria-label="Resort exterior and swimming pool">Harbourlight Retreat</div>
+  <div class="stack-sm">
+    <p class="eyebrow">luxury</p>
+    <h3 class="h-sm">Harbourlight Retreat</h3>
+    <p><span class="stars" role="img" aria-label="5-star hotel"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></span></p>
+    <p class="sm muted">V&amp;A Waterfront, Cape Town</p>
+    <div style="padding-top:11px"><p class="score-row"><span class="score">4.8</span><span class="sm muted">Superb · 248&nbsp;reviews</span></p></div>
+    <div class="chips" style="padding-top:11px"><span class="chip">Swimming pool</span><span class="chip">Spa</span><span class="chip">Restaurant</span></div>
+    <div style="padding-top:11px"><p class="cancel-line ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg><span>Non-refundable</span></p></div>
+  </div>
+  <div class="lc-price">
+    <p class="sm muted">1&nbsp;night, 2 adults: from</p>
+    <p class="price">R&nbsp;2&nbsp;450</p>
+    <p class="sm muted">R&nbsp;2&nbsp;450 a night</p>
+    <span class="btn">See availability</span>
+  </div>
+</a></div>
+</main><footer class="ftr"><div class="wrap"><p>CheckInn is a demo. Hotels, prices and reviews are fictional. Photos are illustrative. No payment is taken.</p><p><a href="#">Photo credits</a></p></div></footer></div></div></div>
+</div></section>
 </body>
 </html>
