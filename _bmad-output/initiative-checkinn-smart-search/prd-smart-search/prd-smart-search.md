@@ -487,9 +487,9 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
 |---|---|
 | AI provider: Azure AI Foundry (gpt-6-luna, text-embedding-3-large) | Approved by the user, 2026-10-15 |
 | Enrichment file next to the seed (seed unchanged) | Approved by the user, 2026-10-15 |
-| Database schema change: tables for chunks, embeddings and full-text search | **Ask before build** |
-| `openai` npm SDK, for the Foundry endpoint | **Ask before build** |
-| `sqlite-vec`. Optional: about 150 vectors are fine without it | **Ask before build, if architecture wants it** |
+| Database schema change: tables for chunks, embeddings and full-text search | Approved by the user, 2026-10-19 |
+| `openai` npm SDK 7.28.0, for the Foundry endpoint | Approved by the user, 2026-10-19 |
+| `sqlite-vec`. Optional: about 150 vectors are fine without it | Not needed; the architecture uses brute-force cosine in TypeScript (AD-25) |
 | Running evals in CI (`.github/workflows/`) | Not planned. Ask if wanted |
 
 ## 11. Success Metrics

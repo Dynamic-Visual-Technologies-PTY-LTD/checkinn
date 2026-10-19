@@ -25,9 +25,9 @@ companions: []
 
 This spine extends the MVP spine (`../../initiative-checkinn-mvp/architecture-checkinn/architecture-checkinn.md`). Every MVP `AD` still binds unless a row below says it is extended. New decisions continue the MVP numbering from AD-19, so an `AD` id means the same thing in both documents.
 
-## Pending approvals and the build gate
+## Approvals and the build gate
 
-These are AGENTS.md "ask first" items. They are **not approved**. The spine names a default and a fallback for each, and the first Smart search story must not start until the user has decided the first two.
+These are AGENTS.md "ask first" items. The user **approved** the schema change and the `openai` SDK on 2026-10-19, so the build gate is open and the defaults below apply. The "if not approved" column is kept for the record.
 
 | Item | Spine default if approved | If not approved | Governs |
 | --- | --- | --- | --- |
@@ -56,7 +56,7 @@ flowchart LR
 | Presentation | Smart search box, Example queries, Criteria chips, notices, Match reason block, Best-fit chip, Score breakdown, and the `SmartSearchProvider` client context (AD-33), all in `src/components/smart-search/`; changes in `src/app/page.tsx`, `src/app/search/` and `src/app/hotels/[hotelId]/` |
 | Application | `src/features/search/smart-search.ts`: the three pipeline cores `interpretQuery`, `runSmartSearch` and `generateReasons`, with no `server-only`. Also `index.repo.ts` (Prepared index reads), `provider/` (port, `azure.ts`, `fake.ts`, `config.ts`) and `cache.ts`. `actions.ts` (`submitQuery`) and `queries.ts` (`searchHotels`, `getMatchReasons`, `getSmartSearchConfig`) are thin `server-only` wrappers |
 | Domain | `interpretation.ts`, `hard-criteria.ts`, `relevance.ts`, `ranking.ts`, `best-fit.ts`, `chunks.ts`, `match-reason.ts`, `golden.ts`, `text.ts`; the criteria codec and `types.ts` grow (AD-20, AD-21) |
-| Data | Prepared index tables, their loader and `search_meta`, pending approval (AD-24) |
+| Data | Prepared index tables, their loader and `search_meta`, approved (AD-24) |
 | Scripts | `scripts/search-index.ts`, `scripts/search-eval.ts`, `scripts/search-preflight.ts` |
 
 ```mermaid
@@ -68,7 +68,7 @@ flowchart TD
   features --> domain
   features --> db["src/db"]
   features --> hotels["src/features/hotels/availability.repo.ts (AD-4)"]
-  azure["provider/azure.ts"] --> sdk["openai SDK (pending, AD-25)"]
+  azure["provider/azure.ts"] --> sdk["openai SDK (AD-25)"]
   scripts["scripts/search-*.ts"] --> core["features/search non-server-only modules"]
   scripts --> domain
   scripts --> db
@@ -212,7 +212,7 @@ flowchart TD
   - The candidate set is the MVP Destination and Stay match (MVP `matches`, AD-4), narrowed by this check. Both `smart` and `fallback` modes apply it, following PRD FR-6. Party capacity filters in fallback too.
   - Retrieval, ranking, Best-fit and Match reasons only ever see qualifying Hotels and Room types.
 
-### AD-24 — Enrichment and the Prepared index are committed files; the database copy is reset-owned [PENDING schema approval]
+### AD-24 — Enrichment and the Prepared index are committed files; the database copy is reset-owned [approved 2026-10-19]
 
 - **Binds:** FR-7, FR-8, FR-9, PRD §9 fresh clone; extends MVP AD-5 and AD-6
 - **Prevents:**
@@ -243,7 +243,7 @@ flowchart TD
     - Fails if fewer than 4 Hotels' Enrichment never mentions quiet.
     - Fails if any description is outside 80–150 words (FR-7).
   - **Bootstrap.** The story that adds the loader also commits the Enrichment, `search-index.json` and `golden-embeddings.json`, produced by a key holder. Any later edit to the Enrichment or the chunking re-runs `search:index` in the same PR.
-  - **Database copy** (the default, pending the schema-change approval). Two Drizzle migrations add these, a generated one for the plain tables and a custom one for FTS5:
+  - **Database copy** (approved by the user 2026-10-19). Two Drizzle migrations add these, a generated one for the plain tables and a custom one for FTS5:
 
     | Table | Columns |
     | --- | --- |
@@ -259,12 +259,12 @@ flowchart TD
   - **In-memory alternative** (if the schema change is not approved). `index.repo.ts` loads `search-index.json` once per process and scores BM25 in TypeScript. The two paths are alternatives, chosen once at the approval gate; only one is ever built. Choosing the in-memory path re-baselines `BM25_K`, `STRONG_MATCH_THRESHOLD` and the Golden-query tests on it.
   - **Test databases.** `src/db/test-db.ts` loads the real index for Retrieval and Golden-query tests, which fail if the index has fewer chunks than `buildChunks` produces.
 
-### AD-25 — Dependencies: the `openai` SDK only, no `sqlite-vec` [PENDING approval]
+### AD-25 — Dependencies: the `openai` SDK only, no `sqlite-vec` [approved 2026-10-19]
 
 - **Binds:** AGENTS.md ask-first, PRD §10
 - **Prevents:** a native vector extension that may not load on Windows or Node 24; Azure-specific clients; a second AI SDK.
 - **Rule:**
-  - `openai` 7.28.0, pinned exactly, is the one new runtime dependency. It is the newest release at least 14 days old on 2026-10-19. It is **pending the user's approval**, and it is imported only by `provider/azure.ts`. If it is not approved, `azure.ts` calls `POST <base>/responses` and `POST <base>/embeddings` with `fetch` behind the same port.
+  - `openai` 7.28.0, pinned exactly, is the one new runtime dependency. It is the newest release at least 14 days old on 2026-10-19. It was **approved by the user on 2026-10-19**, and it is imported only by `provider/azure.ts`. If it is not approved, `azure.ts` calls `POST <base>/responses` and `POST <base>/embeddings` with `fetch` behind the same port.
   - Vector similarity is a brute-force dot product over unit vectors in TypeScript, in `src/domain/relevance.ts`. `sqlite-vec` is not used and not requested. Revisit only if the index passes about 10 000 vectors.
   - No `@azure/openai`, `@azure/identity`, `dotenv`, LangChain or other AI library. Authentication is an API key.
 
@@ -450,7 +450,7 @@ Only what Smart search adds; the MVP Stack is unchanged.
 
 | Name | Version |
 | --- | --- |
-| `openai` (npm), pending approval (AD-25) | 7.28.0 |
+| `openai` (npm), approved (AD-25) | 7.28.0 |
 | SQLite FTS5, bundled in better-sqlite3 13.0.3 | SQLite 3.53.4 |
 | Azure AI Foundry, OpenAI v1 API (`/openai/v1/`, no `api-version`) | v1 GA |
 | Generation deployment (name to be confirmed by pre-flight) | `gpt-6-luna`, model version 2026-09-22, Global Standard |
@@ -467,7 +467,7 @@ data/
   eval/golden-embeddings.json       # their expected Preferences vectors (AD-30, AD-32)
   eval/judge-calibration.json
   eval/fake-provider.json           # fake Provider fixtures (AD-30)
-drizzle/000N_search_index.sql       # pending schema approval (AD-24)
+drizzle/000N_search_index.sql       # approved schema change (AD-24)
 scripts/search-index.ts, search-eval.ts, search-preflight.ts
 src/
   domain/  interpretation.ts, hard-criteria.ts, relevance.ts, ranking.ts, best-fit.ts,
@@ -543,14 +543,14 @@ flowchart LR
 | Fallback (FR-2) | `actions.ts`, `runSmartSearch` | AD-20, AD-22, AD-23 |
 | Pre-flight (PRD §7) | `scripts/search-preflight.ts` | AD-32 |
 
-## Open questions for the user
+## Resolved with the user (2026-10-19)
 
-1. **Schema change** (AGENTS.md ask-first): approve the Prepared index tables (AD-24), or use the in-memory alternative. This gates the first story.
-2. **`openai` SDK** (ask-first): approve `openai` 7.28.0, or use plain `fetch` (AD-25). This gates the Provider story.
-3. **Deployment names, region and quota:** confirm the exact `gpt-6-luna` deployment name (the user once typed "gpt-luna-6"), that `text-embedding-3-large` is deployed in the same Foundry resource's region, and that the subscription has GPT-6 quota (it may need a quota request). `search:preflight` checks all three.
-4. **Interpretation latency:** the spine starts `gpt-6-luna` at reasoning effort `none` to fit the 2.5 s budget. If the eval shows interpretation accuracy (SM-5) suffers, the trade-off between `low` effort and the 2.5 s timeout is the user's call.
-5. **Keys and spend on the stand:** whether attendees share the presenter's key or get their own; the deployment's tokens-per-minute quota as the cost ceiling; and rotating the key after the event. The spine assumes one presenter key, the TPM quota as the cap, and rotation afterwards.
-6. **"This weekend" on a Sunday:** FR-4 gives a zero-night Stay. The spine assumes Sunday to Monday; the alternative is to ignore it with the ignored-value notice.
+1. **Schema change:** approved. The Prepared index goes in SQLite tables plus FTS5 (AD-24, database copy).
+2. **`openai` SDK 7.28.0:** approved (AD-25).
+3. **Deployments:** confirmed. `gpt-6-luna` and `text-embedding-3-large` are in the same Foundry resource and region, with GPT-6 quota available. `search:preflight` still checks all three before going on stage.
+4. **Interpretation latency:** start at reasoning effort `none` with a 2.5 s timeout. If SM-5 suffers in the eval, move to effort `low` with a 4 s timeout, which puts the results target at about 4.5 s.
+5. **Keys and spend:** the presenter's key only. Attendees see the MVP on a fresh clone. The deployment's tokens-per-minute quota is the spend cap, and the key is rotated after the event.
+6. **"This weekend" on a Sunday:** it means tonight, Sunday to Monday for 1 night.
 
 ## Deferred
 
