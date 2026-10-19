@@ -1,0 +1,202 @@
+# epic-smart-search — planned entries in build order. Table order is the build order; ids are never reused.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Tracer: Smart search box to an interpreted Search bar"
+description = "Adds the Provider port with ProviderError and all four methods plus the full AD-22 output schema and an interpretation context with today, City aliases and a nickname-map field, getProvider for off and fake (AD-29), the fake adapter on data/eval/fake-provider.json, the no-outbound-request test (AD-31), and CHECKINN_PROVIDER=off in Vitest. Adds the codec sq and smart parameters, interpretQuery and submitQuery with applyInterpretation for Destination, absolute Stay and Party, the VALIDATION outcome for an empty or over-300-character Query, and the Smart search box with SmartSearchProvider and its Submitting state (readonly, aria-disabled, status text, skeletons) on Home and /search, rendered only when a Provider is configured. Adds the second Playwright server on port 3101 with the fake and its own database, and the smart-desktop and smart-mobile projects (AD-30)."
+verify = "An e2e spec on 3101 submits a fixture Query on Home and lands on /search with sq and smart=1, the Search bar showing the interpreted Destination and Party; the MVP specs on 3100 see no box; unit tests prove no fetch happens with the Provider off."
+covers = ["FR-1", "FR-2", "FR-3", "FR-4"]
+after = []
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-19, AD-21, AD-22, AD-29, AD-30, AD-31, AD-33", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-home-smart.html"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Azure Provider adapter and pre-flight"
+description = "Installs openai 7.28.0 pinned exactly (approved) and adds provider/azure.ts implementing interpret, embed, reasons and judge against the Foundry v1 endpoint per AD-19: Responses API with strict json_schema, store false, maxRetries 0, reasoning effort none, max_output_tokens, final-message parsing, error and timeout mapping. Adds the azure branch of getProvider, the provider import guard scanning src/ for provider/ and openai imports, toUnitVector with a check against the configured 1024 dimensions (entry 10 adds the check against the index's model), .env.example with names only, script .env loading, and npm run search:preflight (AD-32). The presenter puts the key in .env.local and runs the pre-flight."
+verify = "Unit tests with a stubbed client cover error-code mapping, final-message parsing and the dimension check; npm run search:preflight with the presenter's key prints both deployment names and OK, with interpretation p95 under 2.5 s."
+covers = ["FR-2", "FR-4", "FR-9", "FR-15", "FR-19"]
+after = [1]
+hitl = true
+risk = "high"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-19, AD-25, AD-29, AD-32", "_bmad-output/initiative-checkinn-smart-search/prd-smart-search/addendum.md, Provider decision and Embedding model choice"]
+
+[[entry]]
+id = 3
+type = "story"
+title = "Query interpretation: every Hard criterion, notices and Example queries"
+description = "Completes applyInterpretation (AD-22): relative dates against clock.ts with \"this weekend\" on a Sunday as Sunday to Monday, the nickname table, out-of-catalog place with its words appended to Preferences, invalid values turned into the ignored phrase, Party replace and keep rules, and Rooms auto-raise with fewestRooms (AD-26). Adds the codec prefs, maxPrice, policy, place and ignored parameters, the place and ignored notices, the Example queries on Home, and the box's counter and clear (EXPERIENCE Component Patterns). Fills the nickname-map field of entry 1's interpretation context from the domain table without changing the port, and handles stale or invalid Smart search URLs as EXPERIENCE says. Fixture Queries it adds reuse Golden-query expected Preferences strings once entry 8 exists (AD-30)."
+verify = "Unit tests resolve the UJ-1 Query with today Thu 15 Oct 2026 to Stellenbosch, Fri 23 to Sun 25 Oct, 4 adults, 1 Room, Max price 2000 and pets; 'Joburg' becomes Johannesburg; 'Kruger' gives the place notice; 'last Tuesday' gives the ignored notice. An e2e spec clicks the UJ-1 Example query and sees the filled Search bar."
+covers = ["FR-1", "FR-3", "FR-4"]
+after = [1]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-21, AD-22, AD-26 Rooms auto-raise", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-home-smart.html", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-weak.html"]
+notes = ["Interpretation latency (user, 2026-10-19): start at reasoning effort none with a 2.5 s timeout. If the evals show misreads, move to effort low with a 4 s timeout (results target about 4.5 s). A tuning step, not a blocker."]
+
+[[entry]]
+id = 4
+type = "story"
+title = "Hard-criteria filter, Criteria chips and corrections"
+description = "Adds qualifyingRoomTypes, hotelQualifies and hardCriteriaSummary in src/domain/hard-criteria.ts (AD-23) and applies them in runSmartSearch's smart mode, so Party capacity, Rooms, Max price and Policy criteria filter Hotels. Renders the Criteria chips with removal, focus kept in the chip row and the count announced once, the Search bar re-run that keeps the Query's Preferences, the empty-box Search that returns the MVP search, and the no-results state naming the Hard criteria (FR-5, FR-6, FR-10). Smart mode has no embed stage until entry 12, so Relevance is 0 here."
+verify = "Unit tests: no Hotel shown lacks one Room type meeting availability, capacity and Max price at once. The UJ-1 e2e shows only Winelands Family Lodge with chips 'Max R 2 000 per night' and 'Pets allowed'; changing the Party to 2 adults and 2 children updates results with no new interpretation; removing 'Pets allowed' keeps focus in the chip row and shows more Hotels; clearing the box and searching gives the MVP order."
+covers = ["FR-5", "FR-6", "FR-10"]
+after = [3]
+hitl = false
+risk = "high"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 Mode, AD-21 URL changes, AD-23, AD-33", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-thandi.html"]
+
+[[entry]]
+id = 5
+type = "story"
+title = "Best-fit room on cards, Ranking blend and Score breakdown"
+description = "Adds bestFit() in src/domain/best-fit.ts taking qualifying Room types and a per-Room-type meaning input, empty until entry 12 supplies it (AD-26), the Best-fit room line and its price on smart-mode cards, and the codec's bestFit parameter written into the card's hotelHref for entry 6, with a codec test that hotelHref never carries a Smart parameter (AD-21). Adds RANKING_BLEND in src/domain/ranking.ts at the spine's starting value, provisional until entry 15, with fixed scales, 4-decimal rounding and the tie-breaks (FR-13). Adds the Score breakdown table behind CHECKINN_SEARCH_DEBUG (FR-20)."
+verify = "Unit tests cover the scales, rounding, tie-breaks by Review score, price and name, and Best-fit ties to the lower Nightly price. The UJ-1 card shows 'Family Room · 1 room · sleeps 4' at R 2 000 a night; the breakdown shows only with the debug flag and never from a URL."
+covers = ["FR-11", "FR-12", "FR-13", "FR-14", "FR-20"]
+after = [4]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 Types, AD-26 Ranking and Best-fit, AD-29"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Best-fit pre-selection on the Hotel page"
+description = "Reads entry 5's bestFit parameter on the Hotel page and pre-selects that Room type at the URL's Rooms when sel is absent, a Provider is configured and the Room type still qualifies (AD-26 Hotel page). Shows the Best-fit chip and the booking-summary line, lets sel win once the Guest changes the selection, keeps every Smart parameter off the Hotel page and /book URLs (AD-21), does not enforce Max price, re-checks bestFit when Stay or Party change, and pre-selects nothing when the Room type no longer qualifies."
+verify = "The UJ-1 e2e opens Winelands Family Lodge from its card with the Family Room selected, the chip shown and Reserve enabled; changing the quantity removes the summary line and keeps the chip; the Reserve URL to /book carries no Smart parameter or bestFit."
+covers = ["FR-14"]
+after = [5]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-hotel-bestfit.html"]
+
+[[entry]]
+id = 7
+type = "story"
+title = "Fallback, Try again and the interpretation cache"
+description = "Adds the codec fallback parameter and turns every ProviderError and the 2.5 s interpretation timeout into the fallback URL (AD-22 Outcomes) and adds runSmartSearch's fallback mode: Hard criteria from the URL, MVP order, MVP cards priced from the cheapest qualifying Room type (AD-20). Shows the fallback notice with Try again, which resubmits the Query (FR-2). Adds src/features/search/cache.ts with the bounded interpretation map and in-flight sharing (AD-28) that entries 12 and 13 extend."
+verify = "An e2e spec submits a Query the fake does not know and sees the fallback notice, the usual order and the Query in the box; Try again resubmits it. Unit tests: a timed-out interpret falls back; two concurrent identical submits make one Provider call; a rejected call is not cached."
+covers = ["FR-2", "FR-3", "FR-6", "FR-13"]
+after = [5, 6]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 Mode, AD-22 Timeouts and Outcomes, AD-28", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-thandi.html"]
+
+[[entry]]
+id = 8
+type = "story"
+title = "Golden query set"
+description = "Adds the GoldenQuery type and parser in src/domain/golden.ts and data/eval/golden-queries.json: 24 Golden queries, 4 held out, each with a fixed today, the expected Hard criteria, hand-written expected Preferences, acceptable Hotels, Best-fit room and Rooms, and the Hotel that must not rank first, written from the seed before the Enrichment exists (FR-17, AD-32). It includes the e2e Queries (UJ-1 to UJ-3, Kruger, the fallback Query), so the fake's fixture Preferences reuse these expected Preferences strings (AD-30). The presenter confirms the expected answers match their intent."
+verify = "A unit test parses the file and checks the size, the held-out count, the half with an empty Destination or a province or coast, and one Golden query of each FR-17 coverage kind; the presenter signs off the expected answers."
+covers = ["FR-17"]
+after = [1]
+hitl = true
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-32 golden.ts"]
+
+[[entry]]
+id = 9
+type = "story"
+title = "Enrichment file"
+description = "Writes data/seed/hotel-enrichment.json: for each of the 12 Hotels an 80 to 150 word description, 4 fictional reviews and 3 nearby highlights, keyed by seed Hotel id, with the seed file unchanged (FR-7, AD-24). Adds the Enrichment checks in src/domain/chunks.test.ts: no Facility or policy the Hotel lacks, at least 4 Hotels never quiet, and the word counts."
+verify = "The Enrichment tests pass; only Winelands Family Lodge mentions pets; git shows data/seed/hotel-booking-demo.json unchanged; the Golden queries' expected answers were not edited."
+covers = ["FR-7"]
+after = [8]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 10
+type = "story"
+title = "Chunking and Prepared index build"
+description = "Adds buildChunks and CHUNKING_VERSION in src/domain/chunks.ts (AD-24 Chunking) and npm run search:index, which embeds every chunk and every Golden query's expected Preferences through entry 2's adapter and writes data/seed/search-index.json and data/eval/golden-embeddings.json (AD-32). Adds the pre-flight check against the index's model, and the drift test that fails with 'run npm run search:index' when a chunk, hash, version, model or dimensions differ. The presenter runs the command with the key and commits both files."
+verify = "Unit tests check chunk ids, facets and hashes for one Hotel; the drift test passes against the committed index and fails after an Enrichment edit; both committed files hold 1024-dimension vectors from text-embedding-3-large."
+covers = ["FR-8", "FR-9", "FR-17"]
+after = [2, 9]
+hitl = true
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-24 Files, Chunking and Tests, AD-26 Vectors"]
+
+[[entry]]
+id = 11
+type = "story"
+title = "Prepared index tables, load, reset and exact-word scores"
+description = "Adds the approved schema change: two Drizzle migrations for search_chunks, search_chunk_vectors, the content-storing FTS5 search_chunks_fts and search_meta (AD-24 Database copy). The seed and reset load the committed index, openDb reloads it when indexHash differs, and resetDb walks PRAGMA table_list and skips shadow tables. Adds index.repo.ts with FTS joins and exact-word scores, ftsQuery, and the test database loading the real index."
+verify = "A reset test runs FTS5 integrity-check and a MATCH query after db:reset; the existing reset.test.ts and reset e2e spec pass unchanged; an existing database with an old indexHash reloads on start; a repo test gives 'Oak & Vine' its Hotel's highest exact score; npm run build succeeds with no database file and no Provider configuration."
+covers = ["FR-9"]
+after = [10]
+hitl = false
+risk = "high"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-24 Database copy, AD-26 Preferences"]
+
+[[entry]]
+id = 12
+type = "story"
+title = "Hybrid Relevance in the ranking and the weak-match heading"
+description = "Adds meaning and exact parts, chunkScore, Hotel Relevance, topChunks and the Strong-match threshold in src/domain/relevance.ts (AD-26), the Preferences embedding at submit and render with its cache map and the embed-failure fallback (AD-22, AD-28), and the fake's embed from golden embeddings. Feeds Relevance into entry 5's RANKING_BLEND and Room-type meanings into bestFit, and renders the Weak-match heading with its rephrase line (FR-10). Fills the meaning and exact rows of entry 5's Score breakdown, handles the No-Preferences state (equal Relevance, no heading, no reasons), re-baselines the order-asserting specs from entries 4 and 5, and adds the Golden-query Retrieval and ranking tests to npm test with the test that every fake fixture Preferences string has a golden embedding (FR-18, AD-30)."
+verify = "npm test with committed embeddings and no Provider: 'with a pool' ranks pool Hotels higher, 'ski chalet with a fireplace' has no Strong match, every Golden query with an answer has one, 'Durban' alone gives the MVP Durban Hotels, and a Hotel's Relevance is the same whatever else is in the set. The UJ-2 e2e lists Jacaranda Garden Hotel first and UJ-3 shows 'No strong matches for ‘ski chalet with a fireplace’'."
+covers = ["FR-8", "FR-9", "FR-10", "FR-13", "FR-14", "FR-18"]
+after = [7, 11]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 weakMatch, AD-26, AD-28, AD-30 The fake", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-weak.html"]
+
+[[entry]]
+id = 13
+type = "story"
+title = "Grounded Match reasons, streamed into the cards"
+description = "Adds generateReasons with one batched call over each Hotel's topChunks, validateReason in src/domain/match-reason.ts (120 characters, valid citations, no prices, dates, links or contact details), getMatchReasons with cached reasons inline and misses streamed in their own Suspense, and the reasons cache map (AD-27, AD-28). Renders the Match reason block with its two-line skeleton and the polite 'Match reasons added' announcement, and adds fake reasons fixtures citing the first sent chunk (AD-30)."
+verify = "Unit tests drop over-long, uncited, wrong-Hotel and price-bearing reasons and check every fixture reason passes validateReason. The UJ-1 e2e shows the Match reason after the cards; a reason the fake fails leaves the card with no reason and no message."
+covers = ["FR-15", "FR-16"]
+after = [12]
+hitl = false
+risk = "high"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 Match reasons, AD-27, AD-28", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-thandi.html"]
+
+[[entry]]
+id = 14
+type = "story"
+title = "Eval runner and grounding judge"
+description = "Adds npm run search:eval, which resets a temp database and runs every Golden query through interpretQuery, runSmartSearch and generateReasons at its fixed today, scores SM-1 to SM-6 and SM-C1 and SM-C2 per query and in total with held-out queries apart, and scores all three Ranking blend candidates side by side (AD-32). Adds the judge with data/eval/judge-calibration.json, the not-grounded list for a person, and reports in a gitignored .eval-results/ recording the deployments, weights and today, with one terminal line per query. The presenter runs it with the key and confirms each not-grounded verdict."
+verify = "A unit test of the scoring on a fixture run, including the UJ-2 check that Best value ranks Jacaranda first and Top rated ranks Goldleaf first; the presenter's run writes the JSON and Markdown report with all three candidates, passes judge calibration, and exits non-zero when the current RANKING_BLEND misses a target."
+covers = ["FR-11", "FR-17", "FR-18", "FR-19"]
+after = [13]
+hitl = true
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-32", "_bmad-output/initiative-checkinn-smart-search/prd-smart-search/prd-smart-search.md, §11 Success Metrics", "_bmad-output/initiative-checkinn-smart-search/prd-smart-search/addendum.md, Eval design"]
+
+[[entry]]
+id = 15
+type = "story"
+title = "Workshop decision: choose the Ranking blend"
+description = "The workshop reads entry 14's report, chooses Best match, Best value or Top rated on SM-1 and SM-C2, and sets RANKING_BLEND to that candidate's weights only, the one-place change FR-12 promises. Re-baselines the order-asserting tests and specs to the chosen blend and records the choice as a dated Decision in the epic's Notes. Applies the interpretation tuning step from entry 3 when the report shows misreads on SM-5; at a 4 s timeout the submit-time embed budget min(1.5 s, 3 s − elapsed) is gone, so the embed moves to render only and entry 7's fallback timing is re-checked."
+verify = "npm run search:eval exits zero with the chosen blend; npm test and the Smart e2e specs pass; the app has no code for the two candidates not chosen."
+covers = ["FR-11", "FR-12"]
+after = [14]
+hitl = true
+risk = "low"
+
+[[entry]]
+id = 16
+type = "story"
+title = "Refactor sweep"
+description = "Cleanup, scoped when it starts from the plans and the review findings deferred during the epic, including a review of the AD-1 layering rule and the provider import guard. No new scope."
+verify = "Lint, typecheck, test, build and the existing e2e specs are green with no behaviour change, and npm run search:eval still exits zero."
+covers = []
+after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 17
+type = "story"
+title = "Smart search e2e suite and workshop dry run"
+description = "Adds the serial e2e/smart-booking project on 3101 with the UJ-1 booking through to a reference, and cross-cutting specs for reload, share and Back on Smart URLs, the mobile viewport and the no-Provider fresh-clone behaviour (AD-30). Then the workshop dry run on the presenter laptop with the presenter's key: search:preflight, the three UJs on the projector within the speed targets, and the fallback with the network cut."
+verify = "npm run test:e2e is green in CI against npm start, and the dry-run checklist passes on the presenter laptop over the venue network."
+covers = ["FR-1", "FR-2", "FR-3", "FR-5", "FR-6", "FR-10", "FR-14", "FR-15"]
+after = [16]
+hitl = true
+risk = "medium"
