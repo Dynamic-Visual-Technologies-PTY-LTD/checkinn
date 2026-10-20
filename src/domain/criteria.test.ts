@@ -31,6 +31,7 @@ describe("parseCriteria defaults", () => {
         sel: null,
         k: null,
         notice: null,
+        smart: null,
       },
       problems: [],
     });
@@ -209,6 +210,7 @@ describe("serializeCriteria", () => {
     ],
     k: "0b6f0c8e-6f43-4b5f-9a59-6b1f1e3b1b9a",
     notice: { type: "room-unavailable", roomTypeIds: ["hotel-001-family"] },
+    smart: null,
   };
 
   it("writes parameters in a fixed order", () => {
@@ -289,6 +291,84 @@ describe("hotelHref", () => {
     ).toBe(
       "/hotels/hotel-001?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=0&rooms=1",
     );
+  });
+});
+
+describe("Smart search parameters", () => {
+  const smartParams = { q: "Stellenbosch", adults: "4", children: "0", rooms: "1" };
+
+  it("parses sq, trimmed, with smart=1 as interpreted", () => {
+    expect(parse({ ...smartParams, sq: "  pet friendly place ", smart: "1" }).criteria.smart).toEqual(
+      { query: "pet friendly place", interpreted: true },
+    );
+  });
+
+  it("is not interpreted without smart=1, and ignores any other smart value", () => {
+    expect(parse({ sq: "quiet hotel" }).criteria.smart).toEqual({
+      query: "quiet hotel",
+      interpreted: false,
+    });
+    for (const smart of ["true", "0", "yes", "11"]) {
+      expect(parse({ sq: "quiet hotel", smart }).criteria.smart).toEqual({
+        query: "quiet hotel",
+        interpreted: false,
+      });
+    }
+  });
+
+  it("is null without sq, with an empty sq, or with an sq over 300 characters", () => {
+    expect(parse({ smart: "1" }).criteria.smart).toBeNull();
+    expect(parse({ sq: "   ", smart: "1" }).criteria.smart).toBeNull();
+    expect(parse({ sq: "a".repeat(301), smart: "1" }).criteria.smart).toBeNull();
+    expect(parse({ sq: "a".repeat(300) }).criteria.smart?.query).toHaveLength(300);
+  });
+
+  it("writes sq and smart after the MVP parameters", () => {
+    expect(
+      searchHref({
+        q: "Stellenbosch",
+        stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+        party: { adults: 4, children: 0, rooms: 1 },
+        smart: { query: "pet friendly place for 4", interpreted: true },
+      }),
+    ).toBe(
+      "/search?q=Stellenbosch&checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1" +
+        "&sq=pet+friendly+place+for+4&smart=1",
+    );
+  });
+
+  it("writes sq without smart when the Query was not interpreted", () => {
+    expect(searchHref({ smart: { query: "quiet hotel", interpreted: false } })).toBe(
+      "/search?adults=2&children=0&rooms=1&sq=quiet+hotel",
+    );
+  });
+
+  it("writes nothing for an empty or over-long Query", () => {
+    expect(serializeCriteria({ smart: { query: "  ", interpreted: true } })).toBe(
+      "adults=2&children=0&rooms=1",
+    );
+    expect(serializeCriteria({ smart: { query: "a".repeat(301), interpreted: true } })).toBe(
+      "adults=2&children=0&rooms=1",
+    );
+  });
+
+  it("round-trips through parseCriteria", () => {
+    const smart = { query: "pet friendly place", interpreted: true };
+    const href = searchHref({ q: "Stellenbosch", smart });
+    const params = new URLSearchParams(href.split("?")[1]);
+    expect(parseCriteria(params, today).criteria.smart).toEqual(smart);
+  });
+
+  it("never puts a Smart parameter on a Hotel page URL", () => {
+    const href = hotelHref("hotel-001", {
+      q: "Stellenbosch",
+      smart: { query: "pet friendly place", interpreted: true },
+    });
+    const params = new URLSearchParams(href.split("?")[1]);
+    for (const key of ["sq", "smart", "prefs", "maxPrice", "policy", "fallback", "place", "ignored"]) {
+      expect(params.has(key)).toBe(false);
+    }
+    expect(href).toBe("/hotels/hotel-001?q=Stellenbosch&adults=2&children=0&rooms=1");
   });
 });
 

@@ -49,6 +49,11 @@ type OccupancyFieldProps = {
   onOpenChange?: (open: boolean) => void;
   /** The visible field label, which also names the popover. */
   label?: string;
+  /**
+   * While Smart search interprets a Query (AD-33): the trigger is
+   * `aria-disabled`, ignores presses and is described by this status id.
+   */
+  busyStatusId?: string;
 };
 
 /**
@@ -61,6 +66,7 @@ export function OccupancyField({
   open: openProp,
   onOpenChange,
   label = "Occupancy",
+  busyStatusId,
 }: OccupancyFieldProps) {
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
@@ -128,7 +134,7 @@ export function OccupancyField({
   }
 
   function onTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
-    if (event.key === "ArrowDown" && !open) {
+    if (event.key === "ArrowDown" && !open && !busyStatusId) {
       event.preventDefault();
       setOpen(true);
     }
@@ -199,7 +205,13 @@ export function OccupancyField({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        onClick={() => (open ? close() : setOpen(true))}
+        aria-describedby={busyStatusId}
+        aria-disabled={busyStatusId ? true : undefined}
+        onClick={() => {
+          if (busyStatusId) return;
+          if (open) close();
+          else setOpen(true);
+        }}
         onKeyDown={onTriggerKeyDown}
         className="relative flex min-h-11 w-full items-center gap-space-sm text-left"
       >

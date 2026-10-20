@@ -13,6 +13,7 @@ import type {
   Party,
   RoomSelection,
   SearchCriteria,
+  SmartCriteria,
   Stay,
 } from "@/domain/types";
 
@@ -24,6 +25,9 @@ export const PARTY_LIMITS = {
 } as const satisfies Record<keyof Party, { min: number; max: number }>;
 
 export const DEFAULT_PARTY: Party = { adults: 2, children: 0, rooms: 1 };
+
+/** The longest Query the Smart search box takes and `sq` keeps (FR-1, AD-21). */
+export const MAX_QUERY_LENGTH = 300;
 
 /** Shown when a link's dates or Party were rejected (EXPERIENCE.md stale link). */
 export const STALE_LINK_MESSAGE = "Those dates have passed. Pick new ones.";
@@ -98,6 +102,7 @@ export function defaultCriteria(today: IsoDate): SearchCriteria {
     sel: null,
     k: null,
     notice: null,
+    smart: null,
   };
 }
 
@@ -180,6 +185,17 @@ export function parseNotice(params: CriteriaParams): CriteriaNotice | null {
   return null;
 }
 
+/**
+ * The Smart search state in URL parameters (AD-21), or null. `sq` is the
+ * trimmed Query and is required: over 300 characters it is dropped, and so is
+ * every other Smart parameter. `smart` counts only as exactly `1`.
+ */
+export function parseSmart(params: CriteriaParams): SmartCriteria | null {
+  const query = readText(params, "sq");
+  if (query === undefined || query.length > MAX_QUERY_LENGTH) return null;
+  return { query, interpreted: readText(params, "smart") === "1" };
+}
+
 /** Turns URL parameters into criteria. Never throws. */
 export function parseCriteria(
   params: CriteriaParams,
@@ -221,6 +237,7 @@ export function parseCriteria(
       sel,
       k: readText(params, "k") ?? null,
       notice: parseNotice(params),
+      smart: parseSmart(params),
     },
     problems,
   };
@@ -249,6 +266,11 @@ export function serializeCriteria(criteria: Partial<SearchCriteria>): string {
   }
   if (criteria.k) params.set("k", criteria.k);
   if (criteria.notice) setNotice(params, criteria.notice);
+  const query = criteria.smart?.query.trim();
+  if (query && query.length <= MAX_QUERY_LENGTH) {
+    params.set("sq", query);
+    if (criteria.smart?.interpreted) params.set("smart", "1");
+  }
   return params.toString();
 }
 
@@ -269,12 +291,19 @@ export function serializeNotice(notice: CriteriaNotice): string {
   return params.toString();
 }
 
-/** The Search results URL for criteria. */
+/**
+ * The Search results URL for criteria. The only builder that writes Smart
+ * search parameters (AD-21).
+ */
 export function searchHref(criteria: Partial<SearchCriteria>): string {
   return `/search?${serializeCriteria(criteria)}`;
 }
 
-/** A Hotel page URL that keeps the search criteria (FR-6). */
+/**
+ * A Hotel page URL that keeps the search criteria (FR-6). It never carries
+ * Smart search parameters (AD-21).
+ */
 export function hotelHref(hotelId: string, criteria: Partial<SearchCriteria>): string {
-  return `/hotels/${encodeURIComponent(hotelId)}?${serializeCriteria(criteria)}`;
+  const query = serializeCriteria({ ...criteria, smart: null });
+  return `/hotels/${encodeURIComponent(hotelId)}?${query}`;
 }

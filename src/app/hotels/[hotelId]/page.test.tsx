@@ -102,6 +102,7 @@ const NO_DATES = {
     sel: null,
     k: null,
     notice: null,
+    smart: null,
   },
 } satisfies AvailabilityContext;
 

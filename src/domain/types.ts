@@ -42,6 +42,16 @@ export type CriteriaNotice =
   | { type: "cancelled" };
 
 /**
+ * Smart search state in the URL (AD-21). `query` is the submitted Query, used
+ * to refill the Smart search box; `interpreted` is true only after a
+ * successful Query interpretation (`smart=1`). Later stories add fields.
+ */
+export type SmartCriteria = {
+  query: string;
+  interpreted: boolean;
+};
+
+/**
  * Everything the URL holds about a search, a Hotel or a Booking in progress
  * (AD-8). Parse and serialize it only with `src/domain/criteria.ts`.
  */
@@ -56,6 +66,8 @@ export type SearchCriteria = {
   /** The idempotency key minted by `startBooking` (AD-10). */
   k: string | null;
   notice: CriteriaNotice | null;
+  /** Smart search state; non-null exactly when the URL holds a valid `sq` (AD-21). */
+  smart: SmartCriteria | null;
 };
 
 /** Why parsing rejected part of the criteria. */

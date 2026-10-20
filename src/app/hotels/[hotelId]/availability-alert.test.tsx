@@ -45,6 +45,17 @@ it("clears notice and rt from the URL by replacing the entry, keeping the rest",
   push.mockRestore();
 });
 
+it("drops sq and smart from the URL with the notice", () => {
+  window.history.replaceState(null, "", `${NOTICE_URL}&sq=quiet+hotel&smart=1`);
+
+  render(<AvailabilityAlert message={MESSAGE} today="2026-11-10" />);
+
+  const params = new URLSearchParams(window.location.search);
+  expect(params.has("sq")).toBe(false);
+  expect(params.has("smart")).toBe(false);
+  expect(params.get("sel")).toBe("hotel-001-standard:1");
+});
+
 it("shows and takes focus when the URL gains the notice only at commit, after a redirect", () => {
   // Next writes the redirect's URL at commit, so the first render still sees /book.
   window.history.replaceState(null, "", "/book?hotel=hotel-001&k=abc");

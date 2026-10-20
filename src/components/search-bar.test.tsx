@@ -4,6 +4,7 @@ import type { Party, Stay } from "@/domain/types";
 import { setViewportWidth } from "@/test/viewport";
 import { SearchBar, searchSummary } from "./search-bar";
 import { SearchStateProvider } from "./search-state";
+import { SmartSearchContext, type SmartSearchState } from "./smart-search/smart-search-context";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
@@ -230,6 +231,69 @@ describe("collapsible SearchBar", () => {
     });
 
     expect(screen.queryByRole("button", { name: /^Change search/ })).toBeNull();
+  });
+});
+
+describe("SearchBar under Smart search", () => {
+  const smart = (pending: boolean): SmartSearchState => ({
+    pending,
+    submittedQuery: "quiet hotel",
+    boxIsEmpty: false,
+    setBoxIsEmpty: () => {},
+    error: null,
+    submit: () => {},
+  });
+
+  function renderSmartBar(pending: boolean, collapsible = false) {
+    return render(
+      <SmartSearchContext value={smart(pending)}>
+        <p id="ss-status">{pending ? "Reading your search…" : ""}</p>
+        <SearchStateProvider initialStay={tomorrow} initialParty={defaultParty}>
+          <SearchBar today={today} getToday={() => today} collapsible={collapsible} />
+        </SearchStateProvider>
+      </SmartSearchContext>,
+    );
+  }
+
+  it("is unchanged without a Smart search context", () => {
+    renderBar({ initialQuery: "Cape Town" });
+    expect(destination()).not.toHaveAttribute("readonly");
+    for (const control of [datesTrigger(), occupancyTrigger(), search()]) {
+      expect(control).not.toHaveAttribute("aria-disabled");
+    }
+  });
+
+  it("is usable while no Query is being read", () => {
+    renderSmartBar(false);
+    expect(destination()).not.toHaveAttribute("readonly");
+    expect(search()).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("is read-only and aria-disabled, never disabled, while a Query is read", () => {
+    renderSmartBar(true);
+
+    expect(destination()).toHaveAttribute("readonly");
+    for (const control of [datesTrigger(), occupancyTrigger(), search()]) {
+      expect(control).toHaveAttribute("aria-disabled", "true");
+      expect(control).toBeEnabled();
+      expect(control).toHaveAccessibleDescription("Reading your search…");
+    }
+
+    fireEvent.click(datesTrigger());
+    fireEvent.click(occupancyTrigger());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(search());
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("does not expand the phone summary while a Query is read", () => {
+    setViewportWidth(390);
+    renderSmartBar(true, true);
+
+    const summary = screen.getByRole("button", { name: /^Change search/ });
+    expect(summary).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(summary);
+    expect(screen.getByRole("button", { name: /^Change search/ })).toBeInTheDocument();
   });
 });
 

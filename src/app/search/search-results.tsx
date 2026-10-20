@@ -6,6 +6,11 @@ import { CityTiles } from "@/components/city-tiles";
 import { ListingCard, ListingCardSkeleton } from "@/components/listing-card";
 import { SearchBar } from "@/components/search-bar";
 import { SearchStateProvider } from "@/components/search-state";
+import { SmartSearchBox } from "@/components/smart-search/smart-search-box";
+import {
+  SmartPendingResults,
+  SmartSearchProvider,
+} from "@/components/smart-search/smart-search-provider";
 import { todayIn } from "@/domain/clock";
 import {
   hotelHref,
@@ -14,7 +19,7 @@ import {
   STALE_LINK_MESSAGE,
 } from "@/domain/criteria";
 import type { SearchCriteria } from "@/domain/types";
-import { getCityTiles, searchHotels } from "@/features/search/queries";
+import { getCityTiles, getSmartSearchConfig, searchHotels } from "@/features/search/queries";
 
 export type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -22,36 +27,61 @@ export type SearchParams = Promise<Record<string, string | string[] | undefined>
  * Reads the URL and today at request time, inside the Suspense boundary
  * (AD-2), and parses them with the criteria codec (AD-8). Stale or invalid
  * criteria show the stale-link state and run no search.
+ *
+ * With a Provider configured, the Smart search box sits above the search bar
+ * and shows the submitted Query (FR-1, FR-3). Without one, Smart search
+ * parameters are ignored and the page is the MVP page (FR-2).
  */
 export async function SearchResults({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   await io();
   const today = todayIn();
-  const { criteria } = parseCriteria(params, today);
+  const smartSearch = await getSmartSearchConfig();
+  const parsed = parseCriteria(params, today).criteria;
+  const criteria = smartSearch ? parsed : { ...parsed, smart: null };
   // `/search` reads only the search criteria; a bad `sel` is not its concern.
   const stale = criteria.stay === null;
+  const query = criteria.smart?.query ?? "";
 
-  return (
+  const results = stale ? (
+    <h1 className="sr-only">Search results</h1>
+  ) : (
+    <Suspense fallback={<ResultsSkeleton />}>
+      <Results criteria={criteria} />
+    </Suspense>
+  );
+
+  const content = (
     // Keyed by the criteria, so a new search or Back starts from the URL.
     <SearchStateProvider
       key={serializeCriteria(criteria)}
       initialStay={criteria.stay}
       initialParty={criteria.party}
     >
+      {smartSearch && (
+        <div className="mb-space-md">
+          <SmartSearchBox initialQuery={query} destination={criteria.q} />
+        </div>
+      )}
       <SearchBar
         today={today}
         initialQuery={criteria.q}
         collapsible
         datesError={stale ? STALE_LINK_MESSAGE : undefined}
       />
-      {stale ? (
-        <h1 className="sr-only">Search results</h1>
+      {smartSearch ? (
+        <SmartPendingResults skeleton={<ResultsSkeleton />}>{results}</SmartPendingResults>
       ) : (
-        <Suspense fallback={<ResultsSkeleton />}>
-          <Results criteria={criteria} />
-        </Suspense>
+        results
       )}
     </SearchStateProvider>
+  );
+
+  // Outside the keyed provider, so its state survives each new URL (AD-33).
+  return smartSearch ? (
+    <SmartSearchProvider initialQuery={query}>{content}</SmartSearchProvider>
+  ) : (
+    content
   );
 }
 

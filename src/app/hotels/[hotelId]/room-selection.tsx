@@ -56,14 +56,19 @@ function selectionKey(selection: readonly RoomSelection[]): string {
   return selection.map((line) => `${line.roomTypeId}:${line.quantity}`).join(",");
 }
 
-/** Writes the selection into the address bar: replace, never push (EXPERIENCE.md Navigation). */
-function replaceSelectionInUrl(selection: RoomSelection[], today: IsoDate) {
+/**
+ * Writes the selection into the address bar: replace, never push (EXPERIENCE.md
+ * Navigation). Smart search parameters are dropped: the Hotel page never
+ * carries them (AD-21).
+ */
+export function replaceSelectionInUrl(selection: RoomSelection[], today: IsoDate) {
   const { criteria } = parseCriteria(new URLSearchParams(window.location.search), today, {
     defaultStay: false,
   });
   const query = serializeCriteria({
     ...criteria,
     sel: selection.length > 0 ? selection : null,
+    smart: null,
   });
   window.history.replaceState(null, "", `${window.location.pathname}?${query}`);
 }

@@ -5,6 +5,7 @@ import type { CityTile, SearchCriteria, SearchResult } from "@/domain/types";
 import { nowIso } from "@/domain/clock";
 import { cityNamed } from "@/domain/search";
 import { listCityNames, listCityTiles } from "@/features/hotels/catalog.repo";
+import { getProvider } from "@/features/search/provider/config";
 import { searchCatalog } from "@/features/search/search.repo";
 
 /** Home's City tiles, read at request time (AD-2). */
@@ -38,4 +39,14 @@ export async function searchHotels(
 ): Promise<SearchResult> {
   await io();
   return searchCatalog(getDb(), criteria, nowIso());
+}
+
+/**
+ * Whether Smart search is configured (AD-29), read at request time (AD-2).
+ * Pages pass it down as a boolean: without a Provider the Smart search box
+ * is not rendered and the page is the MVP page (FR-2).
+ */
+export async function getSmartSearchConfig(): Promise<boolean> {
+  await io();
+  return getProvider() !== null;
 }

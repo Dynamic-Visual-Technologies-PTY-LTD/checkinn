@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultCriteria } from "@/domain/criteria";
 import type { CityTile, ListingCard, SearchCriteria } from "@/domain/types";
@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   searchHotels: vi.fn(),
   getCityTiles: vi.fn(),
   getCityNamed: vi.fn(),
+  getSmartSearchConfig: vi.fn(),
+  submitQuery: vi.fn(),
   io: vi.fn(),
 }));
 
@@ -25,7 +27,9 @@ vi.mock("@/features/search/queries", () => ({
   searchHotels: mocks.searchHotels,
   getCityTiles: mocks.getCityTiles,
   getCityNamed: mocks.getCityNamed,
+  getSmartSearchConfig: mocks.getSmartSearchConfig,
 }));
+vi.mock("@/features/search/actions", () => ({ submitQuery: mocks.submitQuery }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 const weekend = { checkIn: "2026-11-13", checkOut: "2026-11-15" };
@@ -82,6 +86,9 @@ beforeEach(() => {
   mocks.searchHotels.mockReset().mockReturnValue(new Promise(() => {}));
   mocks.getCityTiles.mockReset().mockResolvedValue([tile]);
   mocks.getCityNamed.mockReset().mockResolvedValue(null);
+  // Smart search is off unless a test turns it on.
+  mocks.getSmartSearchConfig.mockReset().mockResolvedValue(false);
+  mocks.submitQuery.mockReset().mockReturnValue(new Promise(() => {}));
   setViewportWidth(1280);
 });
 
@@ -221,6 +228,83 @@ describe("SearchResults", () => {
       screen.getByRole("button", { name: "Occupancy 2 adults · 0 children · 1 room" }),
     ).toBeInTheDocument();
     expect(screen.getByText(STALE)).toBeInTheDocument();
+  });
+});
+
+describe("SearchResults with Smart search", () => {
+  const smartParams = {
+    q: "Stellenbosch",
+    checkIn: weekend.checkIn,
+    checkOut: weekend.checkOut,
+    adults: "4",
+    children: "0",
+    rooms: "1",
+    sq: "pet friendly family place in Stellenbosch for 4",
+    smart: "1",
+  };
+
+  it("has no Smart search box without a Provider, and ignores Smart parameters", async () => {
+    render(await SearchResults({ searchParams: Promise.resolve(smartParams) }));
+
+    expect(screen.queryByRole("textbox", { name: "Describe your stay" })).not.toBeInTheDocument();
+    expect(mocks.searchHotels).toHaveBeenCalledWith(expect.objectContaining({ smart: null }));
+  });
+
+  it("shows the box above the search bar, filled with the submitted Query", async () => {
+    mocks.getSmartSearchConfig.mockResolvedValue(true);
+    render(await SearchResults({ searchParams: Promise.resolve(smartParams) }));
+
+    const box = screen.getByRole("textbox", { name: "Describe your stay" });
+    expect(box).toHaveValue("pet friendly family place in Stellenbosch for 4");
+    const bar = screen.getByRole("search", { name: "Search hotels" });
+    expect(box.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(bar).getByRole("textbox", { name: "Destination" })).toHaveValue("Stellenbosch");
+    expect(mocks.searchHotels).toHaveBeenCalledWith(
+      expect.objectContaining({
+        smart: { query: "pet friendly family place in Stellenbosch for 4", interpreted: true },
+      }),
+    );
+  });
+
+  it("leaves the box empty when the URL has no Query", async () => {
+    mocks.getSmartSearchConfig.mockResolvedValue(true);
+    render(await SearchResults({ searchParams: Promise.resolve({ q: "Durban" }) }));
+
+    expect(screen.getByRole("textbox", { name: "Describe your stay" })).toHaveValue("");
+  });
+
+  it("shows the skeleton cards in place of results while a Query is read", async () => {
+    mocks.getSmartSearchConfig.mockResolvedValue(true);
+    mocks.searchHotels.mockResolvedValue({ heading: "Stellenbosch: 2 properties found", cards: [] });
+    // Settled at the end: React entangles async transitions across tests.
+    let settle: (value: undefined) => void = () => {};
+    mocks.submitQuery.mockReturnValue(
+      new Promise<undefined>((resolve) => {
+        settle = resolve;
+      }),
+    );
+    const { container } = render(
+      await SearchResults({ searchParams: Promise.resolve(smartParams) }),
+    );
+    expect(await screen.findByRole("heading", { name: "Stellenbosch: 2 properties found" })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Describe your stay" }), {
+      target: { value: "quiet hotel in Durban" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Search by description" }));
+
+    expect(await screen.findByText("Reading your search…")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /properties found/ })).not.toBeInTheDocument();
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+    expect(mocks.submitQuery).toHaveBeenCalledWith({
+      query: "quiet hotel in Durban",
+      current: {
+        q: "Stellenbosch",
+        stay: weekend,
+        party: { adults: 4, children: 0, rooms: 1 },
+      },
+    });
+    await act(async () => settle(undefined));
   });
 });
 

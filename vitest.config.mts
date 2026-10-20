@@ -13,6 +13,8 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
     setupFiles: ["./src/test/setup.ts"],
+    // Smart search is off in unit tests, whatever the shell says (AD-29).
+    env: { CHECKINN_PROVIDER: "off" },
     // The calendar and search bar tests drive many userEvent clicks in jsdom;
     // the slowest takes ~2.5 s alone, so the 5 s default fails under load.
     testTimeout: 15_000,
