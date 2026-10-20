@@ -9,9 +9,14 @@ import { countLabel, OccupancyField } from "@/components/occupancy-field";
 import { useRequiredSearchState } from "@/components/search-state";
 import { SMART_STATUS_ID, useSmartSearch } from "@/components/smart-search/smart-search-context";
 import { todayIn } from "@/domain/clock";
-import { problemMessage, searchHref, validateStay } from "@/domain/criteria";
+import {
+  parseCriteria,
+  problemMessage,
+  searchBarSearch,
+  validateStay,
+} from "@/domain/criteria";
 import { compactStayLabel } from "@/domain/dates";
-import type { IsoDate, Party, Stay } from "@/domain/types";
+import type { IsoDate, Party, SmartCriteria, Stay } from "@/domain/types";
 
 type SearchBarProps = {
   /** Today, read on the server; the calendar disables the days before it. */
@@ -26,6 +31,12 @@ type SearchBarProps = {
   collapsible?: boolean;
   /** A message to show under Dates from the start, e.g. for a stale link. */
   datesError?: string;
+  /**
+   * The Smart search criteria in the URL. Under a Query, Search keeps them
+   * and runs no new Query interpretation, unless the Smart search box is
+   * empty at Search time (FR-5, AD-33).
+   */
+  smart?: SmartCriteria | null;
 };
 
 /** The collapsed bar's summary: "Cape Town · 13–15 Nov · 2 adults". */
@@ -54,9 +65,11 @@ export function SearchBar({
   getToday = todayIn,
   collapsible = false,
   datesError,
+  smart = null,
 }: SearchBarProps) {
   const { stay, party, setStay, setParty } = useRequiredSearchState();
-  const busy = useSmartSearch()?.pending ?? false;
+  const smartSearch = useSmartSearch();
+  const busy = smartSearch?.pending ?? false;
   const busyStatusId = busy ? SMART_STATUS_ID : undefined;
 
   const router = useRouter();
@@ -111,7 +124,20 @@ export function SearchBar({
       setDateErrors(problems.map(problemMessage));
       return;
     }
-    router.push(searchHref({ q: query, stay, party }));
+    // Read at Search time (AD-33); unsubmitted box text is never used. The
+    // Smart criteria come from the newest URL, so a chip removed a moment ago
+    // stays removed (the newest action wins).
+    const boxIsEmpty = smartSearch?.boxIsEmpty ?? false;
+    const urlSmart =
+      smart && smartSearch
+        ? parseCriteria(smartSearch.currentParams(), getToday()).criteria.smart
+        : smart;
+    const href = searchBarSearch({ q: query, stay, party, smart: urlSmart }, { boxIsEmpty });
+    // This Search overtakes any chip removal.
+    smartSearch?.finishChipRemoval();
+    smartSearch?.announceResults("");
+    smartSearch?.recordPush(href);
+    router.push(href);
   }
 
   function clearQuery() {

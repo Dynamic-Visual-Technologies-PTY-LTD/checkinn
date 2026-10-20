@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition, type ReactNode } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { NETWORK_ERROR, redirectTarget } from "@/components/server-action";
 import {
+  type ChipFocusTarget,
   SmartSearchContext,
   useSmartSearch,
 } from "@/components/smart-search/smart-search-context";
@@ -17,10 +18,13 @@ import { submitQuery } from "@/features/search/actions";
  */
 export function SmartSearchProvider({
   initialQuery = "",
+  url = "",
   children,
 }: {
   /** The submitted Query from the URL; empty on Home. */
   initialQuery?: string;
+  /** The page's Search results URL (`searchHref`); empty on Home. */
+  url?: string;
   children: ReactNode;
 }) {
   const [pending, startTransition] = useTransition();
@@ -28,6 +32,39 @@ export function SmartSearchProvider({
   const [submitCount, setSubmitCount] = useState(0);
   const [boxIsEmpty, setBoxIsEmpty] = useState(initialQuery.trim() === "");
   const [error, setError] = useState<string | null>(null);
+  const [chipRemoval, setChipRemoval] = useState<{
+    focus: ChipFocusTarget;
+    target: string;
+  } | null>(null);
+  const [resultsStatus, setResultsStatus] = useState("");
+
+  const startChipRemoval = useCallback((focus: ChipFocusTarget, target: string) => {
+    setChipRemoval({ focus, target });
+    setResultsStatus("");
+  }, []);
+  const finishChipRemoval = useCallback(() => setChipRemoval(null), []);
+
+  // A URL change that is not the removal's own (Back, Forward, a Search bar
+  // Search) ends the removal, so a later heading takes focus as usual.
+  const [seenUrl, setSeenUrl] = useState(url);
+  if (seenUrl !== url) {
+    setSeenUrl(url);
+    if (chipRemoval && chipRemoval.target !== url) setChipRemoval(null);
+  }
+
+  // The last pushed URL and the address bar when it was pushed: while the
+  // address bar has not moved on, the push is still in flight.
+  const pushed = useRef<{ href: string; from: string } | null>(null);
+  const recordPush = useCallback((href: string) => {
+    pushed.current = { href, from: window.location.href };
+  }, []);
+  const currentParams = useCallback(() => {
+    const last = pushed.current;
+    if (last && last.from === window.location.href) {
+      return new URL(last.href, window.location.href).searchParams;
+    }
+    return new URLSearchParams(window.location.search);
+  }, []);
 
   // A new Query in the URL (navigation, Back) becomes the submitted one.
   const [seenQuery, setSeenQuery] = useState(initialQuery);
@@ -42,6 +79,8 @@ export function SmartSearchProvider({
     (query: string, current: SearchBarCriteria) => {
       if (pending) return;
       setError(null);
+      // A new Query overtakes any chip removal.
+      setChipRemoval(null);
       // The box shows the submitted Query, as when an Example query fills it.
       setSubmittedQuery(query);
       setSubmitCount((count) => count + 1);
@@ -60,8 +99,36 @@ export function SmartSearchProvider({
   );
 
   const value = useMemo(
-    () => ({ pending, submittedQuery, submitCount, boxIsEmpty, setBoxIsEmpty, error, submit }),
-    [pending, submittedQuery, submitCount, boxIsEmpty, error, submit],
+    () => ({
+      pending,
+      submittedQuery,
+      submitCount,
+      boxIsEmpty,
+      setBoxIsEmpty,
+      error,
+      submit,
+      chipRemoval,
+      startChipRemoval,
+      finishChipRemoval,
+      recordPush,
+      currentParams,
+      resultsStatus,
+      announceResults: setResultsStatus,
+    }),
+    [
+      pending,
+      submittedQuery,
+      submitCount,
+      boxIsEmpty,
+      error,
+      submit,
+      chipRemoval,
+      startChipRemoval,
+      finishChipRemoval,
+      recordPush,
+      currentParams,
+      resultsStatus,
+    ],
   );
   return <SmartSearchContext value={value}>{children}</SmartSearchContext>;
 }
@@ -81,4 +148,18 @@ export function SmartPendingResults({
   const smart = useSmartSearch();
   if (smart?.pending) return <div aria-busy="true">{skeleton}</div>;
   return children;
+}
+
+/**
+ * The polite results status region (EXPERIENCE.md Criteria chip), empty at
+ * page load. After a Criteria chip removal it says the new result count once.
+ * It sits outside the per-URL key, so it is never re-mounted.
+ */
+export function ResultsStatus() {
+  const smart = useSmartSearch();
+  return (
+    <p role="status" aria-label="Result count" className="sr-only">
+      {smart?.resultsStatus ?? ""}
+    </p>
+  );
 }

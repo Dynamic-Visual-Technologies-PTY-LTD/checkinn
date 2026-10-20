@@ -188,7 +188,20 @@ export type SearchResult = {
   cards: ListingCard[];
   /** Smart search notices, in priority order, at most 2; `[]` for an MVP search. */
   notices: SmartNotice[];
+  /** How the search ran (AD-20); `mvp` is the MVP search, unchanged. */
+  mode: SearchMode;
+  /**
+   * The no-results sentence naming the Hard criteria (FR-10), from
+   * `hardCriteriaSummary`. Null when something was found or nothing is named.
+   */
+  criteriaSummary: string | null;
 };
+
+/**
+ * How `searchHotels` ran a search (AD-20): `mvp`, the MVP search unchanged,
+ * or `smart`, filtered by the Hard criteria (AD-23).
+ */
+export type SearchMode = "mvp" | "smart";
 
 /** A City photo's credit on `/credits`: the source page holds the credit. */
 export type CityPhotoCredit = {

@@ -116,9 +116,12 @@ test.describe("Query interpretation", () => {
     await page.goto(`${href}&${stale}`);
 
     await expect(smartBox(page)).toHaveValue("pet friendly family place");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      /^All destinations: \d+ properties found$/,
-    );
+    // The valid `pets` entry survives and filters (AD-23): only Winelands
+    // allows pets. The invalid Max price is dropped, so it has no chip.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("1 property found");
+    const chips = page.getByRole("list", { name: "Your filters" }).getByRole("button");
+    await expect(chips).toHaveCount(1);
+    await expect(chips).toHaveAccessibleName("Remove Pets allowed");
     await expect(page.getByText(/^We don't have hotels in/)).toHaveCount(0);
     await expect(page.getByRole("heading", { level: 1 })).not.toHaveAttribute("aria-describedby");
     await expect(page.getByText("Something went wrong")).toHaveCount(0);

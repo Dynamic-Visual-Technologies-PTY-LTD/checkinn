@@ -8,11 +8,13 @@ import {
   parseNotice,
   parseSelection,
   problemMessage,
+  searchBarSearch,
   searchHref,
   serializeCriteria,
   serializeNotice,
   smartCriteria,
   validateStay,
+  withoutCriterion,
 } from "./criteria";
 
 const today = "2026-11-10";
@@ -534,5 +536,61 @@ describe("serializeNotice", () => {
       type: "cancelled",
     });
     expect(parseNotice({ notice: "unknown" })).toBeNull();
+  });
+});
+
+describe("Smart search URL changes (AD-21)", () => {
+  const base = {
+    q: "Stellenbosch",
+    stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+    party: { adults: 4, children: 0, rooms: 1 },
+  };
+  const smart = smartCriteria("pet friendly place for 4", true, {
+    preferences: "pet friendly place",
+    maxPriceRand: 2000,
+    policies: ["pets", "children"],
+    place: "Kruger",
+    ignored: "for 0",
+    ignoredKind: "party",
+  });
+  const mvp =
+    "/search?q=Stellenbosch&checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1";
+  const smartPart = "sq=pet+friendly+place+for+4&smart=1&prefs=pet+friendly+place";
+
+  it("removes one chip's criterion and keeps every other Smart parameter", () => {
+    expect(withoutCriterion({ ...base, smart }, "maxPrice")).toBe(
+      `${mvp}&${smartPart}&policy=pets%2Cchildren&place=Kruger&ignored=for+0&ignoredKind=party`,
+    );
+    expect(withoutCriterion({ ...base, smart }, "pets")).toBe(
+      `${mvp}&${smartPart}&maxPrice=2000&policy=children&place=Kruger&ignored=for+0&ignoredKind=party`,
+    );
+  });
+
+  it("removes the last Policy criterion, leaving no policy parameter", () => {
+    const one = { ...smart, policies: ["smoking" as const], maxPriceRand: null };
+    expect(withoutCriterion({ ...base, smart: one }, "smoking")).not.toContain("policy=");
+  });
+
+  it("round-trips a chip removal through the codec", () => {
+    const href = withoutCriterion({ ...base, smart }, "children");
+    const parsed = parseCriteria(new URLSearchParams(href.split("?")[1]), today).criteria;
+    expect(parsed.smart).toEqual({ ...smart, policies: ["pets"] });
+  });
+
+  it("keeps sq, smart, prefs, maxPrice and policy on a Search bar Search", () => {
+    expect(searchBarSearch({ ...base, smart }, { boxIsEmpty: false })).toBe(
+      `${mvp}&${smartPart}&maxPrice=2000&policy=pets%2Cchildren`,
+    );
+  });
+
+  it("drops every Smart parameter when the box is empty at Search time", () => {
+    expect(searchBarSearch({ ...base, smart }, { boxIsEmpty: true })).toBe(mvp);
+  });
+
+  it("is the MVP URL without a Query", () => {
+    expect(searchBarSearch({ ...base, smart: null }, { boxIsEmpty: false })).toBe(mvp);
+    expect(searchBarSearch({ ...base, smart: null }, { boxIsEmpty: false })).toBe(
+      searchHref(base),
+    );
   });
 });

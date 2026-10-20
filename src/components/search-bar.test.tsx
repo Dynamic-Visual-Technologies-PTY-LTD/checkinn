@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Party, Stay } from "@/domain/types";
+import { searchHref, smartCriteria } from "@/domain/criteria";
+import type { Party, SmartCriteria, Stay } from "@/domain/types";
 import { setViewportWidth } from "@/test/viewport";
 import { SearchBar, searchSummary } from "./search-bar";
 import { SearchStateProvider } from "./search-state";
@@ -235,26 +236,97 @@ describe("collapsible SearchBar", () => {
 });
 
 describe("SearchBar under Smart search", () => {
-  const smart = (pending: boolean): SmartSearchState => ({
+  const smart = (
+    pending: boolean,
+    boxIsEmpty = false,
+    current: SmartCriteria | null = null,
+  ): SmartSearchState => ({
     pending,
     submittedQuery: "quiet hotel",
     submitCount: 0,
-    boxIsEmpty: false,
+    boxIsEmpty,
     setBoxIsEmpty: () => {},
     error: null,
     submit: () => {},
+    chipRemoval: null,
+    startChipRemoval: () => {},
+    finishChipRemoval: () => {},
+    recordPush: () => {},
+    // The newest URL, as the address bar or an in-flight push holds it.
+    currentParams: () =>
+      new URLSearchParams(searchHref({ q: "Stellenbosch", smart: current }).split("?")[1]),
+    resultsStatus: "",
+    announceResults: () => {},
   });
 
-  function renderSmartBar(pending: boolean, collapsible = false) {
+  function renderSmartBar(
+    pending: boolean,
+    collapsible = false,
+    {
+      boxIsEmpty = false,
+      url = null,
+      current = url,
+    }: { boxIsEmpty?: boolean; url?: SmartCriteria | null; current?: SmartCriteria | null } = {},
+  ) {
     return render(
-      <SmartSearchContext value={smart(pending)}>
+      <SmartSearchContext value={smart(pending, boxIsEmpty, current)}>
         <p id="ss-status">{pending ? "Reading your search…" : ""}</p>
         <SearchStateProvider initialStay={tomorrow} initialParty={defaultParty}>
-          <SearchBar today={today} getToday={() => today} collapsible={collapsible} />
+          <SearchBar
+            today={today}
+            getToday={() => today}
+            collapsible={collapsible}
+            initialQuery="Stellenbosch"
+            smart={url}
+          />
         </SearchStateProvider>
       </SmartSearchContext>,
     );
   }
+
+  const uj1 = smartCriteria("pet friendly family place", true, {
+    preferences: "pet friendly family place",
+    maxPriceRand: 2000,
+    policies: ["pets"],
+    place: "Kruger",
+    ignored: "for 0",
+    ignoredKind: "party",
+  });
+  const mvpUrl =
+    "/search?q=Stellenbosch&checkIn=2026-11-11&checkOut=2026-11-12&adults=2&children=0&rooms=1";
+
+  it("under a Query keeps the Smart criteria and drops place and ignored (FR-5)", () => {
+    renderSmartBar(false, false, { url: uj1 });
+    fireEvent.click(search());
+
+    expect(push).toHaveBeenCalledWith(
+      `${mvpUrl}&sq=pet+friendly+family+place&smart=1&prefs=pet+friendly+family+place&maxPrice=2000&policy=pets`,
+    );
+  });
+
+  it("builds on the newest URL, so a chip removed a moment ago stays removed", () => {
+    // The page still renders the old criteria while the removal is in flight.
+    renderSmartBar(false, false, { url: uj1, current: { ...uj1, policies: [] } });
+    fireEvent.click(search());
+
+    expect(push).toHaveBeenCalledWith(
+      `${mvpUrl}&sq=pet+friendly+family+place&smart=1&prefs=pet+friendly+family+place&maxPrice=2000`,
+    );
+  });
+
+  it("with the box empty at Search time runs the MVP search (AD-33)", () => {
+    renderSmartBar(false, false, { url: uj1, boxIsEmpty: true });
+    fireEvent.click(search());
+
+    expect(push).toHaveBeenCalledWith(mvpUrl);
+  });
+
+  it("without a Query in the URL pushes the MVP URL", () => {
+    renderSmartBar(false);
+    fireEvent.click(search());
+
+    expect(push).toHaveBeenCalledWith(mvpUrl);
+  });
 
   it("is unchanged without a Smart search context", () => {
     renderBar({ initialQuery: "Cape Town" });

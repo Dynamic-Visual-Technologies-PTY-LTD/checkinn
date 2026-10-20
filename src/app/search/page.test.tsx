@@ -311,6 +311,57 @@ describe("SearchResults with Smart search", () => {
     await act(async () => settle(undefined));
   });
 
+  it("shows the Criteria chips under the Search bar, and an empty results status", async () => {
+    mocks.getSmartSearchConfig.mockResolvedValue(true);
+    render(
+      await SearchResults({
+        searchParams: Promise.resolve({ ...smartParams, maxPrice: "2000", policy: "pets" }),
+      }),
+    );
+
+    const chips = screen.getByRole("list", { name: "Your filters" });
+    expect(within(chips).getAllByRole("button").map((chip) => chip.textContent)).toEqual([
+      "Remove Max R 2 000 per night",
+      "Remove Pets allowed",
+    ]);
+    const bar = screen.getByRole("search", { name: "Search hotels" });
+    expect(bar.compareDocumentPosition(chips) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Result count" })).toBeEmptyDOMElement();
+  });
+
+  it("shows no chips on a stale link, where no search runs", async () => {
+    mocks.getSmartSearchConfig.mockResolvedValue(true);
+    render(
+      await SearchResults({
+        searchParams: Promise.resolve({
+          ...smartParams,
+          checkIn: "2026-11-01",
+          checkOut: "2026-11-02",
+          maxPrice: "2000",
+          policy: "pets",
+        }),
+      }),
+    );
+
+    expect(screen.getByText(STALE, { selector: "p" })).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Your filters" })).not.toBeInTheDocument();
+    expect(mocks.searchHotels).not.toHaveBeenCalled();
+  });
+
+  it("shows no chips for a Query that was not interpreted, or without a Provider", async () => {
+    const params = { ...smartParams, maxPrice: "2000", policy: "pets" };
+    mocks.getSmartSearchConfig.mockResolvedValue(true);
+    const { unmount } = render(
+      await SearchResults({ searchParams: Promise.resolve({ ...params, smart: "0" }) }),
+    );
+    expect(screen.queryByRole("list", { name: "Your filters" })).not.toBeInTheDocument();
+    unmount();
+
+    mocks.getSmartSearchConfig.mockResolvedValue(false);
+    render(await SearchResults({ searchParams: Promise.resolve(params) }));
+    expect(screen.queryByRole("list", { name: "Your filters" })).not.toBeInTheDocument();
+  });
+
   it("drops stale Smart values silently and keeps the Query in the box", async () => {
     mocks.getSmartSearchConfig.mockResolvedValue(true);
     render(
@@ -375,6 +426,27 @@ describe("Results", () => {
       within(explore).getByRole("link", { name: "Cape Town, 2 hotels" }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("article")).toBeNull();
+  });
+
+  it("names the Hard criteria in the no-results body under Smart search", async () => {
+    const summary =
+      "We looked for Pets allowed and Max R 1 999 per night in Stellenbosch. Remove a filter, or try other dates or another city.";
+    mocks.searchHotels.mockResolvedValue({
+      heading: null,
+      cards: [],
+      notices: [],
+      mode: "smart",
+      criteriaSummary: summary,
+    });
+
+    render(await Results({ criteria: criteria({ q: "Stellenbosch" }) }));
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Nothing matches that search." }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(summary)).toBeInTheDocument();
+    expect(screen.queryByText("Try another city, other dates or fewer rooms.")).toBeNull();
+    expect(screen.getByRole("region", { name: "Explore a city" })).toBeInTheDocument();
   });
 
   it("has no notices and no heading description for an MVP search", async () => {

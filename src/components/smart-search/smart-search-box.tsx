@@ -1,13 +1,17 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { iconButton } from "@/components/button-styles";
 import { Icon } from "@/components/icons/icons";
 import { useRequiredSearchState } from "@/components/search-state";
-import { SMART_STATUS_ID, useSmartSearch } from "@/components/smart-search/smart-search-context";
+import {
+  SMART_INPUT_ID,
+  SMART_STATUS_ID,
+  useSmartSearch,
+} from "@/components/smart-search/smart-search-context";
 import { MAX_QUERY_LENGTH } from "@/domain/criteria";
 
-const INPUT_ID = "ss-input";
+const INPUT_ID = SMART_INPUT_ID;
 const HINT_ID = "ss-hint";
 const COUNTER_ID = "ss-counter";
 const ERROR_ID = "ss-error";
@@ -49,6 +53,12 @@ export function SmartSearchBox({ initialQuery = "", destination = "" }: SmartSea
   const [limitMessage, setLimitMessage] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { pending, error, setBoxIsEmpty, submit } = smart;
+
+  // The box is re-mounted with each URL and shows its Query, so the Search
+  // bar's "box is empty" starts from that Query (AD-33).
+  useEffect(() => {
+    setBoxIsEmpty(initialQuery.trim() === "");
+  }, [initialQuery, setBoxIsEmpty]);
 
   const empty = value.trim() === "";
   const length = value.length;

@@ -15,21 +15,29 @@ export function PageHeading({
   children,
   className = "text-headline-lg-responsive",
   describedBy,
+  focusOnArrival = true,
 }: {
   children: ReactNode;
   /** The headline's type style; `headline-lg` by default. */
   className?: string;
   /** Ids of what is read with the headline, such as Smart search notices. */
   describedBy?: string;
+  /**
+   * Whether it takes focus when it arrives by client navigation. Off after a
+   * Criteria chip removal, where focus stays in the chip row.
+   */
+  focusOnArrival?: boolean;
 }) {
   const ref = useRef<HTMLHeadingElement>(null);
   // The server snapshot is used only while hydrating. The first render's
   // value is kept, so the re-render after hydration does not count.
   const hydrating = useSyncExternalStore(noSubscribe, () => false, () => true);
   const hydrated = useRef(hydrating);
+  // Decided when it arrives; later renders do not move focus.
+  const skipFocus = useRef(!focusOnArrival);
 
   useEffect(() => {
-    if (!hydrated.current) ref.current?.focus();
+    if (!hydrated.current && !skipFocus.current) ref.current?.focus();
   }, []);
 
   return (

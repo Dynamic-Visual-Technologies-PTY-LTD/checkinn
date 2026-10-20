@@ -404,3 +404,45 @@ export function hotelHref(hotelId: string, criteria: Partial<SearchCriteria>): s
   const query = serializeCriteria({ ...criteria, smart: null });
   return `/hotels/${encodeURIComponent(hotelId)}?${query}`;
 }
+
+/** The criteria a Search results URL is built from: the Search bar's and the Smart search state. */
+export type ResultsCriteria = Pick<SearchCriteria, "q" | "stay" | "party" | "smart">;
+
+/**
+ * The Search results URL with one Hard criterion removed (AD-21, FR-5): every
+ * other Smart search parameter is kept, so the search re-runs with the same
+ * Preferences and no new Query interpretation.
+ */
+export function withoutCriterion(
+  criteria: ResultsCriteria,
+  key: "maxPrice" | PolicyCriterion,
+): string {
+  const { q, stay, party, smart } = criteria;
+  if (!smart) return searchHref({ q, stay, party });
+  const next: SmartCriteria =
+    key === "maxPrice"
+      ? { ...smart, maxPriceRand: null }
+      : { ...smart, policies: smart.policies.filter((policy) => policy !== key) };
+  return searchHref({ q, stay, party, smart: next });
+}
+
+/**
+ * The URL a Search bar Search pushes (AD-21, AD-33, FR-5). Under a Query it
+ * keeps `sq`, `smart`, `prefs`, `maxPrice` and `policy`, and drops `place`
+ * and `ignored`, so the Search re-runs without a new Query interpretation.
+ * With the Smart search box empty at Search time, or no Query, it is the MVP
+ * search URL.
+ */
+export function searchBarSearch(
+  criteria: ResultsCriteria,
+  { boxIsEmpty }: { boxIsEmpty: boolean },
+): string {
+  const { q, stay, party, smart } = criteria;
+  if (!smart || boxIsEmpty) return searchHref({ q, stay, party });
+  return searchHref({
+    q,
+    stay,
+    party,
+    smart: { ...smart, place: null, ignored: null, ignoredKind: "dates" },
+  });
+}

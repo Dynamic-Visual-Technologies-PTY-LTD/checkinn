@@ -1,11 +1,12 @@
 // @vitest-environment node
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/db/client";
 import { createTestDb } from "@/db/test-db";
 import { defaultCriteria, smartCriteria } from "@/domain/criteria";
 import type { SearchCriteria } from "@/domain/types";
+import { createFakeProvider } from "@/features/search/provider/fake";
 
-const mocks = vi.hoisted(() => ({ db: undefined as unknown }));
+const mocks = vi.hoisted(() => ({ db: undefined as unknown, provider: null as unknown }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ io: async () => {} }));
@@ -13,6 +14,7 @@ vi.mock("@/db/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/db/client")>()),
   getDb: () => mocks.db,
 }));
+vi.mock("@/features/search/provider/config", () => ({ getProvider: () => mocks.provider }));
 vi.mock("@/domain/clock", () => ({
   todayIn: () => "2026-10-13",
   nowIso: () => "2026-10-13T08:00:00.000Z",
@@ -25,6 +27,9 @@ let db: Db;
 beforeAll(() => {
   db = createTestDb();
   mocks.db = db;
+});
+beforeEach(() => {
+  mocks.provider = createFakeProvider({ interpretations: {}, reasons: {} });
 });
 afterAll(() => {
   db.$client.close();
@@ -65,5 +70,31 @@ describe("searchHotels notices", () => {
       criteria({ q: "Durban", smart: smartCriteria("quiet", true, { place: "Kruger" }) }),
     );
     expect(result.notices).toEqual([]);
+  });
+});
+
+describe("searchHotels goes through runSmartSearch (AD-20)", () => {
+  const uj1 = () =>
+    criteria({
+      q: "Stellenbosch",
+      party: { adults: 4, children: 0, rooms: 1 },
+      smart: smartCriteria("pet friendly family place", true, {
+        maxPriceRand: 2000,
+        policies: ["pets"],
+      }),
+    });
+
+  it("filters by the Hard criteria with a Provider", async () => {
+    const result = await searchHotels(uj1());
+    expect(result.mode).toBe("smart");
+    expect(result.cards.map((card) => card.name)).toEqual(["Winelands Family Lodge"]);
+  });
+
+  it("is the MVP search without a Provider", async () => {
+    mocks.provider = null;
+    const result = await searchHotels(uj1());
+    expect(result.mode).toBe("mvp");
+    expect(result.cards).toHaveLength(2);
+    expect(result.criteriaSummary).toBeNull();
   });
 });
