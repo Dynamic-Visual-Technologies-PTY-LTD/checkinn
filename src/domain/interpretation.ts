@@ -259,13 +259,15 @@ export function applyInterpretation(
 
 /**
  * The notices for Smart search criteria (AD-20, EXPERIENCE.md Notices): the
- * unknown place, then the ignored value, at most 2. None without `smart`.
+ * fallback, then the unknown place, then the ignored value, at most 2. None
+ * without `smart`.
  * The place notice says all cities are shown, so it needs an empty
  * Destination `q`.
  */
 export function smartNotices(smart: SmartCriteria | null, q: string): SmartNotice[] {
   if (!smart) return [];
   const notices: SmartNotice[] = [];
+  if (smart.fallback) notices.push({ kind: "fallback" });
   if (smart.place && !q.trim()) notices.push({ kind: "place", place: smart.place });
   if (smart.ignored) notices.push({ kind: "ignored", text: smart.ignored, about: smart.ignoredKind });
   return notices.slice(0, MAX_NOTICES);

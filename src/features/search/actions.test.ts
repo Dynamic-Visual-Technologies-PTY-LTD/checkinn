@@ -32,7 +32,10 @@ vi.mock("@/features/search/provider/config", async (importOriginal) => {
   };
 });
 
+import { interpretationCache } from "@/features/search/cache";
 import { ProviderError } from "@/features/search/provider/types";
+import { fallbackHref } from "@/domain/criteria";
+import { createFakeProvider } from "@/features/search/provider/fake";
 import { submitQuery } from "./actions";
 
 const UJ1 = "pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night";
@@ -54,6 +57,7 @@ beforeEach(() => {
   mocks.redirect.mockClear();
   mocks.provider = undefined;
   mocks.db = db;
+  interpretationCache.clear();
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -144,13 +148,14 @@ describe("submitQuery with the fake Provider", () => {
     expect(url.searchParams.get("ignoredKind")).toBe("party");
   });
 
-  it("keeps the current criteria and sq, with no smart, for an unknown Query", async () => {
+  it("gives the fallback URL for an unknown Query: the current criteria, sq and fallback=1", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const url = await redirectedTo("a castle on the moon");
     expect(url).toBe(
       "/search?q=Cape+Town&checkIn=2026-10-16&checkOut=2026-10-17&adults=2&children=0&rooms=1" +
-        "&sq=a+castle+on+the+moon",
+        "&sq=a+castle+on+the+moon&fallback=1",
     );
+    expect(url).toBe(fallbackHref(current, "a castle on the moon"));
     // Logged by code only, never the Query.
     expect(JSON.stringify(error.mock.calls)).toContain("UNAVAILABLE");
     expect(JSON.stringify(error.mock.calls)).not.toContain("castle");
@@ -181,10 +186,51 @@ describe("submitQuery outcomes", () => {
   it("treats a timeout like any Provider failure", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.provider = failingProvider(new DOMException("timed out", "TimeoutError"));
-    const url = new URL(await redirectedTo(UJ1), "http://localhost");
-    expect(url.searchParams.get("q")).toBe("Cape Town");
-    expect(url.searchParams.get("sq")).toBe(UJ1);
-    expect(url.searchParams.has("smart")).toBe(false);
+    expect(await redirectedTo(UJ1)).toBe(fallbackHref(current, UJ1));
+  });
+
+  it.each(["TIMEOUT", "RATE_LIMITED", "UNAVAILABLE", "INVALID_OUTPUT"] as const)(
+    "gives the fallback URL, with no smart or Hard criteria, for %s",
+    async (code) => {
+      const error = vi.spyOn(console, "error").mockImplementation(() => {});
+      mocks.provider = failingProvider(new ProviderError(code));
+      const url = new URL(await redirectedTo(UJ1), "http://localhost");
+      expect(url.searchParams.get("fallback")).toBe("1");
+      for (const key of ["smart", "prefs", "maxPrice", "policy", "place", "ignored"]) {
+        expect(url.searchParams.has(key)).toBe(false);
+      }
+      expect(JSON.stringify(error.mock.calls)).toContain(code);
+      expect(JSON.stringify(error.mock.calls)).not.toContain("Stellenbosch");
+    },
+  );
+
+  it("gives the fallback URL after the timeout when interpret never settles", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    // A short timeout stands in for 2.5 s; the Provider ignores the signal.
+    const timeout = AbortSignal.timeout.bind(AbortSignal);
+    vi.spyOn(AbortSignal, "timeout").mockImplementation(() => timeout(20));
+    mocks.provider = {
+      ...failingProvider(new Error("unused")),
+      interpret: () => new Promise(() => {}),
+    };
+    expect(await redirectedTo(UJ1)).toBe(fallbackHref(current, UJ1));
+  });
+
+  it("makes one interpret call for two concurrent identical submits", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubEnv("CHECKINN_PROVIDER", "fake");
+    const fake = createFakeProvider();
+    const interpret = vi.fn(fake.interpret);
+    mocks.provider = { ...fake, interpret };
+    const results = await Promise.allSettled([
+      submitQuery({ query: UJ1, current }),
+      submitQuery({ query: UJ1, current }),
+    ]);
+    expect(results.map((result) => result.status)).toEqual(["rejected", "rejected"]);
+    expect(interpret).toHaveBeenCalledTimes(1);
+    expect(mocks.redirect).toHaveBeenCalledTimes(2);
+    expect(mocks.redirect.mock.calls[0][0]).toBe(mocks.redirect.mock.calls[1][0]);
+    expect(mocks.redirect.mock.calls[0][0]).toContain("smart=1");
   });
 
   it("passes interpretation a 2.5 s signal", async () => {

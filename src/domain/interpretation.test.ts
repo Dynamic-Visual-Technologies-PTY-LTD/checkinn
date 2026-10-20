@@ -340,6 +340,21 @@ describe("smartNotices", () => {
     ]);
   });
 
+  it("puts the fallback notice first and keeps at most 2", () => {
+    expect(smartNotices(smartCriteria("quiet", false, { fallback: true }), "")).toEqual([
+      { kind: "fallback" },
+    ]);
+    expect(
+      smartNotices(
+        smartCriteria("quiet", false, { fallback: true, place: "Kruger", ignored: "for 0" }),
+        "",
+      ),
+    ).toEqual([{ kind: "fallback" }, { kind: "place", place: "Kruger" }]);
+    expect(
+      smartNotices(smartCriteria("quiet", true, { fallback: true, ignored: "for 0" }), "Durban"),
+    ).toEqual([{ kind: "fallback" }, { kind: "ignored", text: "for 0", about: "dates" }]);
+  });
+
   it("gives no place notice when the URL has a Destination", () => {
     expect(
       smartNotices(smartCriteria("quiet", true, { place: "Kruger", ignored: "for 0" }), "Durban"),

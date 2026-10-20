@@ -19,12 +19,29 @@ import {
 } from "@/domain/hard-criteria";
 import { smartNotices } from "@/domain/interpretation";
 import { CITY_NICKNAMES } from "@/domain/nicknames";
+import { fromPrice } from "@/domain/pricing";
 import { rankByBlend } from "@/domain/ranking";
-import { heading } from "@/domain/search";
+import { heading, rank } from "@/domain/search";
 import { normaliseText } from "@/domain/text";
-import type { IsoDate, ListingCard, SearchCriteria, SearchResult } from "@/domain/types";
-import type { InterpretationContext, Provider } from "@/features/search/provider/types";
-import { searchCatalog, smartCandidates } from "@/features/search/search.repo";
+import type {
+  IsoDate,
+  ListingCard,
+  Party,
+  SearchCriteria,
+  SearchResult,
+  SmartCriteria,
+} from "@/domain/types";
+import { interpretationCache, interpretationKey } from "@/features/search/cache";
+import {
+  type InterpretationContext,
+  type Provider,
+  ProviderError,
+} from "@/features/search/provider/types";
+import {
+  searchCatalog,
+  type SmartCandidate,
+  smartCandidates,
+} from "@/features/search/search.repo";
 
 /** What interpretation needs from the catalog. */
 export type InterpretationCatalog = {
@@ -34,10 +51,39 @@ export type InterpretationCatalog = {
 };
 
 /**
+ * `promise`, or a `ProviderError("TIMEOUT")` as soon as `signal` aborts, even
+ * when whatever made `promise` ignores the signal.
+ */
+function raceSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(new ProviderError("TIMEOUT"));
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(new ProviderError("TIMEOUT"));
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(error);
+      },
+    );
+  });
+}
+
+/**
  * Query interpretation (AD-22), the only caller of `Provider.interpret`:
  * normalises the Query, asks the Provider with today, the Cities and the
  * nickname map, then applies its untrusted output to the current criteria.
- * Provider failures throw `ProviderError`.
+ *
+ * The Provider's raw output comes through the interpretation cache (AD-28),
+ * keyed by the normalised Query and today, so a repeated or concurrent
+ * identical Query makes one call; `applyInterpretation` still runs every
+ * time. When `signal` aborts it rejects with `ProviderError("TIMEOUT")`, even
+ * if the Provider ignores the signal, and evicts that call from the cache
+ * (unless a newer call has replaced it), so a call that never settles is
+ * never pinned there. Provider failures throw `ProviderError`.
  */
 export async function interpretQuery(
   provider: Provider,
@@ -52,14 +98,53 @@ export async function interpretQuery(
     cities: catalog.cities,
     nicknames: { ...CITY_NICKNAMES },
   };
-  const raw = await provider.interpret(normaliseText(query), context, signal);
+  // Out of time already: no cache lookup and no Provider call.
+  if (signal.aborted) throw new ProviderError("TIMEOUT");
+  const normalised = normaliseText(query);
+  const key = interpretationKey(normalised, today);
+  const call = interpretationCache.getOrCreate(key, () =>
+    provider.interpret(normalised, context, signal),
+  );
+  let raw: Awaited<typeof call>;
+  try {
+    raw = await raceSignal(call, signal);
+  } catch (error) {
+    // A call that lost the race may never settle: never pin it in the cache.
+    if (signal.aborted) interpretationCache.evict(key, call);
+    throw error;
+  }
   return applyInterpretation(raw, current, catalog, today);
+}
+
+/** The candidates that meet the Hard criteria (AD-23), each with its qualifying Room types. */
+function qualifyingCandidates(
+  candidates: readonly SmartCandidate[],
+  party: Party,
+  smart: SmartCriteria,
+) {
+  const found: { candidate: SmartCandidate; qualifying: SmartCandidate["roomTypes"] }[] = [];
+  for (const candidate of candidates) {
+    const qualifying = qualifyingRoomTypes(
+      candidate.roomTypes,
+      candidate.availability,
+      party,
+      smart.maxPriceRand,
+    );
+    if (hotelQualifies(candidate, qualifying, smart.policies)) found.push({ candidate, qualifying });
+  }
+  return found;
 }
 
 /**
  * Runs a search (AD-20), the one place its mode is decided:
- * - `mvp` with no Provider, no Smart search criteria, or a Query that was not
- *   interpreted: the MVP `searchCatalog` result, unchanged, with no notices.
+ * - `mvp` with no Provider, no Smart search criteria, or a Query that is
+ *   neither interpreted nor a fallback: the MVP `searchCatalog` result,
+ *   unchanged, with no notices.
+ * - `fallback` on a fallback URL: the Hard criteria the URL holds (AD-23:
+ *   Party capacity and Availability always, Max price and Policy criteria if
+ *   present), in MVP `rank` order, as MVP cards priced "from" the cheapest
+ *   qualifying Room type, with no Best-fit room. The fallback notice comes
+ *   first.
  * - `smart`: the MVP Destination and Stay match, narrowed by the Hard
  *   criteria (AD-23). Each card carries its Best-fit room and is priced from
  *   it, and the cards are in Ranking blend order (AD-26). Relevance is 0, and
@@ -69,7 +154,7 @@ export async function interpretQuery(
  * With `debug` (the server's `CHECKINN_SEARCH_DEBUG`, AD-29), each `smart`
  * card also carries its Score breakdown (FR-20).
  *
- * `today` is for the stages that follow (Relevance and the fallback). It never
+ * `today` is for the stages still to come (Relevance). It never
  * throws for Provider errors.
  */
 export function runSmartSearch(
@@ -81,22 +166,37 @@ export function runSmartSearch(
   { debug = false }: { debug?: boolean } = {},
 ): SearchResult {
   const { smart, stay, party, q } = criteria;
-  if (searchMode(provider !== null, smart) === "mvp" || !smart) {
+  const mode = searchMode(provider !== null, smart);
+  if (mode === "mvp" || !smart) {
     return { ...searchCatalog(db, criteria, now), mode: "mvp", criteriaSummary: null };
   }
 
   const notices = smartNotices(smart, q);
-  if (!stay) return { heading: null, cards: [], notices, mode: "smart", criteriaSummary: null };
+  if (!stay) return { heading: null, cards: [], notices, mode, criteriaSummary: null };
+  const found = qualifyingCandidates(smartCandidates(db, criteria, now), party, smart);
+
+  if (mode === "fallback") {
+    const cards: ListingCard[] = [];
+    for (const { candidate, qualifying } of found) {
+      const price = fromPrice(
+        qualifying.map((type) => type.nightlyRand),
+        candidate.card.nights,
+        party.rooms,
+      );
+      if (price) cards.push({ ...candidate.card, ...price });
+    }
+    const ranked = rank(cards);
+    return {
+      heading: heading(q, ranked),
+      cards: ranked,
+      notices,
+      mode,
+      criteriaSummary: ranked.length === 0 ? hardCriteriaSummary(q, smart) : null,
+    };
+  }
 
   const priced: { item: ListingCard; relevance: number }[] = [];
-  for (const candidate of smartCandidates(db, criteria, now)) {
-    const qualifying = qualifyingRoomTypes(
-      candidate.roomTypes,
-      candidate.availability,
-      party,
-      smart.maxPriceRand,
-    );
-    if (!hotelQualifies(candidate, qualifying, smart.policies)) continue;
+  for (const { candidate, qualifying } of found) {
     // No Room-type meanings until Relevance exists, so the cheapest wins.
     const room = bestFit(qualifying, new Map(), party.rooms, candidate.card.nights);
     if (!room) continue;

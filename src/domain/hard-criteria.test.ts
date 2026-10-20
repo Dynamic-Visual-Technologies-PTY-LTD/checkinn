@@ -87,6 +87,15 @@ describe("searchMode", () => {
   it("is smart for an interpreted Query with a Provider", () => {
     expect(searchMode(true, interpreted)).toBe("smart");
   });
+
+  it("is fallback on a fallback URL, ahead of interpreted", () => {
+    expect(searchMode(true, smartCriteria("quiet", false, { fallback: true }))).toBe("fallback");
+    expect(searchMode(true, smartCriteria("quiet", true, { fallback: true }))).toBe("fallback");
+  });
+
+  it("is mvp on a fallback URL with no Provider", () => {
+    expect(searchMode(false, smartCriteria("quiet", false, { fallback: true }))).toBe("mvp");
+  });
 });
 
 describe("Criteria chip copy", () => {

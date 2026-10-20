@@ -66,6 +66,7 @@ export function smartCriteria(
     preferences: null,
     maxPriceRand: null,
     policies: [],
+    fallback: false,
     place: null,
     ignored: null,
     ignoredKind: "dates",
@@ -249,10 +250,11 @@ function noticeText(value: string | undefined): string | null {
 /**
  * The Smart search state in URL parameters (AD-21), or null. `sq` is the
  * trimmed Query and is required: over 300 characters it is dropped, and so is
- * every other Smart parameter. `smart` counts only as exactly `1`. Every
- * other invalid value is dropped silently: `prefs` over 300 characters, a
- * `maxPrice` that is not a positive whole number, unknown `policy` entries,
- * and a `place` or `ignored` that is not short, plain notice text.
+ * every other Smart parameter. `smart` and `fallback` count only as exactly
+ * `1`. Every other invalid value is dropped silently: `prefs` over 300
+ * characters, a `maxPrice` that is not a positive whole number, unknown
+ * `policy` entries, and a `place` or `ignored` that is not short, plain
+ * notice text.
  * `ignoredKind` is `party` only when it says so.
  */
 export function parseSmart(params: CriteriaParams): SmartCriteria | null {
@@ -267,6 +269,7 @@ export function parseSmart(params: CriteriaParams): SmartCriteria | null {
         : null,
     maxPriceRand: parseMaxPrice(readText(params, "maxPrice")),
     policies: parsePolicies(readText(params, "policy")),
+    fallback: readText(params, "fallback") === "1",
     place: noticeText(readText(params, "place")),
     ignored: noticeText(readText(params, "ignored")),
     ignoredKind,
@@ -366,6 +369,7 @@ function setSmart(params: URLSearchParams, smart: SmartCriteria) {
   if (isMaxPrice(smart.maxPriceRand)) params.set("maxPrice", String(smart.maxPriceRand));
   const policies = POLICY_CRITERIA.filter((policy) => smart.policies.includes(policy));
   if (policies.length > 0) params.set("policy", policies.join(","));
+  if (smart.fallback) params.set("fallback", "1");
   const place = smart.place?.trim();
   if (place && isNoticeText(place)) params.set("place", place);
   const ignored = smart.ignored?.trim();
@@ -446,8 +450,10 @@ export function withoutCriterion(
 
 /**
  * The URL a Search bar Search pushes (AD-21, AD-33, FR-5). Under a Query it
- * keeps `sq`, `smart`, `prefs`, `maxPrice` and `policy`, and drops `place`
- * and `ignored`, so the Search re-runs without a new Query interpretation.
+ * keeps `sq`, `smart`, `prefs`, `maxPrice` and `policy`, and drops
+ * `fallback`, `place` and `ignored`, so the Search re-runs without a new
+ * Query interpretation; on a fallback URL that is the MVP search with the
+ * Query still in the box.
  * With the Smart search box empty at Search time, or no Query, it is the MVP
  * search URL.
  */
@@ -461,6 +467,20 @@ export function searchBarSearch(
     q,
     stay,
     party,
-    smart: { ...smart, place: null, ignored: null, ignoredKind: "dates" },
+    smart: { ...smart, fallback: false, place: null, ignored: null, ignoredKind: "dates" },
   });
+}
+
+/**
+ * The fallback URL (AD-22, EXPERIENCE.md Fallback URL): the Search bar's
+ * Destination, Stay and Party from before the submit, the Query for the box
+ * and `fallback=1`. No Preferences, Max price, Policy criteria or notices, so
+ * those of a previous Query are dropped.
+ */
+export function fallbackHref(
+  current: Pick<SearchCriteria, "q" | "stay" | "party">,
+  query: string,
+): string {
+  const { q, stay, party } = current;
+  return searchHref({ q, stay, party, smart: smartCriteria(query, false, { fallback: true }) });
 }

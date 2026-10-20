@@ -31,8 +31,21 @@ export function ResultsHeading({
     finish?.();
   }, [arrival, children, announce, finish]);
 
+  // A submitted Query that lands on this same URL (Try again failing back to
+  // the fallback page) does not re-mount the heading, so it takes focus again
+  // when the submit ends, unless it ended in an error message under the box
+  // (EXPERIENCE.md Fallback notice).
+  const pending = smart?.pending ?? false;
+  const failed = Boolean(smart?.error);
+  const [wasPending, setWasPending] = useState(pending);
+  const [landings, setLandings] = useState(0);
+  if (wasPending !== pending) {
+    setWasPending(pending);
+    if (!pending && !failed) setLandings((count) => count + 1);
+  }
+
   return (
-    <PageHeading describedBy={describedBy} focusOnArrival={!arrival}>
+    <PageHeading describedBy={describedBy} focusOnArrival={!arrival} refocusKey={landings}>
       {children}
     </PageHeading>
   );

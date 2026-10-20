@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getDb } from "@/db/client";
 import { todayIn } from "@/domain/clock";
 import {
+  fallbackHref,
   MAX_QUERY_LENGTH,
   parseCriteria,
   searchHref,
@@ -64,7 +65,11 @@ function reparse(current: SearchBarCriteria | undefined): SearchBarCriteria {
   return { q: criteria.q, stay: criteria.stay, party: criteria.party };
 }
 
-/** Where a submitted Query leads. */
+/**
+ * Where a submitted Query leads (AD-22 Outcomes): the Smart search URL; the
+ * fallback URL for any Provider failure, the 2.5 s timeout included; or, with
+ * no Provider, the MVP URL. Any other error is thrown.
+ */
 async function queryTarget(query: string, current: SearchBarCriteria): Promise<string> {
   const provider = getProvider();
   // No Provider configured (a crafted call): the MVP URL, and no request (AD-31).
@@ -84,9 +89,10 @@ async function queryTarget(query: string, current: SearchBarCriteria): Promise<s
   } catch (error) {
     const code = providerFailure(error);
     if (!code) throw error;
+    // The code only, never the Query (AD-29).
     console.error("submitQuery interpretation failed", code);
-    // Until story 1.7: the pre-submit criteria with the Query kept for the box.
-    return searchHref({ ...current, smart: smartCriteria(query, false) });
+    // The pre-submit Search bar values, the Query for the box and fallback=1.
+    return fallbackHref(current, query);
   }
 }
 
@@ -94,9 +100,11 @@ async function queryTarget(query: string, current: SearchBarCriteria): Promise<s
  * Submit a Query from the Smart search box (AD-22). Interprets it once and
  * redirects to `/search` with `sq`, `smart=1`, the interpreted Destination,
  * Stay and Party, and the Smart search parameters: Preferences, Max price,
- * Policy criteria, and the place and ignored value for their notices. An empty Query, or one over 300 characters,
- * returns `VALIDATION`. A Provider failure keeps the current criteria and
- * the Query; no Provider gives the MVP URL.
+ * Policy criteria, and the place and ignored value for their notices. An
+ * empty Query, or one over 300 characters, returns `VALIDATION`. A Provider
+ * failure or the 2.5 s timeout redirects to the fallback URL: the current
+ * criteria, the Query and `fallback=1`. No Provider gives the MVP URL; any
+ * other error is `SERVER_ERROR`.
  */
 export async function submitQuery(input: SubmitQueryInput): Promise<ActionResult> {
   let target: string;

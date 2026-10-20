@@ -34,10 +34,11 @@ export async function getCityNamed(query: string): Promise<string | null> {
  * `ListingCard`s (all in `src/domain/types.ts`), needs no change in any
  * caller.
  *
- * It goes through `runSmartSearch` (AD-20), which decides the mode: with an
- * interpreted Query it filters by the Hard criteria and adds the notices
- * (the unknown place, then the ignored value, at most 2); otherwise it is
- * the MVP search, unchanged. The Score breakdown is added only when the
+ * It goes through `runSmartSearch` (AD-20), which decides the mode: `smart`
+ * for an interpreted Query, filtered by the Hard criteria; `fallback` for a
+ * fallback URL, filtered by the URL's Hard criteria in MVP order; otherwise
+ * `mvp`, the MVP search unchanged. Notices come in the order fallback, place,
+ * ignored, at most 2. The Score breakdown is added only when the
  * server sets `CHECKINN_SEARCH_DEBUG=1` (AD-29).
  */
 export async function searchHotels(

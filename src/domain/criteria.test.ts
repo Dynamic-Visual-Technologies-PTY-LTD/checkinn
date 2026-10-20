@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { SearchCriteria } from "@/domain/types";
 import {
   defaultCriteria,
+  fallbackHref,
   hotelHref,
   hotelQuery,
   parseCriteria,
@@ -496,6 +497,7 @@ describe("Smart search parameters", () => {
           preferences: "quiet place Kruger",
           maxPriceRand: 2000,
           policies: ["smoking", "pets"],
+          fallback: true,
           place: "Kruger",
           ignored: "for 0",
           ignoredKind: "party",
@@ -503,8 +505,23 @@ describe("Smart search parameters", () => {
       }),
     ).toBe(
       "/search?adults=2&children=0&rooms=1&sq=quiet+place&smart=1&prefs=quiet+place+Kruger" +
-        "&maxPrice=2000&policy=pets%2Csmoking&place=Kruger&ignored=for+0&ignoredKind=party",
+        "&maxPrice=2000&policy=pets%2Csmoking&fallback=1&place=Kruger&ignored=for+0" +
+        "&ignoredKind=party",
     );
+  });
+
+  it("parses fallback=1, and ignores any other fallback value", () => {
+    expect(parse({ sq: "quiet hotel", fallback: "1" }).criteria.smart).toEqual(
+      smartCriteria("quiet hotel", false, { fallback: true }),
+    );
+    for (const fallback of ["true", "0", "yes", "11"]) {
+      expect(parse({ sq: "quiet hotel", fallback }).criteria.smart?.fallback).toBe(false);
+    }
+  });
+
+  it("ignores fallback without sq", () => {
+    expect(parse({ fallback: "1" }).criteria.smart).toBeNull();
+    expect(parse({ sq: "   ", fallback: "1" }).criteria.smart).toBeNull();
   });
 
   it("leaves ignoredKind out for dates, the default", () => {
@@ -549,6 +566,7 @@ describe("Smart search parameters", () => {
       preferences: "pet friendly family place",
       maxPriceRand: 2000,
       policies: ["pets"],
+      fallback: true,
       place: "Kruger",
       ignored: "for 0",
       ignoredKind: "party",
@@ -566,6 +584,7 @@ describe("Smart search parameters", () => {
         preferences: "pet friendly",
         maxPriceRand: 2000,
         policies: ["pets"],
+        fallback: true,
         place: "Kruger",
         ignored: "for 0",
         ignoredKind: "party",
@@ -652,6 +671,19 @@ describe("Smart search URL changes (AD-21)", () => {
     );
   });
 
+  it("keeps fallback on a chip removal", () => {
+    const fallback = { ...smart, interpreted: false, fallback: true };
+    const href = withoutCriterion({ ...base, smart: fallback }, "maxPrice");
+    expect(new URLSearchParams(href.split("?")[1]).get("fallback")).toBe("1");
+  });
+
+  it("drops fallback, keeping sq, on a Search bar Search", () => {
+    const fallback = smartCriteria("a castle on the moon", false, { fallback: true });
+    expect(searchBarSearch({ ...base, smart: fallback }, { boxIsEmpty: false })).toBe(
+      `${mvp}&sq=a+castle+on+the+moon`,
+    );
+  });
+
   it("drops every Smart parameter when the box is empty at Search time", () => {
     expect(searchBarSearch({ ...base, smart }, { boxIsEmpty: true })).toBe(mvp);
   });
@@ -661,5 +693,32 @@ describe("Smart search URL changes (AD-21)", () => {
     expect(searchBarSearch({ ...base, smart: null }, { boxIsEmpty: false })).toBe(
       searchHref(base),
     );
+  });
+});
+
+describe("fallbackHref (AD-22)", () => {
+  const current = {
+    q: "Stellenbosch",
+    stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+    party: { adults: 4, children: 0, rooms: 1 },
+  };
+
+  it("is the Search bar values, sq and fallback=1, through searchHref", () => {
+    expect(fallbackHref(current, "a castle on the moon")).toBe(
+      "/search?q=Stellenbosch&checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1" +
+        "&sq=a+castle+on+the+moon&fallback=1",
+    );
+    expect(fallbackHref(current, "a castle on the moon")).toBe(
+      searchHref({
+        ...current,
+        smart: smartCriteria("a castle on the moon", false, { fallback: true }),
+      }),
+    );
+  });
+
+  it("parses back to a fallback with no Hard criteria, Preferences or notices", () => {
+    const href = fallbackHref({ ...current, q: "" }, "quiet");
+    const parsed = parseCriteria(new URLSearchParams(href.split("?")[1]), today).criteria;
+    expect(parsed.smart).toEqual(smartCriteria("quiet", false, { fallback: true }));
   });
 });

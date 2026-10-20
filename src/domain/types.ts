@@ -67,6 +67,11 @@ export type SmartCriteria = {
   maxPriceRand: number | null;
   /** Policy criteria (`policy`), in `POLICY_CRITERIA` order, each once. */
   policies: PolicyCriterion[];
+  /**
+   * The fallback page (`fallback=1`, AD-21): Query interpretation failed, so
+   * the search runs in MVP order with the fallback notice.
+   */
+  fallback: boolean;
   /** The out-of-catalog place (`place`) for its notice. */
   place: string | null;
   /** One phrase from the Query that could not be used (`ignored`), for its notice. */
@@ -77,10 +82,12 @@ export type SmartCriteria = {
 
 /**
  * A Smart search notice on Search results (AD-20), shown after the result
- * heading. `place` names the out-of-catalog place; `ignored` names the
- * Guest's phrase and what it was about.
+ * heading. `fallback` says Smart search is not available right now; `place`
+ * names the out-of-catalog place; `ignored` names the Guest's phrase and what
+ * it was about.
  */
 export type SmartNotice =
+  | { kind: "fallback" }
   | { kind: "place"; place: string }
   | { kind: "ignored"; text: string; about: IgnoredKind };
 
@@ -236,10 +243,11 @@ export type SearchResult = {
 };
 
 /**
- * How `searchHotels` ran a search (AD-20): `mvp`, the MVP search unchanged,
- * or `smart`, filtered by the Hard criteria (AD-23).
+ * How `searchHotels` ran a search (AD-20): `mvp`, the MVP search unchanged;
+ * `smart`, filtered by the Hard criteria (AD-23) in Ranking blend order; or
+ * `fallback`, filtered by the Hard criteria the URL holds, in MVP order.
  */
-export type SearchMode = "mvp" | "smart";
+export type SearchMode = "mvp" | "smart" | "fallback";
 
 /** A City photo's credit on `/credits`: the source page holds the credit. */
 export type CityPhotoCredit = {

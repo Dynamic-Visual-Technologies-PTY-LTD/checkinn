@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultCriteria, smartCriteria } from "@/domain/criteria";
 import type { CityTile, ListingCard, SearchCriteria } from "@/domain/types";
 import { setViewportWidth } from "@/test/viewport";
+import { SmartSearchProvider } from "@/components/smart-search/smart-search-provider";
 import SearchPage, { generateMetadata } from "./page";
 import { Results, SearchResults } from "./search-results";
 
@@ -273,11 +274,11 @@ describe("SearchResults with Smart search", () => {
     expect(screen.getByRole("textbox", { name: "Describe your stay" })).toHaveValue("");
   });
 
-  it("shows the skeleton cards in place of results while a Query is read", async () => {
+  it("turns only the cards into skeleton cards while a Query is read", async () => {
     mocks.getSmartSearchConfig.mockResolvedValue(true);
     mocks.searchHotels.mockResolvedValue({
       heading: "Stellenbosch: 2 properties found",
-      cards: [],
+      cards: capeTownCards,
       notices: [],
     });
     // Settled at the end: React entangles async transitions across tests.
@@ -287,10 +288,12 @@ describe("SearchResults with Smart search", () => {
         settle = resolve;
       }),
     );
-    const { container } = render(
-      await SearchResults({ searchParams: Promise.resolve(smartParams) }),
-    );
-    expect(await screen.findByRole("heading", { name: "Stellenbosch: 2 properties found" })).toBeInTheDocument();
+    render(await SearchResults({ searchParams: Promise.resolve(smartParams) }));
+    const heading = await screen.findByRole("heading", {
+      name: "Stellenbosch: 2 properties found",
+    });
+    expect(screen.getByRole("list", { name: "Hotels" })).not.toHaveAttribute("aria-busy");
+    expect(screen.getAllByRole("article")).toHaveLength(2);
 
     fireEvent.change(screen.getByRole("textbox", { name: "Describe your stay" }), {
       target: { value: "quiet hotel in Durban" },
@@ -298,8 +301,12 @@ describe("SearchResults with Smart search", () => {
     fireEvent.click(screen.getByRole("button", { name: "Search by description" }));
 
     expect(await screen.findByText("Reading your search…")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /properties found/ })).not.toBeInTheDocument();
-    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+    // The heading stays; the list holds the skeleton cards, busy, and no card.
+    expect(screen.getByRole("heading", { name: "Stellenbosch: 2 properties found" })).toBe(
+      heading,
+    );
+    expect(screen.getByRole("list", { name: "Hotels" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByRole("article")).toBeNull();
     expect(mocks.submitQuery).toHaveBeenCalledWith({
       query: "quiet hotel in Durban",
       current: {
@@ -360,6 +367,36 @@ describe("SearchResults with Smart search", () => {
     mocks.getSmartSearchConfig.mockResolvedValue(false);
     render(await SearchResults({ searchParams: Promise.resolve(params) }));
     expect(screen.queryByRole("list", { name: "Your filters" })).not.toBeInTheDocument();
+  });
+
+  it("shows chips on a fallback URL with Hard criteria, and the Query in the box", async () => {
+    mocks.getSmartSearchConfig.mockResolvedValue(true);
+    render(
+      await SearchResults({
+        searchParams: Promise.resolve({
+          ...smartParams,
+          smart: undefined,
+          sq: "a castle on the moon",
+          fallback: "1",
+          maxPrice: "2000",
+          policy: "pets",
+        }),
+      }),
+    );
+
+    expect(screen.getByRole("textbox", { name: "Describe your stay" })).toHaveValue(
+      "a castle on the moon",
+    );
+    expect(screen.getByRole("list", { name: "Your filters" })).toBeInTheDocument();
+    expect(mocks.searchHotels).toHaveBeenCalledWith(
+      expect.objectContaining({
+        smart: smartCriteria("a castle on the moon", false, {
+          fallback: true,
+          maxPriceRand: 2000,
+          policies: ["pets"],
+        }),
+      }),
+    );
   });
 
   it("drops stale Smart values silently and keeps the Query in the box", async () => {
@@ -551,5 +588,122 @@ describe("Results", () => {
     expect(heading).toHaveAccessibleDescription(
       "We couldn't use 'for 0', so check who's staying.",
     );
+  });
+
+  describe("the fallback notice", () => {
+    const FALLBACK =
+      "Smart search isn't available right now, so these results are in the usual order.";
+    const fallbackCriteria = () =>
+      criteria({ smart: smartCriteria("a castle on the moon", false, { fallback: true }) });
+
+    beforeEach(() => {
+      mocks.searchHotels.mockResolvedValue({
+        heading: "All destinations: 2 properties found",
+        cards: capeTownCards,
+        notices: [{ kind: "fallback" }],
+        mode: "fallback",
+        criteriaSummary: null,
+      });
+    });
+
+    it("describes the heading, with Try again after its text and before the cards", async () => {
+      render(
+        <SmartSearchProvider initialQuery="a castle on the moon">
+          {await Results({ criteria: fallbackCriteria() })}
+        </SmartSearchProvider>,
+      );
+
+      const heading = screen.getByRole("heading", {
+        level: 1,
+        name: "All destinations: 2 properties found",
+      });
+      expect(heading).toHaveAttribute("aria-describedby", "notice-fallback");
+      // The notice, Try again included, is the heading's description.
+      expect(heading).toHaveAccessibleDescription(`${FALLBACK} Try again`);
+      const message = screen.getByText(FALLBACK);
+      const tryAgain = screen.getByRole("button", { name: "Try again" });
+      expect(heading.compareDocumentPosition(tryAgain) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(message.compareDocumentPosition(tryAgain) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      const [firstCard] = screen.getAllByRole("article");
+      expect(tryAgain.compareDocumentPosition(firstCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it("keeps the heading, the notice and Try again while Try again submits", async () => {
+      let settle: (value: undefined) => void = () => {};
+      mocks.submitQuery.mockReturnValue(
+        new Promise<undefined>((resolve) => {
+          settle = resolve;
+        }),
+      );
+      render(
+        <SmartSearchProvider initialQuery="a castle on the moon">
+          {await Results({ criteria: fallbackCriteria() })}
+        </SmartSearchProvider>,
+      );
+      const heading = screen.getByRole("heading", { level: 1 });
+      const tryAgain = screen.getByRole("button", { name: "Try again" });
+
+      tryAgain.focus();
+      fireEvent.click(tryAgain);
+
+      expect(mocks.submitQuery).toHaveBeenCalledWith({
+        query: "a castle on the moon",
+        current: { q: "", stay: weekend, party: { adults: 2, children: 0, rooms: 1 } },
+      });
+      expect(await screen.findByRole("list", { name: "Hotels" })).toHaveAttribute(
+        "aria-busy",
+        "true",
+      );
+      expect(screen.queryByRole("article")).toBeNull();
+      expect(screen.getByRole("heading", { level: 1 })).toBe(heading);
+      expect(heading).toHaveAccessibleDescription(`${FALLBACK} Try again`);
+      expect(screen.getByRole("button", { name: "Try again" })).toBe(tryAgain);
+      expect(tryAgain).toHaveAttribute("aria-disabled", "true");
+      expect(tryAgain).toHaveFocus();
+
+      // Landing on the same fallback URL again focuses the heading.
+      await act(async () => settle(undefined));
+      expect(tryAgain).not.toHaveAttribute("aria-disabled");
+      expect(screen.getAllByRole("article")).toHaveLength(2);
+      expect(heading).toHaveFocus();
+    });
+
+    it("shows MVP cards: from prices and no Best-fit line", async () => {
+      render(
+        <SmartSearchProvider initialQuery="a castle on the moon">
+          {await Results({ criteria: fallbackCriteria() })}
+        </SmartSearchProvider>,
+      );
+
+      for (const article of screen.getAllByRole("article")) {
+        expect(within(article).getByText(/: from/)).toBeInTheDocument();
+        expect(within(article).queryByText(/ · sleeps /)).toBeNull();
+      }
+      expect(screen.getByRole("link", { name: "Harbourlight Retreat" })).not.toHaveAttribute(
+        "href",
+        expect.stringContaining("bestFit"),
+      );
+    });
+
+    it("shows the notice in the no-results state too", async () => {
+      mocks.searchHotels.mockResolvedValue({
+        heading: null,
+        cards: [],
+        notices: [{ kind: "fallback" }],
+        mode: "fallback",
+        criteriaSummary: null,
+      });
+      render(
+        <SmartSearchProvider initialQuery="a castle on the moon">
+          {await Results({ criteria: fallbackCriteria() })}
+        </SmartSearchProvider>,
+      );
+
+      expect(screen.getByRole("heading", { level: 1 })).toHaveAttribute(
+        "aria-describedby",
+        "notice-fallback",
+      );
+      expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    });
   });
 });

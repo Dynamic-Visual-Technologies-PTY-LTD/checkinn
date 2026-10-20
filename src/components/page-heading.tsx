@@ -16,6 +16,7 @@ export function PageHeading({
   className = "text-headline-lg-responsive",
   describedBy,
   focusOnArrival = true,
+  refocusKey,
 }: {
   children: ReactNode;
   /** The headline's type style; `headline-lg` by default. */
@@ -27,6 +28,11 @@ export function PageHeading({
    * Criteria chip removal, where focus stays in the chip row.
    */
   focusOnArrival?: boolean;
+  /**
+   * Takes focus again each time this changes after the heading arrived: for
+   * a navigation that lands on the same URL, which does not re-mount it.
+   */
+  refocusKey?: number;
 }) {
   const ref = useRef<HTMLHeadingElement>(null);
   // The server snapshot is used only while hydrating. The first render's
@@ -39,6 +45,11 @@ export function PageHeading({
   useEffect(() => {
     if (!hydrated.current && !skipFocus.current) ref.current?.focus();
   }, []);
+
+  const arrivalKey = useRef(refocusKey);
+  useEffect(() => {
+    if (refocusKey !== arrivalKey.current) ref.current?.focus();
+  }, [refocusKey]);
 
   return (
     <h1 ref={ref} tabIndex={-1} className={className} aria-describedby={describedBy || undefined}>

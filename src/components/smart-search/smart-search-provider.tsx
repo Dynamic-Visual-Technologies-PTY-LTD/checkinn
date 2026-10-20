@@ -134,9 +134,28 @@ export function SmartSearchProvider({
 }
 
 /**
- * The listing, or the three skeleton cards while a Query is being
- * interpreted (EXPERIENCE.md Submitting). Without Smart search it is the
- * listing.
+ * The Listing cards, or the skeleton cards while a Query is being interpreted
+ * (EXPERIENCE.md Submitting). Only the cards are swapped: the heading, the
+ * notices with Try again, and the chips around them stay mounted, so focus
+ * and their `aria-disabled` state are kept until navigation. Without Smart
+ * search it is the cards.
+ */
+export function SmartPendingListing({
+  skeleton,
+  children,
+}: {
+  /** The busy list of skeleton cards, carrying `aria-busy="true"`. */
+  skeleton: ReactNode;
+  children: ReactNode;
+}) {
+  const smart = useSmartSearch();
+  return smart?.pending ? skeleton : children;
+}
+
+/**
+ * The whole results area, or the skeleton while a Query is being
+ * interpreted. Used where there is no result heading yet (a stale link), so
+ * nothing focusable is lost. Without Smart search it is the results.
  */
 export function SmartPendingResults({
   skeleton,

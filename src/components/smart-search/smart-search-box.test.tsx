@@ -5,7 +5,7 @@ import { SearchStateProvider } from "@/components/search-state";
 import type { ActionResult, Party, Stay } from "@/domain/types";
 import { setViewportWidth } from "@/test/viewport";
 import { SmartSearchBox } from "./smart-search-box";
-import { SmartPendingResults, SmartSearchProvider } from "./smart-search-provider";
+import { SmartPendingListing, SmartSearchProvider } from "./smart-search-provider";
 
 const mocks = vi.hoisted(() => ({
   submitQuery: vi.fn(),
@@ -28,9 +28,10 @@ function renderBox({
       <SearchStateProvider initialStay={stay} initialParty={party}>
         <SmartSearchBox initialQuery={initialQuery} destination={destination} />
         {withBar && <SearchBar today="2026-11-10" getToday={() => "2026-11-10"} />}
-        <SmartPendingResults skeleton={<p>Skeleton cards</p>}>
+        <h1>Results heading</h1>
+        <SmartPendingListing skeleton={<p>Skeleton cards</p>}>
           <p>Results</p>
-        </SmartPendingResults>
+        </SmartPendingListing>
       </SearchStateProvider>
     </SmartSearchProvider>,
   );
@@ -172,8 +173,9 @@ describe("SmartSearchBox", () => {
     expect(mocks.push).not.toHaveBeenCalled();
   });
 
-  it("shows the skeleton cards in place of results while submitting", async () => {
+  it("shows the skeleton cards in place of the cards only while submitting", async () => {
     renderBox();
+    const heading = screen.getByRole("heading", { name: "Results heading" });
     expect(screen.getByText("Results")).toBeInTheDocument();
 
     fireEvent.change(box(), { target: { value: "quiet hotel" } });
@@ -181,6 +183,8 @@ describe("SmartSearchBox", () => {
 
     expect(await screen.findByText("Skeleton cards")).toBeInTheDocument();
     expect(screen.queryByText("Results")).not.toBeInTheDocument();
+    // The heading around the cards stays mounted.
+    expect(screen.getByRole("heading", { name: "Results heading" })).toBe(heading);
   });
 
   it("shows a VALIDATION message under the field and becomes editable again", async () => {

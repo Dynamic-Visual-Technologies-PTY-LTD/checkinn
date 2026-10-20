@@ -9,8 +9,10 @@ import { SearchStateProvider } from "@/components/search-state";
 import { CriteriaChips } from "@/components/smart-search/criteria-chips";
 import { ResultsHeading } from "@/components/smart-search/results-heading";
 import { SmartSearchBox } from "@/components/smart-search/smart-search-box";
+import { TryAgain } from "@/components/smart-search/try-again";
 import {
   ResultsStatus,
+  SmartPendingListing,
   SmartPendingResults,
   SmartSearchProvider,
 } from "@/components/smart-search/smart-search-provider";
@@ -23,6 +25,7 @@ import {
   STALE_LINK_MESSAGE,
 } from "@/domain/criteria";
 import { searchMode } from "@/domain/hard-criteria";
+import type { SearchBarCriteria } from "@/domain/interpretation";
 import type { SearchCriteria, SmartNotice } from "@/domain/types";
 import { getCityTiles, getSmartSearchConfig, searchHotels } from "@/features/search/queries";
 
@@ -89,7 +92,9 @@ export async function SearchResults({ searchParams }: { searchParams: SearchPara
         smart={criteria.smart}
       />
       {chips && <CriteriaChips criteria={urlCriteria} />}
-      {smartSearch ? (
+      {/* With results, only their cards turn into skeletons while a Query is
+          read (see Results); a stale link has no heading to keep. */}
+      {smartSearch && stale ? (
         <SmartPendingResults skeleton={<ResultsSkeleton />}>{results}</SmartPendingResults>
       ) : (
         results
@@ -111,11 +116,17 @@ export async function SearchResults({ searchParams }: { searchParams: SearchPara
 
 /** A Smart search notice's stable id (EXPERIENCE.md Notices). */
 function noticeId(notice: SmartNotice): string {
+  if (notice.kind === "fallback") return "notice-fallback";
   return notice.kind === "place" ? "notice-place" : "notice-value";
 }
 
+/** The fallback notice's copy (EXPERIENCE.md Voice and Tone). */
+export const FALLBACK_MESSAGE =
+  "Smart search isn't available right now, so these results are in the usual order.";
+
 /** A Smart search notice's copy (EXPERIENCE.md Voice and Tone). */
 export function noticeMessage(notice: SmartNotice): string {
+  if (notice.kind === "fallback") return FALLBACK_MESSAGE;
   if (notice.kind === "place") {
     return `We don't have hotels in ${notice.place}, so we're showing all cities.`;
   }
@@ -128,15 +139,22 @@ function noticeIds(notices: readonly SmartNotice[]): string {
   return notices.map(noticeId).join(" ");
 }
 
+/** What Try again resubmits: the URL's Query and its Search bar values. */
+type Retry = { query: string; current: SearchBarCriteria };
+
 /**
  * The Smart search notices after the result heading (EXPERIENCE.md Notices):
- * the MVP `notice`, display only, never taking focus.
+ * the MVP `notice`, display only, never taking focus. The fallback notice
+ * holds Try again after its text (EXPERIENCE.md Fallback notice), so it comes
+ * after the heading and before the cards in the tab order.
  */
 function Notices({
   notices,
+  retry,
   className = "mt-space-md",
 }: {
   notices: readonly SmartNotice[];
+  retry: Retry | null;
   /** The space above the notices; none where a parent's gap already gives it. */
   className?: string;
 }) {
@@ -150,7 +168,14 @@ function Notices({
           className="flex items-start gap-space-sm rounded-md border border-primary bg-surface p-space-md"
         >
           <Icon name="info" className="mt-0.5 shrink-0" />
-          <p>{noticeMessage(notice)}</p>
+          {notice.kind === "fallback" && retry ? (
+            <div className="flex flex-1 flex-col items-start gap-space-sm md:flex-row md:items-center md:justify-between">
+              <p>{noticeMessage(notice)}</p>
+              <TryAgain query={retry.query} current={retry.current} />
+            </div>
+          ) : (
+            <p>{noticeMessage(notice)}</p>
+          )}
         </div>
       ))}
     </div>
@@ -168,6 +193,12 @@ export const NO_RESULTS_HINT = "Try another city, other dates or fewer rooms.";
  */
 export async function Results({ criteria }: { criteria: SearchCriteria }) {
   const { heading, cards, notices, criteriaSummary } = await searchHotels(criteria);
+  const retry: Retry | null = criteria.smart
+    ? {
+        query: criteria.smart.query,
+        current: { q: criteria.q, stay: criteria.stay, party: criteria.party },
+      }
+    : null;
 
   if (!heading) {
     const tiles = await getCityTiles();
@@ -175,12 +206,14 @@ export async function Results({ criteria }: { criteria: SearchCriteria }) {
       <>
         <div className="mt-space-xl flex flex-col gap-space-md">
           <ResultsHeading describedBy={noticeIds(notices)}>Nothing matches that search.</ResultsHeading>
-          <Notices notices={notices} className="" />
+          <Notices notices={notices} retry={retry} className="" />
           <p className="text-body-lg">{criteriaSummary ?? NO_RESULTS_HINT}</p>
         </div>
-        <ExploreSection>
-          <CityTiles tiles={tiles} />
-        </ExploreSection>
+        <SmartPendingListing skeleton={<BusyListing />}>
+          <ExploreSection>
+            <CityTiles tiles={tiles} />
+          </ExploreSection>
+        </SmartPendingListing>
       </>
     );
   }
@@ -190,23 +223,46 @@ export async function Results({ criteria }: { criteria: SearchCriteria }) {
     <>
       <div className="mt-space-xl">
         <ResultsHeading describedBy={noticeIds(notices)}>{heading}</ResultsHeading>
-        <Notices notices={notices} />
+        <Notices notices={notices} retry={retry} />
       </div>
-      <ul className="mt-space-lg flex flex-col gap-space-md">
-        {cards.map((card) => (
-          <li key={card.hotelId}>
-            <ListingCard
-              card={card}
-              // A Smart search card hands its Best-fit room to the Hotel page (FR-14).
-              href={hotelHref(card.hotelId, {
-                ...linkCriteria,
-                bestFit: card.bestFit?.roomTypeId ?? null,
-              })}
-            />
-          </li>
-        ))}
-      </ul>
+      {/* While a Query is read, only the cards turn into skeletons. */}
+      <SmartPendingListing skeleton={<BusyListing />}>
+        <ul aria-label={LISTING_LABEL} className={LISTING}>
+          {cards.map((card) => (
+            <li key={card.hotelId}>
+              <ListingCard
+                card={card}
+                // A Smart search card hands its Best-fit room to the Hotel page (FR-14).
+                href={hotelHref(card.hotelId, {
+                  ...linkCriteria,
+                  bestFit: card.bestFit?.roomTypeId ?? null,
+                })}
+              />
+            </li>
+          ))}
+        </ul>
+      </SmartPendingListing>
     </>
+  );
+}
+
+/** The Listing cards' list name, the same for the cards and their skeletons. */
+const LISTING_LABEL = "Hotels";
+const LISTING = "mt-space-lg flex flex-col gap-space-md";
+
+/**
+ * The listing while a Query is read (EXPERIENCE.md Submitting): the MVP's
+ * three skeleton cards, in a list marked `aria-busy="true"`.
+ */
+function BusyListing() {
+  return (
+    <ul aria-label={LISTING_LABEL} aria-busy="true" className={LISTING}>
+      {[0, 1, 2].map((index) => (
+        <li key={index}>
+          <ListingCardSkeleton />
+        </li>
+      ))}
+    </ul>
   );
 }
 

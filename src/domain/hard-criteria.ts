@@ -75,14 +75,16 @@ export function hotelQualifies(
 }
 
 /**
- * How a search runs (AD-20): `mvp` with no Provider, no Smart search criteria
- * or a Query that was not interpreted; otherwise `smart`. `runSmartSearch`
- * decides the mode with this, and the page shows the Criteria chips only
- * outside `mvp`.
+ * How a search runs (AD-20), the one mode rule: `mvp` with no Provider, no
+ * Smart search criteria, or a Query that is neither interpreted nor a
+ * fallback; `fallback` on a fallback URL, even an interpreted one; otherwise
+ * `smart`. `runSmartSearch` decides the mode with this, and the page shows
+ * the Criteria chips only outside `mvp`.
  */
 export function searchMode(hasProvider: boolean, smart: SmartCriteria | null): SearchMode {
-  if (!hasProvider || !smart || !smart.interpreted) return "mvp";
-  return "smart";
+  if (!hasProvider || !smart) return "mvp";
+  if (smart.fallback) return "fallback";
+  return smart.interpreted ? "smart" : "mvp";
 }
 
 const POLICY_LABELS: Record<PolicyCriterion, string> = {
