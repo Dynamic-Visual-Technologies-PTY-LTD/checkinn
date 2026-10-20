@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ExploreSection } from "@/app/home-search";
 import { PageHeading } from "@/components/page-heading";
 import { CityTiles } from "@/components/city-tiles";
+import { Icon } from "@/components/icons/icons";
 import { ListingCard, ListingCardSkeleton } from "@/components/listing-card";
 import { SearchBar } from "@/components/search-bar";
 import { SearchStateProvider } from "@/components/search-state";
@@ -18,7 +19,7 @@ import {
   serializeCriteria,
   STALE_LINK_MESSAGE,
 } from "@/domain/criteria";
-import type { SearchCriteria } from "@/domain/types";
+import type { SearchCriteria, SmartNotice } from "@/domain/types";
 import { getCityTiles, getSmartSearchConfig, searchHotels } from "@/features/search/queries";
 
 export type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -85,16 +86,69 @@ export async function SearchResults({ searchParams }: { searchParams: SearchPara
   );
 }
 
-/** The result heading and Listing cards, or the no-results state (FR-7, FR-8). */
+/** A Smart search notice's stable id (EXPERIENCE.md Notices). */
+function noticeId(notice: SmartNotice): string {
+  return notice.kind === "place" ? "notice-place" : "notice-value";
+}
+
+/** A Smart search notice's copy (EXPERIENCE.md Voice and Tone). */
+export function noticeMessage(notice: SmartNotice): string {
+  if (notice.kind === "place") {
+    return `We don't have hotels in ${notice.place}, so we're showing all cities.`;
+  }
+  const check = notice.about === "party" ? "check who's staying" : "check your dates";
+  return `We couldn't use '${notice.text}', so ${check}.`;
+}
+
+/** The heading's `aria-describedby`: every shown notice's id, in priority order. */
+function noticeIds(notices: readonly SmartNotice[]): string {
+  return notices.map(noticeId).join(" ");
+}
+
+/**
+ * The Smart search notices after the result heading (EXPERIENCE.md Notices):
+ * the MVP `notice`, display only, never taking focus.
+ */
+function Notices({
+  notices,
+  className = "mt-space-md",
+}: {
+  notices: readonly SmartNotice[];
+  /** The space above the notices; none where a parent's gap already gives it. */
+  className?: string;
+}) {
+  if (notices.length === 0) return null;
+  return (
+    <div className={`flex flex-col gap-space-sm ${className}`}>
+      {notices.map((notice) => (
+        <div
+          key={noticeId(notice)}
+          id={noticeId(notice)}
+          className="flex items-start gap-space-sm rounded-md border border-primary bg-surface p-space-md"
+        >
+          <Icon name="info" className="mt-0.5 shrink-0" />
+          <p>{noticeMessage(notice)}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The result heading, any Smart search notices and the Listing cards, or the
+ * no-results state (FR-7, FR-8). Notices come after the heading, which they
+ * describe.
+ */
 export async function Results({ criteria }: { criteria: SearchCriteria }) {
-  const { heading, cards } = await searchHotels(criteria);
+  const { heading, cards, notices } = await searchHotels(criteria);
 
   if (!heading) {
     const tiles = await getCityTiles();
     return (
       <>
         <div className="mt-space-xl flex flex-col gap-space-md">
-          <PageHeading>Nothing matches that search.</PageHeading>
+          <PageHeading describedBy={noticeIds(notices)}>Nothing matches that search.</PageHeading>
+          <Notices notices={notices} className="" />
           <p className="text-body-lg">Try another city, other dates or fewer rooms.</p>
         </div>
         <ExploreSection>
@@ -108,7 +162,8 @@ export async function Results({ criteria }: { criteria: SearchCriteria }) {
   return (
     <>
       <div className="mt-space-xl">
-        <PageHeading>{heading}</PageHeading>
+        <PageHeading describedBy={noticeIds(notices)}>{heading}</PageHeading>
+        <Notices notices={notices} />
       </div>
       <ul className="mt-space-lg flex flex-col gap-space-md">
         {cards.map((card) => (

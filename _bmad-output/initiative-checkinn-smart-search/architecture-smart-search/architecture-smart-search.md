@@ -161,6 +161,7 @@ flowchart TD
     | `bestFit` | Hotel page only: the Best-fit Room type id | Checked against `hotel`; unknown pre-selects nothing |
 
   - `place` and `ignored` are at most 60 characters of letters, digits, spaces and `' - , .`, or they are dropped.
+  - **`ignoredKind`** (user decision, 2026-10-20) follows `ignored` and says what the phrase was: `dates` (an unusable Stay, "so check your dates") or `party` (an unusable Party, "so check who's staying"). It is `dates` when absent or invalid, so it is written only as `ignoredKind=party`. Only the first unusable value is recorded, the Stay before the Party. `SmartNotice` ignored is `{ kind: "ignored"; text; about: "dates" | "party" }`.
   - `smart` (the criteria field) is non-null exactly when `sq` is valid. The MVP `q` keeps its MVP meaning (the Destination), and Rooms stay in the MVP `rooms`.
   - Rendering a URL never runs Query interpretation. Only `submitQuery` (AD-22) does.
   - URL changes:

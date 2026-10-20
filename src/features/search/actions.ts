@@ -8,10 +8,11 @@ import {
   parseCriteria,
   searchHref,
   serializeCriteria,
+  smartCriteria,
 } from "@/domain/criteria";
-import type { InterpretedCriteria } from "@/domain/interpretation";
+import type { SearchBarCriteria } from "@/domain/interpretation";
 import type { ActionResult } from "@/domain/types";
-import { listCityNames } from "@/features/hotels/catalog.repo";
+import { listCityNames, listInterpretationCatalog } from "@/features/hotels/catalog.repo";
 import { getProvider } from "@/features/search/provider/config";
 import { ProviderError } from "@/features/search/provider/types";
 import { interpretQuery } from "@/features/search/smart-search";
@@ -20,7 +21,7 @@ export type SubmitQueryInput = {
   /** The Query as typed in the Smart search box. */
   query: string;
   /** The Search bar's Destination, Stay and Party before the submit. */
-  current: InterpretedCriteria;
+  current: SearchBarCriteria;
 };
 
 /** Query interpretation's time budget (AD-22). */
@@ -55,7 +56,7 @@ function providerFailure(error: unknown): string | null {
  * Re-parses the client's criteria through the codec (AD-8): client values
  * are never trusted as they are.
  */
-function reparse(current: InterpretedCriteria | undefined): InterpretedCriteria {
+function reparse(current: SearchBarCriteria | undefined): SearchBarCriteria {
   const params = new URLSearchParams(
     serializeCriteria({ q: current?.q, stay: current?.stay, party: current?.party }),
   );
@@ -64,34 +65,36 @@ function reparse(current: InterpretedCriteria | undefined): InterpretedCriteria 
 }
 
 /** Where a submitted Query leads. */
-async function queryTarget(query: string, current: InterpretedCriteria): Promise<string> {
+async function queryTarget(query: string, current: SearchBarCriteria): Promise<string> {
   const provider = getProvider();
   // No Provider configured (a crafted call): the MVP URL, and no request (AD-31).
   if (!provider) return searchHref(current);
 
   try {
-    const interpreted = await interpretQuery(
+    const db = getDb();
+    const { q, stay, party, ...values } = await interpretQuery(
       provider,
       query,
       current,
-      { cities: listCityNames(getDb()) },
+      { cities: listCityNames(db), hotels: listInterpretationCatalog(db) },
       todayIn(),
       AbortSignal.timeout(INTERPRETATION_TIMEOUT_MS),
     );
-    return searchHref({ ...interpreted, smart: { query, interpreted: true } });
+    return searchHref({ q, stay, party, smart: smartCriteria(query, true, values) });
   } catch (error) {
     const code = providerFailure(error);
     if (!code) throw error;
     console.error("submitQuery interpretation failed", code);
     // Until story 1.7: the pre-submit criteria with the Query kept for the box.
-    return searchHref({ ...current, smart: { query, interpreted: false } });
+    return searchHref({ ...current, smart: smartCriteria(query, false) });
   }
 }
 
 /**
  * Submit a Query from the Smart search box (AD-22). Interprets it once and
- * redirects to `/search` with `sq`, `smart=1` and the interpreted
- * Destination, Stay and Party. An empty Query, or one over 300 characters,
+ * redirects to `/search` with `sq`, `smart=1`, the interpreted Destination,
+ * Stay and Party, and the Smart search parameters: Preferences, Max price,
+ * Policy criteria, and the place and ignored value for their notices. An empty Query, or one over 300 characters,
  * returns `VALIDATION`. A Provider failure keeps the current criteria and
  * the Query; no Provider gives the MVP URL.
  */

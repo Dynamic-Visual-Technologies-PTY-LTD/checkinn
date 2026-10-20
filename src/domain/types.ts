@@ -41,15 +41,48 @@ export type CriteriaNotice =
   | { type: "room-unavailable"; roomTypeIds: string[] }
   | { type: "cancelled" };
 
+/** The Policy criteria a Query can set (FR-4), in Criteria chip order. */
+export const POLICY_CRITERIA = ["pets", "children", "smoking"] as const;
+export type PolicyCriterion = (typeof POLICY_CRITERIA)[number];
+
+/**
+ * What an ignored value was (user decision, 2026-10-20): an unusable Stay
+ * ("check your dates") or an unusable Party ("check who's staying").
+ */
+export const IGNORED_KINDS = ["dates", "party"] as const;
+export type IgnoredKind = (typeof IGNORED_KINDS)[number];
+
 /**
  * Smart search state in the URL (AD-21). `query` is the submitted Query, used
  * to refill the Smart search box; `interpreted` is true only after a
- * successful Query interpretation (`smart=1`). Later stories add fields.
+ * successful Query interpretation (`smart=1`). Empty values are `null` (or
+ * `[]` for Policy criteria).
  */
 export type SmartCriteria = {
   query: string;
   interpreted: boolean;
+  /** The Preferences text (`prefs`), at most 300 characters. */
+  preferences: string | null;
+  /** Max price (`maxPrice`), positive whole rand. */
+  maxPriceRand: number | null;
+  /** Policy criteria (`policy`), in `POLICY_CRITERIA` order, each once. */
+  policies: PolicyCriterion[];
+  /** The out-of-catalog place (`place`) for its notice. */
+  place: string | null;
+  /** One phrase from the Query that could not be used (`ignored`), for its notice. */
+  ignored: string | null;
+  /** What `ignored` was (`ignoredKind`); `dates` when absent or invalid. */
+  ignoredKind: IgnoredKind;
 };
+
+/**
+ * A Smart search notice on Search results (AD-20), shown after the result
+ * heading. `place` names the out-of-catalog place; `ignored` names the
+ * Guest's phrase and what it was about.
+ */
+export type SmartNotice =
+  | { kind: "place"; place: string }
+  | { kind: "ignored"; text: string; about: IgnoredKind };
 
 /**
  * Everything the URL holds about a search, a Hotel or a Booking in progress
@@ -153,6 +186,8 @@ export type ListingCard = {
 export type SearchResult = {
   heading: string | null;
   cards: ListingCard[];
+  /** Smart search notices, in priority order, at most 2; `[]` for an MVP search. */
+  notices: SmartNotice[];
 };
 
 /** A City photo's credit on `/credits`: the source page holds the credit. */

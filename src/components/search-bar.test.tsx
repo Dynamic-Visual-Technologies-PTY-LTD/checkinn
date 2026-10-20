@@ -238,6 +238,7 @@ describe("SearchBar under Smart search", () => {
   const smart = (pending: boolean): SmartSearchState => ({
     pending,
     submittedQuery: "quiet hotel",
+    submitCount: 0,
     boxIsEmpty: false,
     setBoxIsEmpty: () => {},
     error: null,

@@ -3,6 +3,7 @@ import { io } from "next/cache";
 import { getDb } from "@/db/client";
 import type { CityTile, SearchCriteria, SearchResult } from "@/domain/types";
 import { nowIso } from "@/domain/clock";
+import { smartNotices } from "@/domain/interpretation";
 import { cityNamed } from "@/domain/search";
 import { listCityNames, listCityTiles } from "@/features/hotels/catalog.repo";
 import { getProvider } from "@/features/search/provider/config";
@@ -33,12 +34,16 @@ export async function getCityNamed(query: string): Promise<string | null> {
  * signature, taking `SearchCriteria` and returning `SearchResult` with
  * `ListingCard`s (all in `src/domain/types.ts`), needs no change in any
  * caller.
+ *
+ * With Smart search criteria it adds their notices (AD-20): the unknown
+ * place, then the ignored value, at most 2. An MVP search has none.
  */
 export async function searchHotels(
   criteria: SearchCriteria,
 ): Promise<SearchResult> {
   await io();
-  return searchCatalog(getDb(), criteria, nowIso());
+  const result = searchCatalog(getDb(), criteria, nowIso());
+  return { ...result, notices: smartNotices(criteria.smart, criteria.q) };
 }
 
 /**

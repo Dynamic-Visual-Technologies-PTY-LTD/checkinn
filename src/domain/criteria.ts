@@ -6,15 +6,18 @@
  * Nothing here reads the clock: callers pass `today` (AD-9).
  */
 import { addDays, MAX_NIGHTS, nightsBetween } from "@/domain/dates";
-import type {
-  CriteriaNotice,
-  CriteriaProblem,
-  IsoDate,
-  Party,
-  RoomSelection,
-  SearchCriteria,
-  SmartCriteria,
-  Stay,
+import {
+  POLICY_CRITERIA,
+  type CriteriaNotice,
+  type CriteriaProblem,
+  type IgnoredKind,
+  type IsoDate,
+  type Party,
+  type PolicyCriterion,
+  type RoomSelection,
+  type SearchCriteria,
+  type SmartCriteria,
+  type Stay,
 } from "@/domain/types";
 
 /** Party limits (EXPERIENCE.md Occupancy picker). Rooms never exceed adults. */
@@ -28,6 +31,47 @@ export const DEFAULT_PARTY: Party = { adults: 2, children: 0, rooms: 1 };
 
 /** The longest Query the Smart search box takes and `sq` keeps (FR-1, AD-21). */
 export const MAX_QUERY_LENGTH = 300;
+
+/** The longest Preferences text `prefs` keeps (AD-21). */
+export const MAX_PREFERENCES_LENGTH = 300;
+
+/**
+ * `place` and `ignored` (AD-21): at most 60 letters, digits, spaces and
+ * `' - , .`, so a shared link cannot put arbitrary text in a notice.
+ */
+const NOTICE_TEXT = /^[\p{L}\p{N} ',.-]{1,60}$/u;
+
+/** Whether text may go in a `place` or `ignored` notice (AD-21). */
+export function isNoticeText(value: string): boolean {
+  return NOTICE_TEXT.test(value);
+}
+
+/** Whether a value is a usable Max price: a positive whole number of rand. */
+export function isMaxPrice(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+
+/**
+ * Smart search criteria with every optional value empty: no Preferences, Max
+ * price, Policy criteria, place or ignored value.
+ */
+export function smartCriteria(
+  query: string,
+  interpreted: boolean,
+  values: Partial<Omit<SmartCriteria, "query" | "interpreted">> = {},
+): SmartCriteria {
+  return {
+    query,
+    interpreted,
+    preferences: null,
+    maxPriceRand: null,
+    policies: [],
+    place: null,
+    ignored: null,
+    ignoredKind: "dates",
+    ...values,
+  };
+}
 
 /** Shown when a link's dates or Party were rejected (EXPERIENCE.md stale link). */
 export const STALE_LINK_MESSAGE = "Those dates have passed. Pick new ones.";
@@ -185,15 +229,47 @@ export function parseNotice(params: CriteriaParams): CriteriaNotice | null {
   return null;
 }
 
+/** A comma list of Policy criteria, unknown entries dropped, in chip order. */
+function parsePolicies(value: string | undefined): PolicyCriterion[] {
+  const entries = new Set((value ?? "").split(",").map((entry) => entry.trim()));
+  return POLICY_CRITERIA.filter((policy) => entries.has(policy));
+}
+
+function parseMaxPrice(value: string | undefined): number | null {
+  if (value === undefined || !QUANTITY.test(value)) return null;
+  const price = Number(value);
+  return isMaxPrice(price) ? price : null;
+}
+
+function noticeText(value: string | undefined): string | null {
+  return value !== undefined && isNoticeText(value) ? value : null;
+}
+
 /**
  * The Smart search state in URL parameters (AD-21), or null. `sq` is the
  * trimmed Query and is required: over 300 characters it is dropped, and so is
- * every other Smart parameter. `smart` counts only as exactly `1`.
+ * every other Smart parameter. `smart` counts only as exactly `1`. Every
+ * other invalid value is dropped silently: `prefs` over 300 characters, a
+ * `maxPrice` that is not a positive whole number, unknown `policy` entries,
+ * and a `place` or `ignored` that is not short, plain notice text.
+ * `ignoredKind` is `party` only when it says so.
  */
 export function parseSmart(params: CriteriaParams): SmartCriteria | null {
   const query = readText(params, "sq");
   if (query === undefined || query.length > MAX_QUERY_LENGTH) return null;
-  return { query, interpreted: readText(params, "smart") === "1" };
+  const preferences = readText(params, "prefs");
+  const ignoredKind: IgnoredKind = readText(params, "ignoredKind") === "party" ? "party" : "dates";
+  return smartCriteria(query, readText(params, "smart") === "1", {
+    preferences:
+      preferences !== undefined && preferences.length <= MAX_PREFERENCES_LENGTH
+        ? preferences
+        : null,
+    maxPriceRand: parseMaxPrice(readText(params, "maxPrice")),
+    policies: parsePolicies(readText(params, "policy")),
+    place: noticeText(readText(params, "place")),
+    ignored: noticeText(readText(params, "ignored")),
+    ignoredKind,
+  });
 }
 
 /** Turns URL parameters into criteria. Never throws. */
@@ -266,12 +342,33 @@ export function serializeCriteria(criteria: Partial<SearchCriteria>): string {
   }
   if (criteria.k) params.set("k", criteria.k);
   if (criteria.notice) setNotice(params, criteria.notice);
-  const query = criteria.smart?.query.trim();
-  if (query && query.length <= MAX_QUERY_LENGTH) {
-    params.set("sq", query);
-    if (criteria.smart?.interpreted) params.set("smart", "1");
-  }
+  if (criteria.smart) setSmart(params, criteria.smart);
   return params.toString();
+}
+
+/**
+ * The Smart search parameters, after the MVP ones, in AD-21 order. A value
+ * that parsing would drop is not written.
+ */
+function setSmart(params: URLSearchParams, smart: SmartCriteria) {
+  const query = smart.query.trim();
+  if (!query || query.length > MAX_QUERY_LENGTH) return;
+  params.set("sq", query);
+  if (smart.interpreted) params.set("smart", "1");
+  const preferences = smart.preferences?.trim();
+  if (preferences && preferences.length <= MAX_PREFERENCES_LENGTH) {
+    params.set("prefs", preferences);
+  }
+  if (isMaxPrice(smart.maxPriceRand)) params.set("maxPrice", String(smart.maxPriceRand));
+  const policies = POLICY_CRITERIA.filter((policy) => smart.policies.includes(policy));
+  if (policies.length > 0) params.set("policy", policies.join(","));
+  const place = smart.place?.trim();
+  if (place && isNoticeText(place)) params.set("place", place);
+  const ignored = smart.ignored?.trim();
+  if (ignored && isNoticeText(ignored)) {
+    params.set("ignored", ignored);
+    if (smart.ignoredKind === "party") params.set("ignoredKind", "party");
+  }
 }
 
 function setNotice(params: URLSearchParams, notice: CriteriaNotice) {

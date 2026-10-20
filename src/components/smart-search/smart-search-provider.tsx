@@ -6,7 +6,7 @@ import {
   SmartSearchContext,
   useSmartSearch,
 } from "@/components/smart-search/smart-search-context";
-import type { InterpretedCriteria } from "@/domain/interpretation";
+import type { SearchBarCriteria } from "@/domain/interpretation";
 import { submitQuery } from "@/features/search/actions";
 
 /**
@@ -25,6 +25,7 @@ export function SmartSearchProvider({
 }) {
   const [pending, startTransition] = useTransition();
   const [submittedQuery, setSubmittedQuery] = useState(initialQuery);
+  const [submitCount, setSubmitCount] = useState(0);
   const [boxIsEmpty, setBoxIsEmpty] = useState(initialQuery.trim() === "");
   const [error, setError] = useState<string | null>(null);
 
@@ -38,10 +39,13 @@ export function SmartSearchProvider({
   }
 
   const submit = useCallback(
-    (query: string, current: InterpretedCriteria) => {
+    (query: string, current: SearchBarCriteria) => {
       if (pending) return;
       setError(null);
+      // The box shows the submitted Query, as when an Example query fills it.
       setSubmittedQuery(query);
+      setSubmitCount((count) => count + 1);
+      setBoxIsEmpty(query.trim() === "");
       startTransition(async () => {
         try {
           const result = await submitQuery({ query, current });
@@ -56,8 +60,8 @@ export function SmartSearchProvider({
   );
 
   const value = useMemo(
-    () => ({ pending, submittedQuery, boxIsEmpty, setBoxIsEmpty, error, submit }),
-    [pending, submittedQuery, boxIsEmpty, error, submit],
+    () => ({ pending, submittedQuery, submitCount, boxIsEmpty, setBoxIsEmpty, error, submit }),
+    [pending, submittedQuery, submitCount, boxIsEmpty, error, submit],
   );
   return <SmartSearchContext value={value}>{children}</SmartSearchContext>;
 }

@@ -1,4 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
+import { todayIn } from "@/domain/clock";
+import { compactStayLabel, relativeStay, stayLabel } from "@/domain/dates";
 import { blockSeedPhotos } from "../support/network";
 
 // Runs on the Smart server (port 3101), whose Provider is the fake. The UJ-1
@@ -46,14 +48,22 @@ test.describe("Smart search tracer", () => {
     release();
 
     await page.waitForURL(/\/search\?/);
+    // Next weekend, from the server's today (FR-4).
+    const stay = relativeStay("next-weekend", todayIn());
     const url = new URL(page.url());
     expect(url.searchParams.get("q")).toBe("Stellenbosch");
+    expect(url.searchParams.get("checkIn")).toBe(stay.checkIn);
+    expect(url.searchParams.get("checkOut")).toBe(stay.checkOut);
     expect(url.searchParams.get("adults")).toBe("4");
     expect(url.searchParams.get("children")).toBe("0");
+    expect(url.searchParams.get("rooms")).toBe("1");
     expect(url.searchParams.get("sq")).toBe(UJ1);
     // Interpreted, so not the fallback.
     expect(url.searchParams.get("smart")).toBe("1");
     expect(url.searchParams.has("fallback")).toBe(false);
+    expect(url.searchParams.get("prefs")).toBe("pet friendly family place");
+    expect(url.searchParams.get("maxPrice")).toBe("2000");
+    expect(url.searchParams.get("policy")).toBe("pets");
 
     // The box keeps the Guest's words.
     await expect(smartBox(page)).toHaveValue(UJ1);
@@ -61,14 +71,19 @@ test.describe("Smart search tracer", () => {
 
     if (isMobile) {
       await expect(
-        page.getByRole("button", { name: /^Change search: Stellenbosch · .+ · 4 adults$/ }),
+        page.getByRole("button", {
+          name: `Change search: Stellenbosch · ${compactStayLabel(stay)} · 4 adults`,
+        }),
       ).toBeVisible();
     } else {
       const results = page.getByRole("search", { name: "Search hotels" });
       await expect(results.getByRole("textbox", { name: "Destination" })).toHaveValue(
         "Stellenbosch",
       );
-      await expect(results.getByRole("button", { name: /^Occupancy 4 adults · / })).toBeVisible();
+      await expect(results.getByRole("button", { name: `Dates ${stayLabel(stay)}` })).toBeVisible();
+      await expect(
+        results.getByRole("button", { name: "Occupancy 4 adults · 0 children · 1 room" }),
+      ).toBeVisible();
     }
   });
 });

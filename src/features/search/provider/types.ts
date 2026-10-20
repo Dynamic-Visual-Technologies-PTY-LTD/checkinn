@@ -38,7 +38,7 @@ export type InterpretationContext = {
   today: IsoDate;
   /** Every catalog City with its aliases. */
   cities: { name: string; aliases: string[] }[];
-  /** Nickname → City name, e.g. "joburg" → "Johannesburg". Empty until story 1.3. */
+  /** Nickname → City name, e.g. "joburg" → "Johannesburg" (`CITY_NICKNAMES`). */
   nicknames: Record<string, string>;
 };
 

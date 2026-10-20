@@ -97,6 +97,7 @@ describe("searchCatalog", () => {
     expect(searchCatalog(db, criteria({ q: "Bloemfontein" }), NOW)).toEqual({
       heading: null,
       cards: [],
+      notices: [],
     });
   });
 
@@ -104,6 +105,7 @@ describe("searchCatalog", () => {
     expect(searchCatalog(db, criteria({ q: "Cape Town", stay: null }), NOW)).toEqual({
       heading: null,
       cards: [],
+      notices: [],
     });
   });
 

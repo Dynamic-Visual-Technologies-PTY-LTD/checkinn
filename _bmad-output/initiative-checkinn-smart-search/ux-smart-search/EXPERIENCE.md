@@ -67,12 +67,13 @@ The MVP voice applies: warm, plain South African English, what happened and then
 | "Pets allowed", "Children allowed", "Smoking allowed" (Criteria chips) | "pets: true", "Kids OK" |
 | "We don't have hotels in Kruger, so we're showing all cities." | "Unknown location." |
 | "We couldn't use 'last Tuesday', so check your dates." | "Invalid date ignored." |
+| "We couldn't use 'for 0', so check who's staying." (an unusable Party; user decision, 2026-10-20) | "Invalid party ignored." |
 | "No strong matches for ‘ski chalet with a fireplace’" (heading), then "Try describing it another way." | "0 results above threshold." |
 | "Smart search isn't available right now, so these results are in the usual order." then the button "Try again" | "Error: Provider timeout." |
 | "Family Room · 1 room · sleeps 4" | "Recommended room for you!" |
 | "Family Room picked for your search. Change it in the table." (booking summary) | "We chose this for you!" |
 
-The copy above for the unknown-place, ignored-value and fallback notices and for the weak-match heading is decided. The unknown-place and ignored-value lines follow the PRD examples (FR-4).
+The copy above for the unknown-place, ignored-value and fallback notices and for the weak-match heading is decided. An ignored Stay ends "so check your dates"; an ignored Party ends "so check who's staying" (user decision, 2026-10-20). The unknown-place and ignored-value lines follow the PRD examples (FR-4).
 
 **Formats.** As the MVP: "R 2 000" with non-breaking spaces, "Fri 23 Oct 2026" dates. The MVP spoken-price rule does not apply to control names: a Criteria chip's name keeps its visible text, so it reads "Remove Max R 2 000 per night" (see Criteria chip).
 

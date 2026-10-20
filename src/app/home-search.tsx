@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { CityTiles, CityTilesSkeleton } from "@/components/city-tiles";
 import { SearchBar } from "@/components/search-bar";
 import { SearchStateProvider } from "@/components/search-state";
+import { ExampleQueries } from "@/components/smart-search/example-queries";
 import { SmartSearchBox } from "@/components/smart-search/smart-search-box";
 import { SmartSearchProvider } from "@/components/smart-search/smart-search-provider";
 import { todayIn } from "@/domain/clock";
@@ -13,7 +14,8 @@ import { getCityTiles, getSmartSearchConfig } from "@/features/search/queries";
  * Reads today at request time, inside the Suspense boundary (AD-2), so the
  * default Stay is never frozen into the build. The provider shares the search
  * bar's live Stay and Party with the City tile links. With a Provider
- * configured, the Smart search box sits above the search bar (FR-1);
+ * configured, the Smart search box and the Example queries sit above the
+ * search bar (FR-1);
  * without one, Home is the MVP Home (FR-2).
  */
 export async function HomeSearch() {
@@ -24,8 +26,9 @@ export async function HomeSearch() {
   const content = (
     <SearchStateProvider initialStay={stay} initialParty={party}>
       {smartSearch && (
-        <div className="mt-space-xl">
+        <div className="mt-space-xl flex flex-col gap-space-sm">
           <SmartSearchBox />
+          <ExampleQueries />
         </div>
       )}
       <div className={smartSearch ? "mt-space-md" : "mt-space-xl"}>

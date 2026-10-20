@@ -41,7 +41,7 @@ export function labels(): Record<string, string> {
  */
 export function searchCatalog(db: Db, criteria: SearchCriteria, now: string): SearchResult {
   const { stay, party, q } = criteria;
-  if (!stay) return { heading: null, cards: [] };
+  if (!stay) return { heading: null, cards: [], notices: [] };
   const nights = nightsBetween(stay.checkIn, stay.checkOut);
 
   const rows = db
@@ -109,5 +109,5 @@ export function searchCatalog(db: Db, criteria: SearchCriteria, now: string): Se
   }
 
   const ranked = rank(cards);
-  return { heading: heading(q, ranked), cards: ranked };
+  return { heading: heading(q, ranked), cards: ranked, notices: [] };
 }

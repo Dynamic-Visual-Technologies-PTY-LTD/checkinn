@@ -14,10 +14,13 @@ const noSubscribe = () => () => {};
 export function PageHeading({
   children,
   className = "text-headline-lg-responsive",
+  describedBy,
 }: {
   children: ReactNode;
   /** The headline's type style; `headline-lg` by default. */
   className?: string;
+  /** Ids of what is read with the headline, such as Smart search notices. */
+  describedBy?: string;
 }) {
   const ref = useRef<HTMLHeadingElement>(null);
   // The server snapshot is used only while hydrating. The first render's
@@ -30,7 +33,7 @@ export function PageHeading({
   }, []);
 
   return (
-    <h1 ref={ref} tabIndex={-1} className={className}>
+    <h1 ref={ref} tabIndex={-1} className={className} aria-describedby={describedBy || undefined}>
       {children}
     </h1>
   );

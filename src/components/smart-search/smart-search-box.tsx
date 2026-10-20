@@ -38,6 +38,13 @@ export function SmartSearchBox({ initialQuery = "", destination = "" }: SmartSea
   if (!smart) throw new Error("SmartSearchBox needs a SmartSearchProvider.");
   const { stay, party } = useRequiredSearchState();
   const [value, setValue] = useState(initialQuery);
+  // Every submit, such as an Example query, fills the box with its Query,
+  // even when it repeats the last one.
+  const [shownCount, setShownCount] = useState(smart.submitCount);
+  if (smart.submitCount !== shownCount) {
+    setShownCount(smart.submitCount);
+    setValue(smart.submittedQuery);
+  }
   // Set when the box reaches 300 characters, so the status region says it once.
   const [limitMessage, setLimitMessage] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);

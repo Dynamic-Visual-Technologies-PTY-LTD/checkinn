@@ -95,6 +95,23 @@ describe("HomeSearch with Smart search", () => {
     const bar = screen.getByRole("search", { name: "Search hotels" });
     expect(box.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it("puts the Example queries between the box and the search bar", async () => {
+    mocks.smartSearch = true;
+    render(await HomeSearch());
+
+    const box = screen.getByRole("textbox", { name: "Describe your stay" });
+    const examples = screen.getByRole("list", { name: "Try an example" });
+    const bar = screen.getByRole("search", { name: "Search hotels" });
+    expect(within(examples).getAllByRole("button")).toHaveLength(3);
+    expect(box.compareDocumentPosition(examples) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(examples.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("has no Example queries without a Provider", async () => {
+    render(await HomeSearch());
+    expect(screen.queryByRole("list", { name: "Try an example" })).not.toBeInTheDocument();
+  });
 });
 
 describe("Search bar and City tiles", () => {
