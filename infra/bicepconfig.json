@@ -1,0 +1,31 @@
+{
+  "analyzers": {
+    "core": {
+      "enabled": true,
+      "rules": {
+        "adminusername-should-not-be-literal": { "level": "error" },
+        "max-outputs": { "level": "error" },
+        "max-params": { "level": "error" },
+        "max-resources": { "level": "error" },
+        "max-variables": { "level": "error" },
+        "no-hardcoded-env-urls": { "level": "error" },
+        "no-hardcoded-location": { "level": "error" },
+        "no-unused-existing-resources": { "level": "error" },
+        "no-unused-params": { "level": "error" },
+        "no-unused-vars": { "level": "error" },
+        "outputs-should-not-contain-secrets": { "level": "error" },
+        "secure-secrets-in-params": { "level": "error" },
+        "use-secure-value-for-secure-inputs": { "level": "error" },
+        "explicit-values-for-loc-params": { "level": "warning" },
+        "prefer-interpolation": { "level": "warning" },
+        "prefer-unquoted-property-names": { "level": "warning" },
+        "simplify-interpolation": { "level": "warning" },
+        "use-parent-property": { "level": "warning" },
+        "use-recent-api-versions": { "level": "warning" },
+        "use-resource-id-functions": { "level": "warning" },
+        "use-resource-symbol-reference": { "level": "warning" },
+        "use-stable-resource-identifiers": { "level": "warning" }
+      }
+    }
+  }
+}
