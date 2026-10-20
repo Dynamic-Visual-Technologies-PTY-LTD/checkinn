@@ -11,7 +11,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.ts"],
     setupFiles: ["./src/test/setup.ts"],
     // Smart search is off in unit tests, whatever the shell says (AD-29).
     env: { CHECKINN_PROVIDER: "off" },

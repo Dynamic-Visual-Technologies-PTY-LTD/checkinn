@@ -5,35 +5,88 @@
  *
  * - `CHECKINN_PROVIDER=off`: no Provider, so the app is the MVP.
  * - `CHECKINN_PROVIDER=fake`: the fake, for e2e only. It logs one warning.
- * - Anything else: the Azure adapter once it exists (story 1.2); until then
- *   no Provider.
+ * - `CHECKINN_PROVIDER` unset or `azure`: the Azure adapter, when all four
+ *   Azure variables are set; otherwise no Provider.
+ * - Anything else: no Provider.
  */
+import { type AzureConfig, createAzureProvider } from "@/features/search/provider/azure";
 import { createFakeProvider } from "@/features/search/provider/fake";
 import type { Provider } from "@/features/search/provider/types";
 
-type ProviderState = { fake?: Provider; warned?: boolean };
+type Env = Record<string, string | undefined>;
 
-// One fake and one warning per process (AD-12).
+/** The four variables the Azure adapter needs (AD-29). */
+export const AZURE_VARIABLES = [
+  "AZURE_OPENAI_BASE_URL",
+  "AZURE_OPENAI_API_KEY",
+  "AZURE_OPENAI_CHAT_DEPLOYMENT",
+  "AZURE_OPENAI_EMBEDDING_DEPLOYMENT",
+] as const;
+
+type ProviderState = {
+  fake?: Provider;
+  warned?: boolean;
+  azure?: { config: AzureConfig; provider: Provider };
+};
+
+// One fake, one Azure adapter and one warning per process (AD-12).
 const state = globalThis as typeof globalThis & { __checkinnProvider?: ProviderState };
 
-function fakeProvider(): Provider {
+function held(): ProviderState {
   state.__checkinnProvider ??= {};
-  const held = state.__checkinnProvider;
-  if (!held.warned) {
-    held.warned = true;
+  return state.__checkinnProvider;
+}
+
+function fakeProvider(): Provider {
+  const current = held();
+  if (!current.warned) {
+    current.warned = true;
     console.warn("CHECKINN_PROVIDER=fake: Smart search answers from fixtures. For e2e only.");
   }
-  held.fake ??= createFakeProvider();
-  return held.fake;
+  current.fake ??= createFakeProvider();
+  return current.fake;
+}
+
+/** The Azure variables that are unset or blank, by name. */
+export function missingAzureVariables(env: Env = process.env): string[] {
+  return AZURE_VARIABLES.filter((name) => !env[name]?.trim());
+}
+
+/** The Azure configuration, or null when any of its variables is missing. */
+export function azureConfig(env: Env = process.env): AzureConfig | null {
+  if (missingAzureVariables(env).length > 0) return null;
+  const value = (name: (typeof AZURE_VARIABLES)[number]) => env[name]!.trim();
+  return {
+    baseURL: value("AZURE_OPENAI_BASE_URL"),
+    apiKey: value("AZURE_OPENAI_API_KEY"),
+    chatDeployment: value("AZURE_OPENAI_CHAT_DEPLOYMENT"),
+    embeddingDeployment: value("AZURE_OPENAI_EMBEDDING_DEPLOYMENT"),
+  };
+}
+
+function sameConfig(a: AzureConfig, b: AzureConfig): boolean {
+  return (
+    a.baseURL === b.baseURL &&
+    a.apiKey === b.apiKey &&
+    a.chatDeployment === b.chatDeployment &&
+    a.embeddingDeployment === b.embeddingDeployment
+  );
+}
+
+function azureProvider(config: AzureConfig): Provider {
+  const current = held();
+  if (!current.azure || !sameConfig(current.azure.config, config)) {
+    current.azure = { config, provider: createAzureProvider(config) };
+  }
+  return current.azure.provider;
 }
 
 /** The configured Provider, or null when Smart search is off. */
-export function getProvider(
-  env: Record<string, string | undefined> = process.env,
-): Provider | null {
+export function getProvider(env: Env = process.env): Provider | null {
   const setting = env.CHECKINN_PROVIDER?.trim().toLowerCase();
   if (setting === "off") return null;
   if (setting === "fake") return fakeProvider();
-  // The Azure adapter arrives in story 1.2.
-  return null;
+  if (setting && setting !== "azure") return null;
+  const config = azureConfig(env);
+  return config ? azureProvider(config) : null;
 }

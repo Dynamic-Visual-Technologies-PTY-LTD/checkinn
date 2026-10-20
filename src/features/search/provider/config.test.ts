@@ -1,6 +1,11 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getProvider } from "@/features/search/provider/config";
+import {
+  AZURE_VARIABLES,
+  azureConfig,
+  getProvider,
+  missingAzureVariables,
+} from "@/features/search/provider/config";
 
 const state = globalThis as typeof globalThis & { __checkinnProvider?: unknown };
 const azure = {
@@ -32,10 +37,38 @@ describe("getProvider", () => {
     expect(getProvider({ CHECKINN_PROVIDER: "something" })).toBeNull();
   });
 
-  it("stays null for the Azure variables until the adapter exists", () => {
-    expect(getProvider(azure)).toBeNull();
-    expect(getProvider({ ...azure, CHECKINN_PROVIDER: "azure" })).toBeNull();
+  it("gives one Azure provider when all four variables are set and the setting is unset or azure", () => {
+    const first = getProvider(azure);
+    expect(first).not.toBeNull();
+    expect(getProvider(azure)).toBe(first);
+    expect(getProvider({ ...azure, CHECKINN_PROVIDER: "azure" })).toBe(first);
+    expect(getProvider({ ...azure, CHECKINN_PROVIDER: " Azure " })).toBe(first);
+    expect(getProvider({ ...azure, CHECKINN_PROVIDER: "" })).toBe(first);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("is null for the Azure variables when the setting is off or unknown", () => {
     expect(getProvider({ ...azure, CHECKINN_PROVIDER: "off" })).toBeNull();
+    expect(getProvider({ ...azure, CHECKINN_PROVIDER: "something" })).toBeNull();
+  });
+
+  it("is null when any Azure variable is missing or blank", () => {
+    for (const name of AZURE_VARIABLES) {
+      const partial: Record<string, string | undefined> = { ...azure, [name]: undefined };
+      expect(getProvider(partial)).toBeNull();
+      expect(getProvider({ ...azure, [name]: "  " })).toBeNull();
+      expect(missingAzureVariables(partial)).toEqual([name]);
+    }
+    expect(missingAzureVariables(azure)).toEqual([]);
+  });
+
+  it("reads trimmed Azure values", () => {
+    expect(azureConfig({ ...azure, AZURE_OPENAI_CHAT_DEPLOYMENT: " chat " })).toEqual({
+      baseURL: azure.AZURE_OPENAI_BASE_URL,
+      apiKey: "test-key",
+      chatDeployment: "chat",
+      embeddingDeployment: "embed",
+    });
   });
 
   it("gives the fake for fake, the same one each time, with one warning", () => {
