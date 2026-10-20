@@ -50,15 +50,55 @@ const names = (criteria: SearchCriteria) =>
   runSmartSearch(db, provider, criteria, TODAY, NOW).cards.map((card) => card.name);
 
 describe("runSmartSearch in smart mode", () => {
-  it("UJ-1: only Winelands, priced from its Family Room at R 2 000 a night", () => {
+  it("UJ-1: only Winelands, priced from its Best-fit Family Room at R 2 000 a night", () => {
     const result = runSmartSearch(db, provider, uj1(), TODAY, NOW);
 
     expect(result.mode).toBe("smart");
     expect(result.heading).toBe("1 property found");
     expect(result.cards.map((card) => card.name)).toEqual(["Winelands Family Lodge"]);
     expect(result.cards[0]).toMatchObject({ nightlyRand: 2000, totalRand: 4000, nights: 2 });
+    expect(result.cards[0].bestFit).toEqual({
+      roomTypeId: "hotel-010-family",
+      name: "Family Room",
+      rooms: 1,
+      sleeps: 4,
+      nightlyRand: 2000,
+      totalRand: 4000,
+    });
+    expect(result.cards[0].breakdown).toBeUndefined();
     expect(result.criteriaSummary).toBeNull();
     expect(result.notices).toEqual([]);
+  });
+
+  it("gives every card a Best-fit room whose prices are the card's", () => {
+    const result = runSmartSearch(db, provider, uj1({ policies: [], maxPriceRand: null }), TODAY, NOW);
+    expect(result.cards).not.toHaveLength(0);
+    for (const card of result.cards) {
+      expect(card.bestFit).toBeDefined();
+      expect(card.nightlyRand).toBe(card.bestFit?.nightlyRand);
+      expect(card.totalRand).toBe(card.bestFit?.totalRand);
+    }
+  });
+
+  it("with debug, adds the Score breakdown, with meaning and exact words at 0", () => {
+    const result = runSmartSearch(
+      db,
+      provider,
+      uj1({ policies: [], maxPriceRand: null }),
+      TODAY,
+      NOW,
+      { debug: true },
+    );
+    const winelands = result.cards.find((card) => card.name === "Winelands Family Lodge");
+    // Review 4.5 → 0.75; Family Room R 2 000 → 0.5; 0.15 × 0.75 + 0.15 × 0.5.
+    expect(winelands?.breakdown).toEqual({
+      meaning: 0,
+      exact: 0,
+      reviewSignal: 0.75,
+      priceSignal: 0.5,
+      score: 0.1875,
+    });
+    for (const card of result.cards) expect(card.breakdown).toBeDefined();
   });
 
   it("Price edge: Max R 1 999 finds nothing and names the Hard criteria", () => {
@@ -86,6 +126,12 @@ describe("runSmartSearch in smart mode", () => {
     expect(result.cards).toHaveLength(2);
     // Priced from the Standard Double, the cheapest qualifying Room type.
     expect(winelands).toMatchObject({ nightlyRand: 1450, totalRand: 1450 * 2 * 2 });
+    expect(winelands?.bestFit).toMatchObject({
+      name: "Standard Double",
+      rooms: 2,
+      sleeps: 4,
+      totalRand: 1450 * 2 * 2,
+    });
   });
 
   it("Availability: a Room type with fewer free Rooms than asked for does not qualify", () => {
@@ -108,11 +154,16 @@ describe("runSmartSearch in smart mode", () => {
     ]);
   });
 
-  it("orders with the MVP rank", () => {
+  it("orders by the Ranking blend, not the MVP rank", () => {
+    // With Relevance 0: Winelands 0.15 × 0.75 + 0.15 × 0.5 = 0.1875 beats
+    // Oak & Vine 0.15 × 0.9 + 0.15 × (1 000 / 3 000) = 0.185, though the MVP
+    // rank puts Oak & Vine's higher Review score first.
     const criteria = uj1({ policies: [], maxPriceRand: null });
-    const result = runSmartSearch(db, provider, criteria, TODAY, NOW);
-    const scores = result.cards.map((card) => card.reviewScore);
-    expect(scores).toEqual([...scores].sort((a, b) => b - a));
+    expect(names(criteria)).toEqual(["Winelands Family Lodge", "Oak & Vine Manor"]);
+    expect(searchCatalog(db, criteria, NOW).cards.map((card) => card.name)).toEqual([
+      "Oak & Vine Manor",
+      "Winelands Family Lodge",
+    ]);
   });
 
   it("Smoking: no Hotel allows it, and the summary names it", () => {
@@ -149,7 +200,7 @@ describe("runSmartSearch in mvp mode", () => {
   ];
 
   it.each(cases)("is the MVP search, unchanged, with %s", (_, given, criteria) => {
-    const result = runSmartSearch(db, given, criteria, TODAY, NOW);
+    const result = runSmartSearch(db, given, criteria, TODAY, NOW, { debug: true });
     expect(result).toEqual({
       ...searchCatalog(db, criteria, NOW),
       mode: "mvp",
@@ -161,5 +212,10 @@ describe("runSmartSearch in mvp mode", () => {
       "Winelands Family Lodge",
     ]);
     expect(result.notices).toEqual([]);
+    // No Best-fit room and no Score breakdown, even with debug.
+    for (const card of result.cards) {
+      expect(card.bestFit).toBeUndefined();
+      expect(card.breakdown).toBeUndefined();
+    }
   });
 });

@@ -72,6 +72,7 @@ function hotelRoomTypes(db: Db, hotelId: string) {
   return db
     .select({
       id: roomTypes.id,
+      name: roomTypes.name,
       maxGuests: roomTypes.maxGuests,
       nightlyRand: roomTypes.pricePerNightRand,
     })

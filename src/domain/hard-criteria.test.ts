@@ -11,8 +11,8 @@ import {
 
 const NBSP = " ";
 
-const standard = { id: "standard", maxGuests: 2, nightlyRand: 1450 };
-const family = { id: "family", maxGuests: 4, nightlyRand: 2000 };
+const standard = { id: "standard", name: "Standard Double", maxGuests: 2, nightlyRand: 1450 };
+const family = { id: "family", name: "Family Room", maxGuests: 4, nightlyRand: 2000 };
 const types = [standard, family];
 const plenty = new Map([
   ["standard", 10],

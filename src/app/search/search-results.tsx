@@ -195,7 +195,14 @@ export async function Results({ criteria }: { criteria: SearchCriteria }) {
       <ul className="mt-space-lg flex flex-col gap-space-md">
         {cards.map((card) => (
           <li key={card.hotelId}>
-            <ListingCard card={card} href={hotelHref(card.hotelId, linkCriteria)} />
+            <ListingCard
+              card={card}
+              // A Smart search card hands its Best-fit room to the Hotel page (FR-14).
+              href={hotelHref(card.hotelId, {
+                ...linkCriteria,
+                bestFit: card.bestFit?.roomTypeId ?? null,
+              })}
+            />
           </li>
         ))}
       </ul>

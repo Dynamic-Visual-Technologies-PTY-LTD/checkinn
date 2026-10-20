@@ -10,6 +10,7 @@ import {
   type SearchBarCriteria,
 } from "@/domain/interpretation";
 import type { Db } from "@/db/client";
+import { bestFit } from "@/domain/best-fit";
 import {
   hardCriteriaSummary,
   hotelQualifies,
@@ -18,8 +19,8 @@ import {
 } from "@/domain/hard-criteria";
 import { smartNotices } from "@/domain/interpretation";
 import { CITY_NICKNAMES } from "@/domain/nicknames";
-import { fromPrice } from "@/domain/pricing";
-import { heading, rank } from "@/domain/search";
+import { rankByBlend } from "@/domain/ranking";
+import { heading } from "@/domain/search";
 import { normaliseText } from "@/domain/text";
 import type { IsoDate, ListingCard, SearchCriteria, SearchResult } from "@/domain/types";
 import type { InterpretationContext, Provider } from "@/features/search/provider/types";
@@ -60,9 +61,13 @@ export async function interpretQuery(
  * - `mvp` with no Provider, no Smart search criteria, or a Query that was not
  *   interpreted: the MVP `searchCatalog` result, unchanged, with no notices.
  * - `smart`: the MVP Destination and Stay match, narrowed by the Hard
- *   criteria (AD-23). Each card is priced from its cheapest qualifying Room
- *   type and ordered by the MVP `rank` (Relevance is 0 until the Ranking
- *   blend). With nothing found, `criteriaSummary` names the Hard criteria.
+ *   criteria (AD-23). Each card carries its Best-fit room and is priced from
+ *   it, and the cards are in Ranking blend order (AD-26). Relevance is 0, and
+ *   the Room-type meanings empty, until Relevance exists. With nothing found,
+ *   `criteriaSummary` names the Hard criteria.
+ *
+ * With `debug` (the server's `CHECKINN_SEARCH_DEBUG`, AD-29), each `smart`
+ * card also carries its Score breakdown (FR-20).
  *
  * `today` is for the stages that follow (Relevance and the fallback). It never
  * throws for Provider errors.
@@ -73,6 +78,7 @@ export function runSmartSearch(
   criteria: SearchCriteria,
   today: IsoDate,
   now: string,
+  { debug = false }: { debug?: boolean } = {},
 ): SearchResult {
   const { smart, stay, party, q } = criteria;
   if (searchMode(provider !== null, smart) === "mvp" || !smart) {
@@ -82,7 +88,7 @@ export function runSmartSearch(
   const notices = smartNotices(smart, q);
   if (!stay) return { heading: null, cards: [], notices, mode: "smart", criteriaSummary: null };
 
-  const cards: ListingCard[] = [];
+  const priced: { item: ListingCard; relevance: number }[] = [];
   for (const candidate of smartCandidates(db, criteria, now)) {
     const qualifying = qualifyingRoomTypes(
       candidate.roomTypes,
@@ -91,16 +97,25 @@ export function runSmartSearch(
       smart.maxPriceRand,
     );
     if (!hotelQualifies(candidate, qualifying, smart.policies)) continue;
-    const price = fromPrice(
-      qualifying.map((type) => type.nightlyRand),
-      candidate.card.nights,
-      party.rooms,
-    );
-    if (!price) continue;
-    cards.push({ ...candidate.card, totalRand: price.totalRand, nightlyRand: price.nightlyRand });
+    // No Room-type meanings until Relevance exists, so the cheapest wins.
+    const room = bestFit(qualifying, new Map(), party.rooms, candidate.card.nights);
+    if (!room) continue;
+    priced.push({
+      item: {
+        ...candidate.card,
+        totalRand: room.totalRand,
+        nightlyRand: room.nightlyRand,
+        bestFit: room,
+      },
+      relevance: 0,
+    });
   }
 
-  const ranked = rank(cards);
+  const ranked = rankByBlend(priced).map(({ item, reviewSignal, priceSignal, score }) =>
+    debug
+      ? { ...item, breakdown: { meaning: 0, exact: 0, reviewSignal, priceSignal, score } }
+      : item,
+  );
   return {
     heading: heading(q, ranked),
     cards: ranked,

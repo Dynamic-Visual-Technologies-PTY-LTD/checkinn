@@ -72,6 +72,7 @@ function criteria(overrides: Partial<SearchCriteria> = {}): SearchCriteria {
     k: null,
     notice: null,
     smart: null,
+    bestFit: null,
     ...overrides,
   };
 }

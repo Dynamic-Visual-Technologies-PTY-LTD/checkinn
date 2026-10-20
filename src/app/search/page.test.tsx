@@ -410,6 +410,53 @@ describe("Results", () => {
     expect(mocks.getCityTiles).not.toHaveBeenCalled();
   });
 
+  it("hands a Smart search card's Best-fit room to the Hotel page, with no Smart parameter", async () => {
+    const family = {
+      roomTypeId: "hotel-010-family",
+      name: "Family Room",
+      rooms: 1,
+      sleeps: 4,
+      nightlyRand: 2000,
+      totalRand: 4000,
+    };
+    mocks.searchHotels.mockResolvedValue({
+      heading: "1 property found",
+      cards: [
+        card({
+          hotelId: "hotel-010",
+          name: "Winelands Family Lodge",
+          adults: 4,
+          nightlyRand: 2000,
+          totalRand: 4000,
+          bestFit: family,
+        }),
+      ],
+      notices: [],
+      mode: "smart",
+      criteriaSummary: null,
+    });
+
+    render(
+      await Results({
+        criteria: criteria({
+          q: "Stellenbosch",
+          party: { adults: 4, children: 0, rooms: 1 },
+          smart: smartCriteria("pet friendly family place", true, {
+            preferences: "pet friendly family place",
+            maxPriceRand: 2000,
+            policies: ["pets"],
+          }),
+        }),
+      }),
+    );
+
+    const href = screen.getByRole("link", { name: "Winelands Family Lodge" }).getAttribute("href");
+    expect(href).toBe(
+      "/hotels/hotel-010?q=Stellenbosch&checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1&bestFit=hotel-010-family",
+    );
+    expect(screen.getByText("Family Room · 1 room · sleeps 4")).toBeInTheDocument();
+  });
+
   it("shows the no-results copy and the City tiles when nothing matches", async () => {
     mocks.searchHotels.mockResolvedValue({ heading: null, cards: [], notices: [] });
 

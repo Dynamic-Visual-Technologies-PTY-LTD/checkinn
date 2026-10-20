@@ -35,6 +35,7 @@ describe("parseCriteria defaults", () => {
         k: null,
         notice: null,
         smart: null,
+        bestFit: null,
       },
       problems: [],
     });
@@ -214,6 +215,7 @@ describe("serializeCriteria", () => {
     k: "0b6f0c8e-6f43-4b5f-9a59-6b1f1e3b1b9a",
     notice: { type: "room-unavailable", roomTypeIds: ["hotel-001-family"] },
     smart: null,
+    bestFit: null,
   };
 
   it("writes parameters in a fixed order", () => {
@@ -294,6 +296,35 @@ describe("hotelHref", () => {
     ).toBe(
       "/hotels/hotel-001?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=0&rooms=1",
     );
+  });
+
+  it("appends bestFit last when it is set", () => {
+    expect(
+      hotelHref("hotel-010", {
+        q: "Stellenbosch",
+        party: { adults: 4, children: 0, rooms: 1 },
+        bestFit: "hotel-010-family",
+      }),
+    ).toBe("/hotels/hotel-010?q=Stellenbosch&adults=4&children=0&rooms=1&bestFit=hotel-010-family");
+    expect(hotelHref("hotel-010", { q: "Stellenbosch", bestFit: null })).not.toContain("bestFit");
+  });
+});
+
+describe("bestFit (AD-21)", () => {
+  it("parses as trimmed non-empty text, or null", () => {
+    expect(parse({ bestFit: " hotel-010-family " }).criteria.bestFit).toBe("hotel-010-family");
+    expect(parse({ bestFit: "   " }).criteria.bestFit).toBeNull();
+    expect(parse({}).criteria.bestFit).toBeNull();
+  });
+
+  it("is never written by serializeCriteria or searchHref", () => {
+    const criteria = {
+      q: "Stellenbosch",
+      bestFit: "hotel-010-family",
+      smart: smartCriteria("pet friendly place", true),
+    };
+    expect(serializeCriteria(criteria)).not.toContain("bestFit");
+    expect(searchHref(criteria)).not.toContain("bestFit");
   });
 });
 
@@ -493,9 +524,10 @@ describe("Smart search parameters", () => {
     expect(parseCriteria(params, today).criteria.smart).toEqual(smart);
   });
 
-  it("never puts a Smart parameter on a Hotel page URL", () => {
+  it("never puts a Smart parameter on a Hotel page URL, but keeps bestFit", () => {
     const href = hotelHref("hotel-001", {
       q: "Stellenbosch",
+      bestFit: "hotel-001-family",
       smart: smartCriteria("pet friendly place", true, {
         preferences: "pet friendly",
         maxPriceRand: 2000,
@@ -519,7 +551,10 @@ describe("Smart search parameters", () => {
     ]) {
       expect(params.has(key)).toBe(false);
     }
-    expect(href).toBe("/hotels/hotel-001?q=Stellenbosch&adults=2&children=0&rooms=1");
+    expect(params.get("bestFit")).toBe("hotel-001-family");
+    expect(href).toBe(
+      "/hotels/hotel-001?q=Stellenbosch&adults=2&children=0&rooms=1&bestFit=hotel-001-family",
+    );
   });
 });
 

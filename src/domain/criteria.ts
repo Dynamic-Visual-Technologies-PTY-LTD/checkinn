@@ -147,6 +147,7 @@ export function defaultCriteria(today: IsoDate): SearchCriteria {
     k: null,
     notice: null,
     smart: null,
+    bestFit: null,
   };
 }
 
@@ -314,6 +315,7 @@ export function parseCriteria(
       k: readText(params, "k") ?? null,
       notice: parseNotice(params),
       smart: parseSmart(params),
+      bestFit: readText(params, "bestFit") ?? null,
     },
     problems,
   };
@@ -322,7 +324,9 @@ export function parseCriteria(
 /**
  * Turns criteria into a query string, without the leading `?`. The order is
  * fixed and empty optional values are left out. The Party is always written,
- * so a shared link never shifts with "today".
+ * so a shared link never shifts with "today". It never writes `bestFit`, so
+ * no `/book`, room-table or alert URL built from spread criteria carries it
+ * (AD-21); `hotelHref` is its one writer.
  */
 export function serializeCriteria(criteria: Partial<SearchCriteria>): string {
   const params = new URLSearchParams();
@@ -398,11 +402,14 @@ export function searchHref(criteria: Partial<SearchCriteria>): string {
 
 /**
  * A Hotel page URL that keeps the search criteria (FR-6). It never carries
- * Smart search parameters (AD-21).
+ * Smart search parameters (AD-21). It is the one writer of `bestFit`, the
+ * Best-fit Room type, appended last when set (FR-14).
  */
 export function hotelHref(hotelId: string, criteria: Partial<SearchCriteria>): string {
-  const query = serializeCriteria({ ...criteria, smart: null });
-  return `/hotels/${encodeURIComponent(hotelId)}?${query}`;
+  const params = new URLSearchParams(serializeCriteria({ ...criteria, smart: null }));
+  const bestFit = criteria.bestFit?.trim();
+  if (bestFit) params.set("bestFit", bestFit);
+  return `/hotels/${encodeURIComponent(hotelId)}?${params.toString()}`;
 }
 
 /** The criteria a Search results URL is built from: the Search bar's and the Smart search state. */

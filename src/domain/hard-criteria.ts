@@ -16,6 +16,8 @@ import {
 /** What the check needs to know about a Room type. */
 export type HardCriteriaRoomType = {
   id: string;
+  /** Shown on the Best-fit room line (FR-14). */
+  name: string;
   maxGuests: number;
   nightlyRand: number;
 };

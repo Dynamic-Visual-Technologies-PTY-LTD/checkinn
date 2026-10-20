@@ -91,7 +91,9 @@ test.describe("Hard criteria, Criteria chips and corrections", () => {
     await chipRow(page).getByRole("button", { name: MAX_CHIP }).click();
     await page.waitForURL((url) => !url.searchParams.has("maxPrice"));
     await expect(heading(page)).toHaveText("Stellenbosch: 2 properties found");
-    await expect(cardNames(page)).toHaveText(["Oak & Vine Manor", "Winelands Family Lodge"]);
+    // The Ranking blend order (Relevance 0 until it exists): Winelands' Family
+    // Room at R 2 000 outweighs Oak & Vine's higher Review score at R 2 500.
+    await expect(cardNames(page)).toHaveText(["Winelands Family Lodge", "Oak & Vine Manor"]);
     await expect(chipRow(page)).toHaveCount(0);
     await expect(smartBox(page)).toBeFocused();
     await expect(

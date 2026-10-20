@@ -5,6 +5,7 @@ import {
   azureConfig,
   getProvider,
   missingAzureVariables,
+  searchDebug,
 } from "@/features/search/provider/config";
 
 const state = globalThis as typeof globalThis & { __checkinnProvider?: unknown };
@@ -78,5 +79,14 @@ describe("getProvider", () => {
     expect(second).toBe(first);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0][0])).toContain("fake");
+  });
+});
+
+describe("searchDebug", () => {
+  it("is on only when CHECKINN_SEARCH_DEBUG is exactly 1", () => {
+    expect(searchDebug({ CHECKINN_SEARCH_DEBUG: "1" })).toBe(true);
+    for (const value of [undefined, "", "0", "true", "yes", " 1", "1 "]) {
+      expect(searchDebug({ CHECKINN_SEARCH_DEBUG: value })).toBe(false);
+    }
   });
 });

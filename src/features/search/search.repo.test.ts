@@ -201,8 +201,8 @@ describe("smartCandidates", () => {
       smokingAllowed: false,
     });
     expect(winelands.roomTypes).toEqual([
-      { id: "hotel-010-standard", maxGuests: 2, nightlyRand: 1450 },
-      { id: "hotel-010-family", maxGuests: 4, nightlyRand: 2000 },
+      { id: "hotel-010-standard", name: "Standard Double", maxGuests: 2, nightlyRand: 1450 },
+      { id: "hotel-010-family", name: "Family Room", maxGuests: 4, nightlyRand: 2000 },
     ]);
     expect(winelands.availability.get("hotel-010-family")).toBe(4);
   });

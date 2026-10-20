@@ -81,6 +81,15 @@ function azureProvider(config: AzureConfig): Provider {
   return current.azure.provider;
 }
 
+/**
+ * Whether the Score breakdown shows (AD-29, FR-20): only when the server's
+ * `CHECKINN_SEARCH_DEBUG` is exactly `1`. Read at request time after `io()`;
+ * no URL parameter turns it on.
+ */
+export function searchDebug(env: Env = process.env): boolean {
+  return env.CHECKINN_SEARCH_DEBUG === "1";
+}
+
 /** The configured Provider, or null when Smart search is off. */
 export function getProvider(env: Env = process.env): Provider | null {
   const setting = env.CHECKINN_PROVIDER?.trim().toLowerCase();

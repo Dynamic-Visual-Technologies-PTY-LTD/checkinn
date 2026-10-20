@@ -5,7 +5,7 @@ import type { CityTile, SearchCriteria, SearchResult } from "@/domain/types";
 import { nowIso, todayIn } from "@/domain/clock";
 import { cityNamed } from "@/domain/search";
 import { listCityNames, listCityTiles } from "@/features/hotels/catalog.repo";
-import { getProvider } from "@/features/search/provider/config";
+import { getProvider, searchDebug } from "@/features/search/provider/config";
 import { runSmartSearch } from "@/features/search/smart-search";
 
 /** Home's City tiles, read at request time (AD-2). */
@@ -37,13 +37,16 @@ export async function getCityNamed(query: string): Promise<string | null> {
  * It goes through `runSmartSearch` (AD-20), which decides the mode: with an
  * interpreted Query it filters by the Hard criteria and adds the notices
  * (the unknown place, then the ignored value, at most 2); otherwise it is
- * the MVP search, unchanged.
+ * the MVP search, unchanged. The Score breakdown is added only when the
+ * server sets `CHECKINN_SEARCH_DEBUG=1` (AD-29).
  */
 export async function searchHotels(
   criteria: SearchCriteria,
 ): Promise<SearchResult> {
   await io();
-  return runSmartSearch(getDb(), getProvider(), criteria, todayIn(), nowIso());
+  return runSmartSearch(getDb(), getProvider(), criteria, todayIn(), nowIso(), {
+    debug: searchDebug(),
+  });
 }
 
 /**

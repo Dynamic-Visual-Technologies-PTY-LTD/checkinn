@@ -101,6 +101,12 @@ export type SearchCriteria = {
   notice: CriteriaNotice | null;
   /** Smart search state; non-null exactly when the URL holds a valid `sq` (AD-21). */
   smart: SmartCriteria | null;
+  /**
+   * The Best-fit Room type id (`bestFit`), for the Hotel page only (AD-21).
+   * Only `hotelHref` writes it; checking it against the Hotel is the Hotel
+   * page's job.
+   */
+  bestFit: string | null;
 };
 
 /** Why parsing rejected part of the criteria. */
@@ -175,6 +181,38 @@ export type ListingCard = {
   totalRand: number;
   /** The lowest Nightly price among the available Room types. */
   nightlyRand: number;
+  /**
+   * The Best-fit room (FR-14, AD-26), set on every `smart` card: its
+   * `nightlyRand` and `totalRand` are the card's.
+   */
+  bestFit?: BestFitRoom;
+  /** The Score breakdown (FR-20), present only under the debug flag (AD-29). */
+  breakdown?: ScoreBreakdown;
+};
+
+/**
+ * The Room type that best fits a Smart search (FR-14, AD-26): one Room type ×
+ * the Party's Rooms, never split. `sleeps` is `maxGuests × rooms`.
+ */
+export type BestFitRoom = {
+  roomTypeId: string;
+  name: string;
+  rooms: number;
+  sleeps: number;
+  nightlyRand: number;
+  totalRand: number;
+};
+
+/**
+ * Why a Hotel ranks where it does (FR-20): each Relevance part, each signal
+ * and the Ranking blend score, all in 0–1.
+ */
+export type ScoreBreakdown = {
+  meaning: number;
+  exact: number;
+  reviewSignal: number;
+  priceSignal: number;
+  score: number;
 };
 
 /**
