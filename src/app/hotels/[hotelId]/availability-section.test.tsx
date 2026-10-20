@@ -85,10 +85,27 @@ const context = (c: SearchCriteria, stale = false): AvailabilityContext => ({
   now: NOW,
   criteria: c,
   stale,
+  smartSearch: false,
+  selInvalid: false,
 });
 
-async function renderResults(c: SearchCriteria, now = NOW) {
-  render(await AvailabilityResults({ hotel, stay, today: "2026-11-10", now, criteria: c }));
+async function renderResults(
+  c: SearchCriteria,
+  now = NOW,
+  smartSearch = false,
+  selInvalid = false,
+) {
+  render(
+    await AvailabilityResults({
+      hotel,
+      stay,
+      today: "2026-11-10",
+      now,
+      criteria: c,
+      smartSearch,
+      selInvalid,
+    }),
+  );
 }
 
 beforeEach(() => {
@@ -381,5 +398,120 @@ describe("AvailabilityResults and the selection", () => {
 
     const bar = screen.getByRole("region", { name: "Booking summary" });
     expect(bar).toHaveTextContent(`0 rooms · ${sp(formatZar(0, { cents: true }))}`);
+  });
+});
+
+describe("AvailabilityResults and the Best-fit room (AD-26)", () => {
+  const PICKED = "Family Room picked for your search. Change it in the table.";
+  const CHIP = "Best fit for your search";
+  const fourAdults = { adults: 4, children: 0, rooms: 1 };
+  const withBestFit = (overrides: Partial<SearchCriteria> = {}) =>
+    criteria({ party: fourAdults, bestFit: "hotel-005-family", ...overrides });
+
+  beforeEach(() => {
+    window.history.replaceState(
+      null,
+      "",
+      "/hotels/hotel-005?checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1" +
+        "&bestFit=hotel-005-family",
+    );
+  });
+
+  it("pre-selects the Best-fit room with the chip, the summary line and Reserve enabled", async () => {
+    await renderResults(withBestFit(), NOW, true);
+
+    const select = screen.getByRole("combobox", { name: "Rooms of Family Room" });
+    expect(select).toHaveValue("1");
+    expect(select).toHaveAccessibleDescription(CHIP);
+    expect(screen.getByText(CHIP)).toHaveAttribute("id", "best-fit-chip-hotel-005-family");
+    const aside = screen.getByRole("complementary", { name: "Booking summary" });
+    expect(within(aside).getByText(PICKED)).toBeInTheDocument();
+    expect(within(aside).getByRole("button", { name: "Reserve" })).not.toHaveAttribute(
+      "aria-disabled",
+    );
+    // Not written to the URL until the Guest changes a quantity.
+    expect(new URLSearchParams(window.location.search).has("sel")).toBe(false);
+  });
+
+  it("pre-selects at the URL's Rooms", async () => {
+    await renderResults(
+      criteria({
+        party: { adults: 4, children: 0, rooms: 2 },
+        bestFit: "hotel-005-standard",
+      }),
+      NOW,
+      true,
+    );
+
+    const select = screen.getByRole("combobox", { name: "Rooms of Standard Double" });
+    expect(select).toHaveValue("2");
+    expect(select).toHaveAccessibleDescription(CHIP);
+    expect(
+      screen.getByText("Standard Double picked for your search. Change it in the table."),
+    ).toBeInTheDocument();
+  });
+
+  it("drops the summary line on a quantity change, keeping the chip and bestFit in the URL", async () => {
+    await renderResults(withBestFit(), NOW, true);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Rooms of Family Room" }), {
+      target: { value: "2" },
+    });
+
+    expect(screen.queryByText(PICKED)).toBeNull();
+    expect(
+      screen.getByRole("combobox", { name: "Rooms of Family Room" }),
+    ).toHaveAccessibleDescription(CHIP);
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get("sel")).toBe("hotel-005-family:2");
+    expect(params.get("bestFit")).toBe("hotel-005-family");
+  });
+
+  it("with sel in the URL, keeps it and only places the chip", async () => {
+    await renderResults(
+      withBestFit({ sel: [{ roomTypeId: "hotel-005-standard", quantity: 2 }] }),
+      NOW,
+      true,
+    );
+
+    expect(screen.getByRole("combobox", { name: "Rooms of Standard Double" })).toHaveValue("2");
+    const family = screen.getByRole("combobox", { name: "Rooms of Family Room" });
+    expect(family).toHaveValue("0");
+    expect(family).toHaveAccessibleDescription(CHIP);
+    expect(screen.queryByText(PICKED)).toBeNull();
+  });
+
+  it("with an invalid sel in the URL, pre-selects nothing but keeps the chip", async () => {
+    // The codec rejected the URL's sel, so criteria.sel is null (sel-invalid).
+    await renderResults(withBestFit({ sel: null }), NOW, true, true);
+
+    expect(screen.getByRole("combobox", { name: "Rooms of Standard Double" })).toHaveValue("0");
+
+    const family = screen.getByRole("combobox", { name: "Rooms of Family Room" });
+    expect(family).toHaveValue("0");
+    expect(family).toHaveAccessibleDescription(CHIP);
+    expect(screen.queryByText(PICKED)).toBeNull();
+  });
+
+  it("does nothing without a Provider", async () => {
+    await renderResults(withBestFit(), NOW, false);
+
+    expect(screen.getByRole("combobox", { name: "Rooms of Family Room" })).toHaveValue("0");
+    expect(screen.queryByText(CHIP)).toBeNull();
+    expect(screen.queryByText(PICKED)).toBeNull();
+  });
+
+  it("does nothing for an unknown id", async () => {
+    await renderResults(withBestFit({ bestFit: "nope" }), NOW, true);
+    expect(screen.queryByText(CHIP)).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Rooms of Family Room" })).toHaveValue("0");
+  });
+
+  it("does nothing when the Best-fit room is too small for the Party", async () => {
+    // 3 adults and 2 children: the Family Room sleeps 4.
+    await renderResults(withBestFit({ party: { adults: 3, children: 2, rooms: 1 } }), NOW, true);
+
+    expect(screen.getByRole("combobox", { name: "Rooms of Family Room" })).toHaveValue("0");
+    expect(screen.queryByText(CHIP)).toBeNull();
   });
 });

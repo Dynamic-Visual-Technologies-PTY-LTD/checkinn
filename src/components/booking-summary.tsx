@@ -22,6 +22,11 @@ type BookingSummaryProps = {
   guestName?: string;
   /** The step's primary button (Reserve, Confirm booking), or null for none. */
   action: ReactNode;
+  /**
+   * One muted line before the total: on the Hotel page, why the Best-fit
+   * room is already selected (EXPERIENCE.md Booking summary (changed)).
+   */
+  note?: string;
 };
 
 /**
@@ -40,6 +45,7 @@ export function BookingSummary({
   cancellation,
   guestName,
   action,
+  note,
 }: BookingSummaryProps) {
   const nights = nightsLabel(nightsBetween(stay.checkIn, stay.checkOut));
   const people = [countLabel("adults", party.adults)];
@@ -69,6 +75,7 @@ export function BookingSummary({
           </li>
         ))}
       </ul>
+      {note && <p className="mt-space-sm text-body-sm text-on-surface-muted">{note}</p>}
       <hr className="my-space-md border-outline" />
       <p aria-live="polite" className="flex items-baseline justify-between gap-space-md">
         <span className="text-headline-sm">Total</span>

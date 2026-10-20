@@ -325,8 +325,8 @@ export function parseCriteria(
  * Turns criteria into a query string, without the leading `?`. The order is
  * fixed and empty optional values are left out. The Party is always written,
  * so a shared link never shifts with "today". It never writes `bestFit`, so
- * no `/book`, room-table or alert URL built from spread criteria carries it
- * (AD-21); `hotelHref` is its one writer.
+ * no `/book` URL built from spread criteria carries it (AD-21); `hotelQuery`
+ * is its one writer, used by `hotelHref` and the Hotel page's own rewrites.
  */
 export function serializeCriteria(criteria: Partial<SearchCriteria>): string {
   const params = new URLSearchParams();
@@ -402,14 +402,25 @@ export function searchHref(criteria: Partial<SearchCriteria>): string {
 
 /**
  * A Hotel page URL that keeps the search criteria (FR-6). It never carries
- * Smart search parameters (AD-21). It is the one writer of `bestFit`, the
- * Best-fit Room type, appended last when set (FR-14).
+ * Smart search parameters (AD-21). Its query is `hotelQuery`'s, which appends
+ * `bestFit`, the Best-fit Room type, last when set (FR-14).
  */
 export function hotelHref(hotelId: string, criteria: Partial<SearchCriteria>): string {
+  return `/hotels/${encodeURIComponent(hotelId)}?${hotelQuery(criteria)}`;
+}
+
+/**
+ * The Hotel page query string, without the leading `?`: `serializeCriteria`
+ * with no Smart search parameters, plus `bestFit` last when set (AD-21). The
+ * Hotel page's own URL rewrites use it so `bestFit` survives them; `/book`
+ * builders keep `serializeCriteria`, which never writes it. It is the one
+ * writer of `bestFit`.
+ */
+export function hotelQuery(criteria: Partial<SearchCriteria>): string {
   const params = new URLSearchParams(serializeCriteria({ ...criteria, smart: null }));
   const bestFit = criteria.bestFit?.trim();
   if (bestFit) params.set("bestFit", bestFit);
-  return `/hotels/${encodeURIComponent(hotelId)}?${params.toString()}`;
+  return params.toString();
 }
 
 /** The criteria a Search results URL is built from: the Search bar's and the Smart search state. */

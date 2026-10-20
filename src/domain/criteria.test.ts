@@ -4,6 +4,7 @@ import type { SearchCriteria } from "@/domain/types";
 import {
   defaultCriteria,
   hotelHref,
+  hotelQuery,
   parseCriteria,
   parseNotice,
   parseSelection,
@@ -307,6 +308,39 @@ describe("hotelHref", () => {
       }),
     ).toBe("/hotels/hotel-010?q=Stellenbosch&adults=4&children=0&rooms=1&bestFit=hotel-010-family");
     expect(hotelHref("hotel-010", { q: "Stellenbosch", bestFit: null })).not.toContain("bestFit");
+  });
+});
+
+describe("hotelQuery (AD-21)", () => {
+  it("is the Hotel page query: the MVP criteria with sel, then bestFit last", () => {
+    expect(
+      hotelQuery({
+        stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+        party: { adults: 4, children: 0, rooms: 1 },
+        sel: [{ roomTypeId: "hotel-010-family", quantity: 1 }],
+        bestFit: "hotel-010-family",
+      }),
+    ).toBe(
+      "checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1&sel=hotel-010-family%3A1&bestFit=hotel-010-family",
+    );
+  });
+
+  it("drops every Smart parameter and leaves out an empty bestFit", () => {
+    const query = hotelQuery({
+      q: "Stellenbosch",
+      smart: smartCriteria("pet friendly place", true, {
+        preferences: "pet friendly",
+        maxPriceRand: 2000,
+        policies: ["pets"],
+      }),
+      bestFit: "  ",
+    });
+    expect(query).toBe("q=Stellenbosch&adults=2&children=0&rooms=1");
+  });
+
+  it("is what hotelHref puts after the path", () => {
+    const criteria = { q: "Stellenbosch", bestFit: "hotel-010-family" };
+    expect(hotelHref("hotel-010", criteria)).toBe(`/hotels/hotel-010?${hotelQuery(criteria)}`);
   });
 });
 

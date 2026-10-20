@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   calls: [] as string[],
   getHotelPage: vi.fn(),
   getAvailability: vi.fn(),
+  getSmartSearchConfig: vi.fn(),
   io: vi.fn(),
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
@@ -35,6 +36,9 @@ vi.mock("@/domain/clock", () => ({
 vi.mock("@/features/hotels/queries", () => ({
   getHotelPage: mocks.getHotelPage,
   getAvailability: mocks.getAvailability,
+}));
+vi.mock("@/features/search/queries", () => ({
+  getSmartSearchConfig: mocks.getSmartSearchConfig,
 }));
 
 const harbourlight: HotelPage = {
@@ -94,6 +98,8 @@ const NO_DATES = {
   today: "2026-11-10",
   now: "2026-11-10T08:00:00.000Z",
   stale: false,
+  smartSearch: false,
+  selInvalid: false,
   criteria: {
     q: "",
     stay: null,
@@ -116,6 +122,10 @@ beforeEach(() => {
   mocks.io.mockReset();
   mocks.io.mockImplementation(async () => {
     mocks.calls.push("io");
+  });
+  mocks.getSmartSearchConfig.mockReset().mockImplementation(async () => {
+    mocks.calls.push("getSmartSearchConfig");
+    return false;
   });
 });
 
@@ -176,7 +186,7 @@ describe("HotelContent", () => {
       }),
     );
 
-    expect(mocks.calls).toEqual(["io", "todayIn", "nowIso"]);
+    expect(mocks.calls).toEqual(["io", "todayIn", "nowIso", "getSmartSearchConfig"]);
     expect(mocks.getHotelPage).toHaveBeenCalledWith("hotel-001");
     expect(
       screen.getByRole("heading", { level: 1, name: "Harbourlight Retreat" }),
@@ -225,6 +235,44 @@ describe("HotelContent", () => {
     expect(mocks.getAvailability).toHaveBeenCalledWith("hotel-001", stay);
     expect(screen.getByRole("combobox", { name: "Rooms of Standard Double" })).toBeInTheDocument();
     expect(screen.getByText("4 900 rand")).toBeInTheDocument();
+  });
+
+  it("passes the Provider flag and keeps bestFit, but no Smart parameter, for Share", async () => {
+    mocks.getHotelPage.mockResolvedValue(harbourlight);
+    mocks.getSmartSearchConfig.mockResolvedValue(true);
+
+    const page = await HotelContent({
+      params: Promise.resolve({ hotelId: "hotel-001" }),
+      searchParams: Promise.resolve({
+        adults: "4",
+        children: "0",
+        rooms: "1",
+        sq: "family place",
+        smart: "1",
+        bestFit: "hotel-001-family",
+      }),
+    });
+    const { availability, sharePath } = (
+      page as ReactElement<{ availability: AvailabilityContext; sharePath: string }>
+    ).props;
+
+    expect(availability.smartSearch).toBe(true);
+    expect(availability.selInvalid).toBe(false);
+    expect(availability.criteria.bestFit).toBe("hotel-001-family");
+    expect(sharePath).toBe("/hotels/hotel-001?adults=4&children=0&rooms=1&bestFit=hotel-001-family");
+  });
+
+  it("flags an invalid sel, so the Best-fit room is not pre-selected over it", async () => {
+    mocks.getHotelPage.mockResolvedValue(harbourlight);
+
+    const page = await HotelContent({
+      params: Promise.resolve({ hotelId: "hotel-001" }),
+      searchParams: Promise.resolve({ sel: "hotel-001-family:x", bestFit: "hotel-001-family" }),
+    });
+    const { availability } = (page as ReactElement<{ availability: AvailabilityContext }>).props;
+
+    expect(availability.criteria.sel).toBeNull();
+    expect(availability.selInvalid).toBe(true);
   });
 
   it("calls notFound for an unknown id", async () => {

@@ -78,3 +78,14 @@ it("hides itself when restored from history after the notice was cleared", () =>
 
   expect(screen.queryByRole("group", { name: "Room no longer available" })).toBeNull();
 });
+
+it("keeps bestFit when it clears the notice (AD-21)", () => {
+  window.history.replaceState(null, "", `${NOTICE_URL}&bestFit=hotel-001-family`);
+
+  render(<AvailabilityAlert message={MESSAGE} today="2026-11-10" />);
+
+  const params = new URLSearchParams(window.location.search);
+  expect(params.has("notice")).toBe(false);
+  expect(params.has("rt")).toBe(false);
+  expect(params.get("bestFit")).toBe("hotel-001-family");
+});

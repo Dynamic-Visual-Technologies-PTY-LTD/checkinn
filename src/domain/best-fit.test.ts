@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { bestFit, type BestFitRoomType } from "./best-fit";
+import { bestFit, hotelBestFit, type BestFitRoomType } from "./best-fit";
 
 const standard: BestFitRoomType = {
   id: "hotel-010-standard",
@@ -76,5 +76,71 @@ describe("bestFit", () => {
 
   it("is null when nothing qualifies", () => {
     expect(bestFit([], none, 1, 2)).toBeNull();
+  });
+});
+
+describe("hotelBestFit (AD-26)", () => {
+  // Winelands Family Lodge: Standard 1 450, sleeps 2; Family 2 000, sleeps 4.
+  const rooms = [standard, family];
+  const open = new Map([
+    [standard.id, 5],
+    [family.id, 3],
+  ]);
+  const fourAdults = { adults: 4, children: 0, rooms: 1 };
+
+  it("UJ-1 arrival: chips and pre-selects the Family Room × 1", () => {
+    expect(hotelBestFit(family.id, rooms, open, fourAdults, false, true)).toEqual({
+      chipRoomTypeId: family.id,
+      preselect: [{ roomTypeId: family.id, quantity: 1 }],
+    });
+  });
+
+  it("pre-selects at the URL's Rooms", () => {
+    expect(
+      hotelBestFit(standard.id, rooms, open, { adults: 4, children: 0, rooms: 2 }, false, true),
+    ).toEqual({
+      chipRoomTypeId: standard.id,
+      preselect: [{ roomTypeId: standard.id, quantity: 2 }],
+    });
+  });
+
+  it("with sel in the URL, only places the chip", () => {
+    expect(hotelBestFit(family.id, rooms, open, fourAdults, true, true)).toEqual({
+      chipRoomTypeId: family.id,
+      preselect: null,
+    });
+  });
+
+  it("does nothing with no Provider", () => {
+    expect(hotelBestFit(family.id, rooms, open, fourAdults, false, false)).toEqual({
+      chipRoomTypeId: null,
+      preselect: null,
+    });
+  });
+
+  it("does nothing for an unknown or absent id", () => {
+    const nothing = { chipRoomTypeId: null, preselect: null };
+    expect(hotelBestFit("nope", rooms, open, fourAdults, false, true)).toEqual(nothing);
+    expect(hotelBestFit(null, rooms, open, fourAdults, false, true)).toEqual(nothing);
+  });
+
+  it("does nothing when the Room type no longer qualifies", () => {
+    const nothing = { chipRoomTypeId: null, preselect: null };
+    // Too small: sleeps 2 < 4 adults in 1 Room.
+    expect(hotelBestFit(standard.id, rooms, open, fourAdults, false, true)).toEqual(nothing);
+    // Availability below the Rooms.
+    const scarce = new Map([[family.id, 1]]);
+    expect(
+      hotelBestFit(family.id, rooms, scarce, { adults: 4, children: 0, rooms: 2 }, false, true),
+    ).toEqual(nothing);
+    // Sold out.
+    expect(hotelBestFit(family.id, rooms, new Map(), fourAdults, false, true)).toEqual(nothing);
+  });
+
+  it("ignores Max price: a dear Room type still qualifies", () => {
+    const dear = { ...family, nightlyRand: 9000 };
+    expect(hotelBestFit(dear.id, [standard, dear], open, fourAdults, false, true).preselect).toEqual(
+      [{ roomTypeId: dear.id, quantity: 1 }],
+    );
   });
 });

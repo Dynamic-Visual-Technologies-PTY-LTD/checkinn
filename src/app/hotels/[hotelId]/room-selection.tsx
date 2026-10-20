@@ -8,7 +8,7 @@ import { BookingSummary } from "@/components/booking-summary";
 import { Icon } from "@/components/icons/icons";
 import { MobileSummaryBar } from "@/components/mobile-summary-bar";
 import { cancellationLine } from "@/domain/cancellation";
-import { parseCriteria, serializeCriteria } from "@/domain/criteria";
+import { hotelQuery, parseCriteria } from "@/domain/criteria";
 import { nightsBetween } from "@/domain/dates";
 import { availabilitySectionId } from "@/domain/hotel";
 import {
@@ -50,6 +50,13 @@ type RoomSelectionProps = {
   loweredNotice: string;
   /** The server lowered the URL's selection, so the address bar follows it. */
   selectionLowered: boolean;
+  /** The Room type whose row carries the Best-fit chip (AD-26), or null. */
+  bestFitRoomTypeId?: string | null;
+  /**
+   * The selection is the server's Best-fit pre-selection, not the URL's `sel`:
+   * the booking summary explains it until the Guest changes a quantity.
+   */
+  preselected?: boolean;
 };
 
 function selectionKey(selection: readonly RoomSelection[]): string {
@@ -59,17 +66,15 @@ function selectionKey(selection: readonly RoomSelection[]): string {
 /**
  * Writes the selection into the address bar: replace, never push (EXPERIENCE.md
  * Navigation). Smart search parameters are dropped: the Hotel page never
- * carries them (AD-21).
+ * carries them. `bestFit` is kept, so a reload still shows the chip (AD-21).
+ * An empty selection writes no `sel`, so a reload pre-selects the Best-fit
+ * room again (AD-26).
  */
 export function replaceSelectionInUrl(selection: RoomSelection[], today: IsoDate) {
   const { criteria } = parseCriteria(new URLSearchParams(window.location.search), today, {
     defaultStay: false,
   });
-  const query = serializeCriteria({
-    ...criteria,
-    sel: selection.length > 0 ? selection : null,
-    smart: null,
-  });
+  const query = hotelQuery({ ...criteria, sel: selection.length > 0 ? selection : null });
   window.history.replaceState(null, "", `${window.location.pathname}?${query}`);
 }
 
@@ -93,19 +98,30 @@ export function RoomSelectionPanel({
   initialSelection,
   loweredNotice,
   selectionLowered,
+  bestFitRoomTypeId = null,
+  preselected = false,
 }: RoomSelectionProps) {
   const [selection, setSelection] = useState(initialSelection);
-  const [seenKey, setSeenKey] = useState(selectionKey(initialSelection));
+  // The server selection last applied. Each server render (a Party or Stay
+  // change, Back, Forward) sends a new array, even with the same content.
+  const [seen, setSeen] = useState(initialSelection);
+  // The Guest has changed a quantity since the Best-fit pre-selection.
+  const [touched, setTouched] = useState(false);
   const liveRef = useRef<HTMLParagraphElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const datesField = useDatesField();
 
-  // Back and Forward bring a new selection from the URL.
-  const incomingKey = selectionKey(initialSelection);
-  if (incomingKey !== seenKey) {
-    setSeenKey(incomingKey);
-    setSelection(initialSelection);
+  // A new server selection (Back, Forward, or a Party change that re-runs the
+  // Best-fit pre-selection) replaces the Guest's local one when it differs,
+  // even if it equals the previous server selection. An echo of the Guest's
+  // own selection changes nothing.
+  if (initialSelection !== seen) {
+    setSeen(initialSelection);
+    if (selectionKey(initialSelection) !== selectionKey(selection)) {
+      setSelection(initialSelection);
+      setTouched(false);
+    }
   }
 
   // A live region announces only changes made after it is in the page.
@@ -125,6 +141,7 @@ export function RoomSelectionPanel({
   function onQuantityChange(roomTypeId: string, quantity: number) {
     const next = withQuantity(selection, rooms, roomTypeId, quantity);
     setSelection(next);
+    setTouched(true);
     setError(null);
     replaceSelectionInUrl(next, today);
   }
@@ -143,6 +160,13 @@ export function RoomSelectionPanel({
     onReserve: reserve,
     error,
   };
+  // EXPERIENCE.md Booking summary (changed): explains the pre-selection until
+  // the first quantity change.
+  const bestFitName = rooms.find((room) => room.id === bestFitRoomTypeId)?.name;
+  const note =
+    preselected && !touched && bestFitName
+      ? `${bestFitName} picked for your search. Change it in the table.`
+      : undefined;
   const summary = (
     <BookingSummary
       hotelName={hotelName}
@@ -152,6 +176,7 @@ export function RoomSelectionPanel({
       roomCount={count}
       totalRand={totalRand}
       cancellation={cancellationLine(cancellationPolicy, stay.checkIn, checkInTime, now)}
+      note={note}
       action={allSoldOut ? null : <ReserveButton {...reserveProps} />}
     />
   );
@@ -184,6 +209,7 @@ export function RoomSelectionPanel({
           availability={availability}
           selection={selection}
           onQuantityChange={onQuantityChange}
+          bestFitRoomTypeId={bestFitRoomTypeId}
         />
         {/* From 768px the summary is a panel (sticky from 1024px); below it, the bar and sheet. */}
         <aside

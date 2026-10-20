@@ -103,8 +103,8 @@ export type SearchCriteria = {
   smart: SmartCriteria | null;
   /**
    * The Best-fit Room type id (`bestFit`), for the Hotel page only (AD-21).
-   * Only `hotelHref` writes it; checking it against the Hotel is the Hotel
-   * page's job.
+   * Only `hotelQuery` writes it (through `hotelHref` and the Hotel page's own
+   * URL rewrites); checking it against the Hotel is the Hotel page's job.
    */
   bestFit: string | null;
 };
