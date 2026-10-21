@@ -2,15 +2,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AZURE_VARIABLES,
+  azureAuthKind,
   azureConfig,
   getProvider,
   missingAzureVariables,
   searchDebug,
+  v1BaseURL,
 } from "@/features/search/provider/config";
 
 const state = globalThis as typeof globalThis & { __checkinnProvider?: unknown };
 const azure = {
-  AZURE_OPENAI_BASE_URL: "https://example.openai.azure.com/openai/v1/",
+  AZURE_OPENAI_ENDPOINT: "https://example.openai.azure.com/",
   AZURE_OPENAI_API_KEY: "test-key",
   AZURE_OPENAI_CHAT_DEPLOYMENT: "chat",
   AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "embed",
@@ -54,7 +56,7 @@ describe("getProvider", () => {
   });
 
   it("is null when any Azure variable is missing or blank", () => {
-    for (const name of AZURE_VARIABLES) {
+    for (const name of AZURE_VARIABLES.key) {
       const partial: Record<string, string | undefined> = { ...azure, [name]: undefined };
       expect(getProvider(partial)).toBeNull();
       expect(getProvider({ ...azure, [name]: "  " })).toBeNull();
@@ -65,11 +67,53 @@ describe("getProvider", () => {
 
   it("reads trimmed Azure values", () => {
     expect(azureConfig({ ...azure, AZURE_OPENAI_CHAT_DEPLOYMENT: " chat " })).toEqual({
-      baseURL: azure.AZURE_OPENAI_BASE_URL,
-      apiKey: "test-key",
+      baseURL: "https://example.openai.azure.com/openai/v1/",
+      auth: { kind: "key", apiKey: "test-key" },
       chatDeployment: "chat",
       embeddingDeployment: "embed",
     });
+  });
+
+  it("uses the managed identity without a key when AZURE_OPENAI_AUTH is managed-identity", () => {
+    const identity = { ...azure, AZURE_OPENAI_API_KEY: undefined, AZURE_OPENAI_AUTH: " Managed-Identity " };
+    expect(missingAzureVariables(identity)).toEqual([]);
+    expect(azureConfig(identity)?.auth).toEqual({ kind: "managed-identity", clientId: null });
+    expect(azureConfig({ ...identity, AZURE_CLIENT_ID: " client-id " })?.auth).toEqual({
+      kind: "managed-identity",
+      clientId: "client-id",
+    });
+    expect(getProvider(identity)).not.toBeNull();
+    for (const name of AZURE_VARIABLES["managed-identity"]) {
+      expect(missingAzureVariables({ ...identity, [name]: undefined })).toEqual([name]);
+    }
+  });
+
+  it("gives a new Azure provider when the auth changes", () => {
+    const withKey = getProvider(azure);
+    const withIdentity = getProvider({ ...azure, AZURE_OPENAI_AUTH: "managed-identity" });
+    expect(withIdentity).not.toBeNull();
+    expect(withIdentity).not.toBe(withKey);
+  });
+
+  it("reads key auth when AZURE_OPENAI_AUTH is unset, blank or key, and nothing else", () => {
+    expect(azureAuthKind({})).toBe("key");
+    expect(azureAuthKind({ AZURE_OPENAI_AUTH: " " })).toBe("key");
+    expect(azureAuthKind({ AZURE_OPENAI_AUTH: "KEY" })).toBe("key");
+    expect(azureAuthKind({ AZURE_OPENAI_AUTH: "something" })).toBeNull();
+    expect(azureConfig({ ...azure, AZURE_OPENAI_AUTH: "something" })).toBeNull();
+    expect(getProvider({ ...azure, AZURE_OPENAI_AUTH: "something" })).toBeNull();
+  });
+
+  it("adds /openai/v1/ to the endpoint unless it is already there", () => {
+    const expected = "https://example.openai.azure.com/openai/v1/";
+    for (const endpoint of [
+      "https://example.openai.azure.com",
+      "https://example.openai.azure.com/",
+      "https://example.openai.azure.com/openai/v1",
+      "https://example.openai.azure.com/openai/v1/",
+    ]) {
+      expect(v1BaseURL(endpoint)).toBe(expected);
+    }
   });
 
   it("gives the fake for fake, the same one each time, with one warning", () => {

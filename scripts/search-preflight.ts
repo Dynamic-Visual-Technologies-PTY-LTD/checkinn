@@ -11,7 +11,7 @@ import { todayIn } from "@/domain/clock";
 import { normaliseText } from "@/domain/text";
 import { loadSeed } from "@/db/seed";
 import { createAzureProvider, EMBEDDING_DIMENSIONS } from "@/features/search/provider/azure";
-import { azureConfig, missingAzureVariables } from "@/features/search/provider/config";
+import { azureAuthKind, azureConfig, missingAzureVariables } from "@/features/search/provider/config";
 import { type InterpretationContext, ProviderError } from "@/features/search/provider/types";
 import { loadEnv } from "./load-env";
 
@@ -43,6 +43,11 @@ function percentile(values: number[], p: number): number {
 
 async function main(): Promise<boolean> {
   loadEnv();
+  const auth = azureAuthKind();
+  if (!auth) {
+    console.error("AZURE_OPENAI_AUTH must be key or managed-identity.");
+    return false;
+  }
   const config = azureConfig();
   if (!config) {
     console.error(`Not configured. Missing: ${missingAzureVariables().join(", ")}.`);
@@ -54,6 +59,7 @@ async function main(): Promise<boolean> {
     console.warn(`Note: CHECKINN_PROVIDER=${setting}, so the app will not use Azure.`);
   }
 
+  console.log(`Auth: ${auth}`);
   console.log(`Chat deployment: ${config.chatDeployment}`);
   console.log(`Embedding deployment: ${config.embeddingDeployment}`);
 

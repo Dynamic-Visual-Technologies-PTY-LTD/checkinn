@@ -12,10 +12,12 @@
  * - `embed` asks for 1024 dimensions and returns unit vectors in input order.
  * - The client never retries (`maxRetries: 0`); every SDK error becomes a
  *   `ProviderError` (`mapError`).
+ * - It signs in with an API key or the host's managed identity (`AzureAuth`).
  *
  * Guest text (the Query and the Preferences) goes only in `input`, never in
  * `instructions`.
  */
+import { getBearerTokenProvider, ManagedIdentityCredential } from "@azure/identity";
 import OpenAI, { APIError, APIUserAbortError, RateLimitError } from "openai";
 import type { CreateEmbeddingResponse, EmbeddingCreateParams } from "openai/resources/embeddings";
 import type {
@@ -45,10 +47,19 @@ export const EMBEDDING_DIMENSIONS = 1024;
 /** Starting `max_output_tokens` per Responses call; tuned with the eval. */
 export const MAX_OUTPUT_TOKENS = { interpret: 600, reasons: 1500, judge: 300 } as const;
 
+/** How the adapter signs in: an API key, or the host's managed identity. */
+export type AzureAuth =
+  | { kind: "key"; apiKey: string }
+  /** `clientId` is a user-assigned identity; null uses the system-assigned one. */
+  | { kind: "managed-identity"; clientId: string | null };
+
+/** The Entra ID scope for Azure OpenAI tokens. */
+export const AZURE_TOKEN_SCOPE = "https://cognitiveservices.azure.com/.default";
+
 export type AzureConfig = {
   /** `https://<resource>.openai.azure.com/openai/v1/` */
   baseURL: string;
-  apiKey: string;
+  auth: AzureAuth;
   /** The `gpt-6-luna` deployment name. */
   chatDeployment: string;
   /** The `text-embedding-3-large` deployment name. */
@@ -242,9 +253,22 @@ function isReason(value: unknown): value is ReasonOutput {
   );
 }
 
+/**
+ * The SDK's `apiKey`: the key itself, or a function that fetches an Entra ID
+ * token from the managed identity. `@azure/identity` caches the token and
+ * refreshes it before it expires.
+ */
+export function azureApiKey(auth: AzureAuth): string | (() => Promise<string>) {
+  if (auth.kind === "key") return auth.apiKey;
+  const credential = auth.clientId
+    ? new ManagedIdentityCredential({ clientId: auth.clientId })
+    : new ManagedIdentityCredential();
+  return getBearerTokenProvider(credential, AZURE_TOKEN_SCOPE);
+}
+
 /** The SDK client for the Foundry v1 endpoint. It never retries (AD-19). */
 export function createAzureClient(config: AzureConfig): OpenAI {
-  return new OpenAI({ baseURL: config.baseURL, apiKey: config.apiKey, maxRetries: 0 });
+  return new OpenAI({ baseURL: config.baseURL, apiKey: azureApiKey(config.auth), maxRetries: 0 });
 }
 
 /** An Azure AI Foundry Provider. `client` is for tests; it defaults to the SDK. */

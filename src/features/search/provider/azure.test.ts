@@ -8,6 +8,7 @@ import {
   APIUserAbortError,
   type AzureClient,
   type AzureConfig,
+  azureApiKey,
   createAzureClient,
   createAzureProvider,
   INTERPRETATION_SCHEMA,
@@ -20,7 +21,7 @@ import { type InterpretationContext, ProviderError } from "@/features/search/pro
 
 const config: AzureConfig = {
   baseURL: "https://example.openai.azure.com/openai/v1/",
-  apiKey: "test-key",
+  auth: { kind: "key", apiKey: "test-key" },
   chatDeployment: "chat-deployment",
   embeddingDeployment: "embedding-deployment",
 };
@@ -113,7 +114,24 @@ describe("createAzureClient", () => {
     const client = createAzureClient(config);
     expect(client.maxRetries).toBe(0);
     expect(client.baseURL).toBe(config.baseURL);
-    expect(client.apiKey).toBe(config.apiKey);
+    expect(client.apiKey).toBe("test-key");
+  });
+
+  it("builds a client that signs in with the managed identity", () => {
+    const client = createAzureClient({ ...config, auth: { kind: "managed-identity", clientId: null } });
+    expect(client.maxRetries).toBe(0);
+    expect(client.baseURL).toBe(config.baseURL);
+  });
+});
+
+describe("azureApiKey", () => {
+  it("is the key itself for key auth", () => {
+    expect(azureApiKey({ kind: "key", apiKey: "test-key" })).toBe("test-key");
+  });
+
+  it("is a token function for a system- or user-assigned managed identity", () => {
+    expect(azureApiKey({ kind: "managed-identity", clientId: null })).toBeTypeOf("function");
+    expect(azureApiKey({ kind: "managed-identity", clientId: "client-id" })).toBeTypeOf("function");
   });
 });
 

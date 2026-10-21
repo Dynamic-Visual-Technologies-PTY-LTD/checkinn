@@ -337,8 +337,10 @@ flowchart TD
     | Variable | Meaning |
     | --- | --- |
     | `CHECKINN_PROVIDER` | `azure` (the default when the Azure variables are set), `fake`, or `off` |
-    | `AZURE_OPENAI_BASE_URL` | `https://<resource>.openai.azure.com/openai/v1/` |
-    | `AZURE_OPENAI_API_KEY` | The key |
+    | `AZURE_OPENAI_ENDPOINT` | `https://<resource>.openai.azure.com/`; the app adds `/openai/v1/` |
+    | `AZURE_OPENAI_AUTH` | `key` (the default, for local development) or `managed-identity` (on Azure, with the Cognitive Services OpenAI User role) |
+    | `AZURE_OPENAI_API_KEY` | The key; key auth only |
+    | `AZURE_CLIENT_ID` | A user-assigned managed identity's client ID; optional |
     | `AZURE_OPENAI_CHAT_DEPLOYMENT` | The `gpt-6-luna` deployment name |
     | `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` | The `text-embedding-3-large` deployment name |
     | `CHECKINN_SEARCH_DEBUG` | `1` shows the Score breakdown (FR-20) |
