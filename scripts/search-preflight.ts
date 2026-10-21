@@ -2,7 +2,7 @@
 // stage (AD-32). Needs the presenter's key in `.env.local`; never part of
 // `npm test`, `db:reset` or CI.
 //
-// Calls `interpret` 5 times (p95 within 2.5 s), `embed` once (1024
+// Calls `interpret` 5 times (p95 within 5 s), `embed` once (1024
 // dimensions) and `reasons` once. Prints the deployment names and OK, or the
 // failing check, and exits non-zero on any failure. Output carries codes,
 // statuses and deployment names only: never the key, the Query or the
@@ -16,7 +16,7 @@ import { type InterpretationContext, ProviderError } from "@/features/search/pro
 import { loadEnv } from "./load-env";
 
 const INTERPRET_RUNS = 5;
-const INTERPRET_TIMEOUT_MS = 2_500;
+const INTERPRET_TIMEOUT_MS = 5_000;
 const EMBED_TIMEOUT_MS = 1_500;
 const REASONS_TIMEOUT_MS = 5_000;
 
@@ -67,7 +67,7 @@ async function main(): Promise<boolean> {
   const seed = loadSeed();
   let ok = true;
 
-  // Interpretation: 5 calls, p95 within the 2.5 s budget.
+  // Interpretation: 5 calls, p95 within the 5 s budget.
   const context: InterpretationContext = {
     today: todayIn(),
     cities: seed.cities.map((city) => ({ name: city.name, aliases: city.aliases })),

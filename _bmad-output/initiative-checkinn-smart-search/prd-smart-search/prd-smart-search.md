@@ -453,9 +453,9 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
 | MVP FR-18: Hotel page opens with nothing selected | Hotel page opens with the Best-fit room pre-selected (FR-14). |
 | MVP FR-25: everything shown comes from the seed | Search knowledge also comes from the Enrichment file, and Match reasons are generated (FR-7, FR-15). |
 | MVP §5: no API key or external service, works offline | Smart search needs the Provider and network (§7, §9). The rest of CheckInn still works offline. |
-| MVP: the Search bar stays usable while results load | The Search bar is read-only while Query interpretation runs, for up to 2.5 s (FR-1). |
+| MVP: the Search bar stays usable while results load | The Search bar is read-only while Query interpretation runs, for up to 5 s (FR-1). |
 | MVP: focus goes to the results headline after every URL change | After a Criteria chip is removed, focus stays in the chip row (UX spine). |
-| MVP §5: renders within 1 s | Smart search results within 3 s, and Match reasons within a further 3 s (§9). Everything else keeps the 1 s target. |
+| MVP §5: renders within 1 s | Smart search results within 5.5 s, and Match reasons within a further 3 s (§9). Everything else keeps the 1 s target. |
 | Architecture AD-7: `searchHotels(criteria)` signature | Search criteria gain Rooms, Max price, Policy criteria, and Preferences. The result gains the Best-fit room, Relevance and Match reason. Smart search still enters through this one function. |
 
 ## 9. Cross-Cutting NFRs
@@ -464,7 +464,7 @@ These MVP rules change *only when a Query is present*. With no Query, or with no
 - **Secrets.** Provider key, endpoint and deployment names come from environment variables. `.env` is never committed, and `.env.example` is committed with names only.
 - **Network.** Smart search needs network access and the Provider (§7). The rest of CheckInn still works offline.
 - **Speed.** On a laptop with a normal connection:
-  - Search results for a Query appear within 3 s. Query interpretation times out at 2.5 s and then falls back as in FR-2.
+  - Search results for a Query appear within 5.5 s. Query interpretation times out at 5 s and then falls back as in FR-2.
   - Match reasons follow within a further 3 s. A reason that times out at 5 s is left off.
 - **Cost and abuse.**
   - A new Query makes at most 3 Provider calls: interpretation, the Preferences embedding, and one batched call for Match reasons.
@@ -527,8 +527,8 @@ The user accepted every starting value as a workshop default on 2026-10-15. Each
 - **FR-15:** Match reasons up to 120 characters.
 - **FR-17:** 24 Golden queries, 4 of them held out.
 - **§9:**
-  - 3 s for results
-  - 2.5 s interpretation timeout
+  - 5.5 s for results
+  - 5 s interpretation timeout
   - 3 s for Match reasons
   - 5 s Match reason timeout
   - at most 3 Provider calls per Query

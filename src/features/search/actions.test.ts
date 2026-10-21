@@ -206,7 +206,7 @@ describe("submitQuery outcomes", () => {
 
   it("gives the fallback URL after the timeout when interpret never settles", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    // A short timeout stands in for 2.5 s; the Provider ignores the signal.
+    // A short timeout stands in for 5 s; the Provider ignores the signal.
     const timeout = AbortSignal.timeout.bind(AbortSignal);
     vi.spyOn(AbortSignal, "timeout").mockImplementation(() => timeout(20));
     mocks.provider = {
@@ -233,12 +233,12 @@ describe("submitQuery outcomes", () => {
     expect(mocks.redirect.mock.calls[0][0]).toContain("smart=1");
   });
 
-  it("passes interpretation a 2.5 s signal", async () => {
+  it("passes interpretation a 5 s signal", async () => {
     const timeout = vi.spyOn(AbortSignal, "timeout");
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.provider = failingProvider(new ProviderError("RATE_LIMITED"));
     await redirectedTo(UJ1);
-    expect(timeout).toHaveBeenCalledWith(2_500);
+    expect(timeout).toHaveBeenCalledWith(5_000);
   });
 
   it("returns SERVER_ERROR for any other failure, logging no Query", async () => {

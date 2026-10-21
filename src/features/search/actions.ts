@@ -26,7 +26,7 @@ export type SubmitQueryInput = {
 };
 
 /** Query interpretation's time budget (AD-22). */
-const INTERPRETATION_TIMEOUT_MS = 2_500;
+const INTERPRETATION_TIMEOUT_MS = 5_000;
 
 const SERVER_ERROR: ActionResult = {
   ok: false,
@@ -67,7 +67,7 @@ function reparse(current: SearchBarCriteria | undefined): SearchBarCriteria {
 
 /**
  * Where a submitted Query leads (AD-22 Outcomes): the Smart search URL; the
- * fallback URL for any Provider failure, the 2.5 s timeout included; or, with
+ * fallback URL for any Provider failure, the 5 s timeout included; or, with
  * no Provider, the MVP URL. Any other error is thrown.
  */
 async function queryTarget(query: string, current: SearchBarCriteria): Promise<string> {
@@ -102,7 +102,7 @@ async function queryTarget(query: string, current: SearchBarCriteria): Promise<s
  * Stay and Party, and the Smart search parameters: Preferences, Max price,
  * Policy criteria, and the place and ignored value for their notices. An
  * empty Query, or one over 300 characters, returns `VALIDATION`. A Provider
- * failure or the 2.5 s timeout redirects to the fallback URL: the current
+ * failure or the 5 s timeout redirects to the fallback URL: the current
  * criteria, the Query and `fallback=1`. No Provider gives the MVP URL; any
  * other error is `SERVER_ERROR`.
  */

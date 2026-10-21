@@ -188,7 +188,7 @@ flowchart TD
     - keeps the current Party, Rooms included, when the Query states neither adults nor children. When it states either, the Query's Party replaces the whole Party (children default to 0)
     - starts Destination, Max price and Policy criteria empty
     - sets Rooms to the Query's Rooms when stated. Otherwise, only when the Party came from the Query, it uses `fewestRooms` (AD-26)
-  - **Timeouts.** Interpretation has 2.5 s. Right after it, `submitQuery` embeds the Preferences into the cache (AD-28) within the remaining budget, `min(1.5 s, 3 s − elapsed)`. A failure there is not an error; render retries it with 1.5 s.
+  - **Timeouts.** Interpretation has 5 s. Right after it, `submitQuery` embeds the Preferences into the cache (AD-28) within the remaining budget, `min(1.5 s, 5.5 s − elapsed)`. A failure there is not an error; render retries it with 1.5 s.
   - **Outcomes** (MVP AD-11):
     - success redirects to `searchHref` with `sq`, `smart=1` and the new criteria
     - an empty Query, or one over 300 characters, returns `{ ok: false, code: "VALIDATION" }`
@@ -400,7 +400,7 @@ flowchart TD
   | --- | --- | --- |
   | `npm run search:index` | yes | Builds chunks (`buildChunks`), embeds them and every Golden query's `expected.preferences`, and writes `data/seed/search-index.json` and `data/eval/golden-embeddings.json` with the same model and dimensions |
   | `npm run search:eval` | yes | See below |
-  | `npm run search:preflight` | yes | Calls `interpret`, `embed` and `reasons` once each. Checks 1024 dimensions, that the embedding deployment's model matches the index's `model`, and that interpretation answers within 2.5 s at p95 over 5 calls; reports a quota or rate-limit error as such. Prints the deployment names (never the key) and OK, or the failing one |
+  | `npm run search:preflight` | yes | Calls `interpret`, `embed` and `reasons` once each. Checks 1024 dimensions, that the embedding deployment's model matches the index's `model`, and that interpretation answers within 5 s at p95 over 5 calls; reports a quota or rate-limit error as such. Prints the deployment names (never the key) and OK, or the failing one |
 
   - **`search:eval`** resets a temp database and runs every Golden query through `interpretQuery`, `runSmartSearch` and `generateReasons`, using the fixed `today` from the golden file. Its report:
     - scores the §11 metrics per query and in total, with held-out queries reported separately (SM-C1)
@@ -441,7 +441,7 @@ flowchart TD
 | Chunk ids | `<hotelId>:<facet>:<n>`, with facet one of `overview`, `facilities`, `room`, `review` or `highlight` |
 | Text keys | `normaliseText` everywhere text is sent, cached or looked up (AD-28) |
 | Provider errors | `ProviderError` with `code` (AD-19); every code leads to the fallback |
-| Timeouts | Interpretation 2.5 s; embedding `min(1.5 s, 3 s − elapsed)` in the action and 1.5 s at render; reasons 5 s; each an `AbortSignal.timeout` |
+| Timeouts | Interpretation 5 s; embedding `min(1.5 s, 5.5 s − elapsed)` in the action and 1.5 s at render; reasons 5 s; each an `AbortSignal.timeout` |
 | Guest copy | The EXPERIENCE.md voice table; never "AI" or "model" |
 | Config | AD-29 variables; `CHECKINN_DB_PATH` unchanged |
 | Committed data | `data/seed/hotel-enrichment.json`, `data/seed/search-index.json`, `data/eval/*.json` |
@@ -503,7 +503,7 @@ sequenceDiagram
   participant S as /search → searchHotels → runSmartSearch
   participant R as getMatchReasons → generateReasons
   G->>A: Query + current criteria
-  A->>P: interpret (2.5 s, cached raw)
+  A->>P: interpret (5 s, cached raw)
   P-->>A: JSON (untrusted)
   A->>A: applyInterpretation (domain)
   A->>P: embed(prefs) to warm the cache (remaining budget)
@@ -551,7 +551,7 @@ flowchart LR
 1. **Schema change:** approved. The Prepared index goes in SQLite tables plus FTS5 (AD-24, database copy).
 2. **`openai` SDK 7.28.0:** approved (AD-25).
 3. **Deployments:** confirmed. `gpt-6-luna` and `text-embedding-3-large` are in the same Foundry resource and region, with GPT-6 quota available. `search:preflight` still checks all three before going on stage.
-4. **Interpretation latency:** start at reasoning effort `none` with a 2.5 s timeout. If SM-5 suffers in the eval, move to effort `low` with a 4 s timeout, which puts the results target at about 4.5 s.
+4. **Interpretation latency:** reasoning effort `none` with a 5 s timeout, which puts the results target at about 5.5 s. It started at 2.5 s; `gpt-6-luna` measured about 2.3 s at p95 warm and more on a cold connection (2026-10-21), so most Queries fell back. If SM-5 suffers in the eval, try effort `low` within the same 5 s.
 5. **Keys and spend:** the presenter's key only. Attendees see the MVP on a fresh clone. The deployment's tokens-per-minute quota is the spend cap, and the key is rotated after the event.
 6. **"This weekend" on a Sunday:** it means tonight, Sunday to Monday for 1 night.
 
