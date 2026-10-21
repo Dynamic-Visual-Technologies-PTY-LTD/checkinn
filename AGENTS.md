@@ -15,7 +15,7 @@
 - Keep it small and readable. Prefer the simple solution over the clever one.
 - The repo is public. No secrets, client names or internal material.
 
-**Current state.** Guests can search, see results, open a Hotel page with its photos, and choose rooms. Reserve leads to Booking details, which is not built yet, nor are confirmation, manage booking and cancel. The catalog lives in SQLite, seeded from `data/seed/hotel-booking-demo.json`. Work follows the tickets in `_bmad-output/initiative-checkinn-mvp/`.
+**Current state.** Guests can search, see results, open a Hotel page with its photos, and choose rooms. Reserve leads to Booking details and a confirmation with a booking reference. Guests can look up a Booking from Manage booking and cancel it within its policy. All MVP stories are built; the expo dry-run in `_bmad-output/initiative-checkinn-mvp/epic-checkinn-mvp/expo-dry-run-checklist.md` has not been performed yet. Intelligent search is not started. The catalog lives in SQLite, seeded from `data/seed/hotel-booking-demo.json`. Work follows the tickets in `_bmad-output/initiative-checkinn-mvp/`.
 
 ## Technology Stack
 
