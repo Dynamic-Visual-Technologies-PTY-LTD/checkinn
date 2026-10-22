@@ -9,6 +9,11 @@
 /test-results/
 /blob-report/
 /playwright/.cache/
+/playwright.pr-capture.config.ts
+/e2e/**/*.tmp.spec.ts
+
+# pr-description skill scratch
+/.pr-description/
 
 # next.js
 /.next/

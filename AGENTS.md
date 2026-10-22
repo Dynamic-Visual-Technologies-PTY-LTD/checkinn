@@ -73,7 +73,9 @@ Agreed but **not installed yet**:
 | `_bmad-output/` | BMAD planning artefacts: PRD, UX, architecture, specs |
 | `.claude/skills/`, `.agents/skills/` | BMAD skills, installed by the `skills` CLI and tracked in `skills-lock.json` |
 
-Generated or tool-managed, do not edit by hand: `.claude/skills/`, `.agents/skills/`, `_bmad/scripts/`, `skills-lock.json`, `next-env.d.ts`, `.next/`.
+`.claude/skills/pr-description/` is the exception: a repo-owned skill, not installed by the `skills` CLI, edited by hand. It writes PR descriptions and keeps the latest PR's review images in `docs/pr-assets/`.
+
+Generated or tool-managed, do not edit by hand: the rest of `.claude/skills/`, `.agents/skills/`, `_bmad/scripts/`, `skills-lock.json`, `next-env.d.ts`, `.next/`.
 
 **Naming and imports.**
 
