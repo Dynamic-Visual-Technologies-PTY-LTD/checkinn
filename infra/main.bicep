@@ -29,6 +29,9 @@ param locationAbbreviation string
 @description('GitHub repository allowed to deploy, as <org>/<repo>.')
 param gitHubRepo string
 
+@description('The repository as it appears in the OIDC token subject: <org>/<repo>, or <org>@<org id>/<repo>@<repo id> when the repository uses immutable subject claims.')
+param gitHubSubjectRepo string = gitHubRepo
+
 @description('Azure region for Foundry. Embedding models are not offered in South Africa North.')
 param foundryLocation string
 
@@ -134,7 +137,7 @@ module gitHubIdentity 'modules/github-identity.bicep' = {
     identityName: 'id-${nameBase}-github'
     registryName: registry.outputs.registryName
     containerAppName: containerApp.outputs.containerAppName
-    gitHubRepo: gitHubRepo
+    gitHubSubjectRepo: gitHubSubjectRepo
     tags: tags
   }
 }

@@ -123,7 +123,7 @@ Pull requests and forks never deploy: the workflow only reacts to CI runs for pu
 
 ## No secrets
 
-- GitHub signs in with OpenID Connect. Azure trusts GitHub's short-lived token only when its subject is exactly `repo:Dynamic-Visual-Technologies-PTY-LTD/checkinn:environment:production`.
+- GitHub signs in with OpenID Connect. Azure trusts GitHub's short-lived token only when its subject is exactly `repo:Dynamic-Visual-Technologies-PTY-LTD@107921294/checkinn@1408493918:environment:production`. The repository uses immutable subject claims, which carry the owner and repository IDs, so a renamed or re-created repository cannot reuse the trust. `gitHubSubjectRepo` in `main.prod.bicepparam` holds that value; check it with `gh api repos/<org>/<repo>/actions/oidc/customization/sub`.
 - The client, tenant and subscription IDs and the resource names are identifiers, not credentials. They live in GitHub environment variables (`vars.*`); the workflow never uses `secrets.*`.
 - The GitHub identity holds two roles: `AcrPush` on the registry and `Container Apps Contributor` on the container app alone. It cannot change any other resource or assign roles. It never deploys Bicep.
 - The registry's admin user is off. The app pulls with its managed identity (`AcrPull`).

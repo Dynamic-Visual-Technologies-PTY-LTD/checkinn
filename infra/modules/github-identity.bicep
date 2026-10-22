@@ -14,8 +14,8 @@ param registryName string
 @description('Name of the container app the workflow updates.')
 param containerAppName string
 
-@description('GitHub repository as <org>/<repo>.')
-param gitHubRepo string
+@description('The repository as it appears in the OIDC token subject: <org>/<repo>, or <org>@<org id>/<repo>@<repo id> when the repository uses immutable subject claims.')
+param gitHubSubjectRepo string
 
 @description('GitHub environment the federated credential is bound to.')
 param gitHubEnvironment string = 'production'
@@ -47,7 +47,7 @@ resource federatedCredential 'Microsoft.ManagedIdentity/userAssignedIdentities/f
   name: 'github-${gitHubEnvironment}'
   properties: {
     issuer: 'https://token.actions.githubusercontent.com'
-    subject: 'repo:${gitHubRepo}:environment:${gitHubEnvironment}'
+    subject: 'repo:${gitHubSubjectRepo}:environment:${gitHubEnvironment}'
     audiences: [
       'api://AzureADTokenExchange'
     ]
