@@ -22,7 +22,8 @@ function isSeedPhoto(url: string | undefined): boolean {
   }
 }
 
-const CITY_TILE_NAME = /^(.+), (\d+) hotels?$/;
+// A City tile is named after its City; its credit link is named "Photo credit: City".
+const CITY_TILE_NAME = /^(?!Photo credit: )(.+)$/;
 
 /** Home's default criteria: tomorrow for 1 night, 2 adults, 0 children, 1 room. */
 function homeDefaults() {
@@ -60,7 +61,7 @@ test.describe("Home page", () => {
     ).toBeVisible();
   });
 
-  test("shows 6 City tiles whose Hotel counts add up to 12", async ({
+  test("shows 6 City tiles that each search for their City", async ({
     page,
   }) => {
     await page.goto("/");
@@ -71,20 +72,16 @@ test.describe("Home page", () => {
     const tiles = cityTiles(page);
     await expect(tiles).toHaveCount(6);
 
-    let total = 0;
     for (const tile of await tiles.all()) {
-      const name = (await tile.getAttribute("aria-label")) ?? "";
-      const [, city, count] = name.match(CITY_TILE_NAME) ?? [];
+      const city = (await tile.getAttribute("aria-label")) ?? "";
       expect(city).toBeTruthy();
-      total += Number(count);
       expect(await tile.getAttribute("href")).toBe(
         searchHref({ ...homeDefaults(), q: city }),
       );
     }
-    expect(total).toBe(12);
   });
 
-  test("shows placeholders with the name and count when photos are blocked", async ({
+  test("shows placeholders with the name when photos are blocked", async ({
     page,
   }) => {
     // Seed photos are aborted in beforeEach.
@@ -94,8 +91,7 @@ test.describe("Home page", () => {
     await expect(tiles).toHaveCount(6);
     for (const tile of await tiles.all()) {
       await tile.scrollIntoViewIfNeeded();
-      const name = (await tile.getAttribute("aria-label")) ?? "";
-      const [, city, count] = name.match(CITY_TILE_NAME) ?? [];
+      const city = (await tile.getAttribute("aria-label")) ?? "";
 
       const placeholder = tile.getByRole("img", {
         name: `${city} destination photograph`,
@@ -104,11 +100,6 @@ test.describe("Home page", () => {
       // Proves the failed <img> is gone; the placeholder also has role img.
       await expect(tile.locator("img")).toHaveCount(0);
       await expect(tile.getByText(city, { exact: true })).toBeVisible();
-      await expect(
-        tile.getByText(`${count} ${count === "1" ? "hotel" : "hotels"}`, {
-          exact: true,
-        }),
-      ).toBeVisible();
       await expect(
         page.getByRole("link", { name: `Photo credit: ${city}` }),
       ).toBeVisible();
@@ -364,7 +355,7 @@ test.describe("Home page", () => {
   test("City tiles carry the search bar's dates and party", async ({ page }) => {
     await page.goto("/");
 
-    const tile = page.getByRole("link", { name: CITY_TILE_NAME }).first();
+    const tile = cityTiles(page).first();
     const city = ((await tile.getAttribute("aria-label")) ?? "").replace(
       CITY_TILE_NAME,
       "$1",

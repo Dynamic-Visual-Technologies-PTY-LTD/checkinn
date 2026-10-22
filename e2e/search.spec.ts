@@ -128,7 +128,7 @@ test.describe("Search results", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("region", { name: "Explore a city" }).getByRole("link", {
-        name: /^.+, \d+ hotels?$/,
+        name: /^(?!Photo credit: )/,
       }),
     ).toHaveCount(6);
     await expect(cards(page)).toHaveCount(0);
