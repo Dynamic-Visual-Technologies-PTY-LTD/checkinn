@@ -85,7 +85,7 @@ describe("Search bar and City tiles", () => {
       </SearchStateProvider>,
     );
 
-    const tile = screen.getByRole("link", { name: "Cape Town, 2 hotels" });
+    const tile = screen.getByRole("link", { name: "Cape Town" });
     expect(tile).toHaveAttribute(
       "href",
       "/search?q=Cape+Town&checkIn=2026-11-11&checkOut=2026-11-12&adults=2&children=0&rooms=1",

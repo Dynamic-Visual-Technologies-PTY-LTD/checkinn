@@ -621,6 +621,9 @@ things:
 - **Translucency.** The header is Midnight at 80% opacity with a barely
   visible `0 0 4px rgba(0, 0, 0, 0.1)` shadow, so imagery shows through as
   the page scrolls.
+- **Pill shadows.** Two small exceptions to the flat rule: the footer's
+  "Photo credits" pill has a soft Brand Blue glow, and the photo-credit pill
+  on a city tile has a dark drop shadow so it lifts off the image.
 - **Image against dark.** Photographs sit directly on the page with a 12px
   radius and no frame.
 
@@ -677,14 +680,19 @@ Component Patterns. Visual composition references: `_bmad-output/initiative-chec
   Match" badge. Facility chips are display only.
 - **Accent headline.** The display headline in Brand Blue, for a page hero.
 - **Link.** Brand Blue only at 24px and above. Every smaller link, including
-  "Manage booking" in the header, the footer links and "Manage this booking",
-  is white with an underline, and turns Gold on hover.
+  "Manage this booking", is white with an underline, and turns Gold on hover.
+  The header's "Manage booking" and the footer's "Photo credits" are links
+  styled as buttons instead.
 - **Header.** Fixed, 100px, translucent Midnight. Logo on the left, "Manage
-  booking" in `body-sm` on the right. 64px on phone, with the icon instead of
+  booking" on the right as a compact secondary button: 44px high, 2px Brand
+  Blue border, uppercase `label-md`, filled Gold with Midnight text on hover. 64px on phone, with the icon instead of
   the wordmark below 480px.
-- **Footer.** Midnight, muted `body-sm`, 50px padding. One line: "CheckInn is
-  a demo. Hotels, prices and reviews are fictional. Photos are illustrative. No payment is taken."
-  Below it, a "Photo credits" link.
+- **Footer.** Midnight, muted `body-sm`, 50px vertical padding, and a faint
+  Brand Blue rule along its top. One line: "CheckInn is a demo. Hotels,
+  prices and reviews are fictional. Photos are illustrative. No payment is
+  taken." Beside it on desktop, under it on phone, a "Photo credits" pill:
+  44px high, Night Blue fill, 1px Brand Blue border, uppercase `label-md`,
+  with a soft Brand Blue glow. Border and text turn Gold on hover.
 - **Divider and accent rule.** A 1px Outline line between list rows; a 2px
   Cyan rule as an occasional accent under a heading.
 - **Search bar.** One 12px-radius container with a 1px Brand Blue border,
@@ -741,11 +749,12 @@ Component Patterns. Visual composition references: `_bmad-output/initiative-chec
 
   The hotel name is the link, and its click area is stretched over the whole
   card. The border turns Gold on hover.
-- **City tile.** The city photo with a 12px radius, the city name in
-  `headline-sm` and "2 hotels" in muted `body-sm` on a Midnight gradient at
-  the bottom of the image. The photo credit sits underneath in small muted
-  text. If the photo fails, the tile keeps its Night Blue placeholder and the
-  overlay text.
+- **City tile.** The city photo with a 12px radius and the city name in
+  `headline-sm` on a Midnight gradient at the bottom of the image. The photo
+  credit is a small translucent Midnight pill over the photo's bottom-right
+  corner, with a soft shadow so it reads on any image, and turns Gold on
+  hover. It is a separate link from the tile. If the photo fails, the tile
+  keeps its Night Blue placeholder and the city name.
 - **Hotel header.** The category eyebrow, then the hotel name in
   `headline-lg`, stars beside it, then "Area, City, Province" in `body-md`
   with a pin icon. On the right on desktop, or below on phone: the save and
