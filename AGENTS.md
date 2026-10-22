@@ -189,6 +189,11 @@ docs(readme): document the end-to-end test setup
 
 - Before opening a PR, all four checks pass locally: lint, typecheck, test, build.
 - Keep a PR to one change. Say what changed and how it was verified.
+- A PR description written with Claude Code ends with this line, in place of the default "🤖 Generated with Claude Code" line:
+
+```
+💡Ideated By Humans - 🤖Generated with [Claude Code](https://claude.com/claude-code)
+```
 - Git tags named `checkpoint/NN-short-name` mark fixed points in history. Do not move or delete an existing one.
 
 ## BMAD

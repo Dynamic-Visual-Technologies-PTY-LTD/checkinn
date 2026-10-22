@@ -130,7 +130,11 @@ Use this shape. Drop a section that has nothing true to say rather than padding 
 ## Checklist
 
 <the template's checklist, ticked only for what was actually run>
+
+💡Ideated By Humans - 🤖Generated with [Claude Code](https://claude.com/claude-code)
 ```
+
+The last line is the repo's PR tagline (AGENTS.md, Git and PR Workflow). It replaces the default "🤖 Generated with Claude Code" line; don't add both.
 
 How to write it, matching the PRs already merged here:
 
