@@ -57,6 +57,7 @@ jobs:
             file and line. If there is nothing worth raising, say so in one line.
 
             Post the review as a single comment on this PR with
-            `gh pr comment ${{ github.event.pull_request.number }}`.
+            `gh pr comment ${{ github.event.pull_request.number }} --body "<review>"`.
+            Only `--body` is allowed; `--body-file` and other flags are blocked.
           claude_args: >-
-            --allowed-tools "Bash(gh pr comment ${{ github.event.pull_request.number }}:*),Bash(gh pr diff ${{ github.event.pull_request.number }}:*),Bash(gh pr view ${{ github.event.pull_request.number }}:*)"
+            --allowed-tools "Bash(gh pr comment ${{ github.event.pull_request.number }} --body *),Bash(gh pr diff ${{ github.event.pull_request.number }}:*),Bash(gh pr view ${{ github.event.pull_request.number }}:*)"
