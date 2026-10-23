@@ -39,6 +39,10 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    # Chromium and its system libraries come with the image, so there is no
+    # browser install step. Keep the tag in step with @playwright/test.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
     steps:
       - uses: actions/checkout@v7
 
@@ -48,9 +52,6 @@ jobs:
           cache: npm
 
       - run: npm ci
-
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
 
       - name: Build
         run: npm run build

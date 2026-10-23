@@ -24,11 +24,8 @@ function section(page: Page) {
   return page.getByRole("region", { name: "Availability" });
 }
 
-/** The summary visible at this width: the panel from 768px, else the bar. */
-function summary(page: Page, isMobile: boolean) {
-  return isMobile
-    ? page.getByRole("region", { name: "Booking summary" })
-    : page.getByRole("complementary", { name: "Booking summary" });
+function summary(page: Page) {
+  return page.getByRole("complementary", { name: "Booking summary" });
 }
 
 test.describe("Room table, selection and Reserve", () => {
@@ -67,10 +64,9 @@ test.describe("Room table, selection and Reserve", () => {
 
   test("Coral Coast: a party that does not fit blocks Reserve until it does, then lands on step 2", async ({
     page,
-    isMobile,
   }) => {
     await page.goto(hotelHref("hotel-005", { stay: weekendStay(), party: FAMILY_OF_FIVE }));
-    const bar = summary(page, isMobile);
+    const bar = summary(page);
     const reserve = bar.getByRole("button", { name: "Reserve" });
 
     await expect(reserve).toHaveAttribute("aria-disabled", "true");
@@ -109,7 +105,6 @@ test.describe("Room table, selection and Reserve", () => {
 
   test("a selection in the URL comes back selected, with the total in the summary", async ({
     page,
-    isMobile,
   }) => {
     await page.goto(
       hotelHref("hotel-001", {
@@ -120,14 +115,13 @@ test.describe("Room table, selection and Reserve", () => {
     );
 
     await expect(page.getByRole("combobox", { name: "Rooms of Standard Double" })).toHaveValue("1");
-    const bar = summary(page, isMobile);
+    const bar = summary(page);
     await expect(bar).toContainText("1 room");
     await expect(bar).toContainText(/R\s4\s900,00/);
   });
 
   test("without dates, rows have no prices and Show prices opens the calendar", async ({
     page,
-    isMobile,
   }) => {
     await page.goto("/hotels/hotel-001");
     const rooms = section(page);
@@ -139,9 +133,7 @@ test.describe("Room table, selection and Reserve", () => {
     await expect(page.getByRole("button", { name: "Reserve" })).toHaveCount(0);
 
     await rooms.getByRole("button", { name: "Show prices" }).first().click();
-    const calendar = isMobile
-      ? page.getByRole("dialog", { name: "Select dates" })
-      : page.getByRole("dialog", { name: "Dates" });
+    const calendar = page.getByRole("dialog", { name: "Dates" });
     await expect(calendar).toBeVisible();
   });
 
@@ -220,29 +212,4 @@ test.describe("Room table, selection and Reserve", () => {
     );
   });
 
-  test("on a phone the rooms are cards with a fixed summary bar and a summary sheet", async ({
-    page,
-    isMobile,
-  }) => {
-    test.skip(!isMobile, "Phone layout only");
-    await page.goto(
-      hotelHref("hotel-001", {
-        stay: weekendStay(),
-        party: COUPLE,
-        sel: [{ roomTypeId: "hotel-001-standard", quantity: 1 }],
-      }),
-    );
-
-    await expect(page.getByRole("heading", { level: 3, name: "Family Room" })).toBeVisible();
-    const bar = page.getByRole("region", { name: "Booking summary" });
-    await expect(bar).toBeInViewport();
-    await bar
-      .getByRole("button", { name: /^1 room, 4\s900 rand\. Show full summary$/ })
-      .click();
-
-    const sheet = page.getByRole("dialog", { name: "Booking summary" });
-    await expect(sheet.getByText("1 × Standard Double")).toBeVisible();
-    await sheet.getByRole("button", { name: "Close" }).click();
-    await expect(sheet).toBeHidden();
-  });
 });

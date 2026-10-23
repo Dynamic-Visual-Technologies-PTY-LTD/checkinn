@@ -35,6 +35,7 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
   },
+  // Desktop only: phone layouts are covered by component tests.
   projects: [
     // Read-only specs, in parallel.
     {
@@ -42,39 +43,21 @@ export default defineConfig({
       testIgnore: [BOOKING_SPECS, SMART_SPECS],
       use: { ...devices["Desktop Chrome"] },
     },
-    {
-      name: "mobile",
-      testIgnore: [BOOKING_SPECS, SMART_SPECS],
-      use: { ...devices["Pixel 7"] },
-    },
     // Smart search specs, read-only, against the fake Provider on 3101.
     {
-      name: "smart-desktop",
+      name: "smart",
       testMatch: SMART_SPECS,
       use: { ...devices["Desktop Chrome"], baseURL: smartURL },
     },
+    // Booking specs: serial, after the read-only project finishes, so they
+    // never race it over Rooms.
     {
-      name: "smart-mobile",
-      testMatch: SMART_SPECS,
-      use: { ...devices["Pixel 7"], baseURL: smartURL },
-    },
-    // Booking specs: serial, after the read-only projects finish, so they
-    // never race them over Rooms; desktop first, then mobile.
-    {
-      name: "booking-desktop",
+      name: "booking",
       testMatch: BOOKING_SPECS,
       fullyParallel: false,
       workers: 1,
-      dependencies: ["chromium", "mobile"],
+      dependencies: ["chromium"],
       use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "booking-mobile",
-      testMatch: BOOKING_SPECS,
-      fullyParallel: false,
-      workers: 1,
-      dependencies: ["booking-desktop"],
-      use: { ...devices["Pixel 7"] },
     },
   ],
   // Always production servers of their own, each against a temporary

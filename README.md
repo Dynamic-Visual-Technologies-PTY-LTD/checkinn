@@ -87,7 +87,7 @@ The end-to-end tests need a browser, downloaded once:
 npx playwright install chromium
 ```
 
-They build the app and start their own production server on port 3100, against a temporary database that is reset before each run. A dev server on port 3000 and `data/checkinn.db` are left alone. They run against a desktop and a mobile viewport.
+They build the app and start their own production server on port 3100, against a temporary database that is reset before each run. A dev server on port 3000 and `data/checkinn.db` are left alone. They run against a desktop viewport only.
 
 </details>
 
