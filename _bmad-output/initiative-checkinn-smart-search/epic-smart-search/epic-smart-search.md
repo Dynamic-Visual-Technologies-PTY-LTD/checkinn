@@ -28,7 +28,7 @@ The PRD's FR ids in `covers` are the requirement source, with the testable detai
 2. A Query the fake does not know, and a Provider timeout, show the fallback page in MVP order with the Query in the box and a working Try again.
 3. With no `.env`, a fresh clone shows no Smart search box and behaves as the MVP, and `npm test` makes no outbound request.
 4. Lint, typecheck, test, build and e2e are green.
-5. `npm run search:preflight` with the presenter's key reports both deployments OK, with interpretation p95 under 2.5 s.
+5. `npm run search:preflight` with the presenter's key reports both deployments OK, with interpretation p95 under 5 s.
 
 ## Boundaries
 
@@ -62,7 +62,8 @@ Prerequisite: the CheckInn MVP epic (epic-checkinn-mvp), done.
 - Decision: no Refactor sweep in this epic. Under the user's split it holds entries 1 to 7 only, and the sweep in epic-smart-search-quality (2.9) waits on 1.1 to 1.7 and takes this epic's deferred findings. (User's split, 2026-10-19)
 - Decision: the Ranking blend is chosen in the workshop from the eval report (2.8); entry 5 builds the mechanism with the spine's starting value, provisional until then, and the other two candidates live only in the eval runner (FR-12). (User, 2026-10-19)
 - Decision: the `openai` SDK 7.28.0 is approved; entry 2 uses it, not the `fetch` alternative. (User, 2026-10-19)
-- Decision: interpretation starts at reasoning effort `none` with a 2.5 s timeout. If the evals show misreads, it moves to effort `low` with a 4 s timeout (results target about 4.5 s). This is a tuning step on entry 3, applied in 2.8 from 2.7's eval report, not a blocker. (User, 2026-10-19)
+- Decision: interpretation starts at reasoning effort `none` with a 2.5 s timeout. If the evals show misreads, it moves to effort `low` with a 4 s timeout (results target about 4.5 s). This is a tuning step on entry 3, applied in 2.8 from 2.7's eval report, not a blocker. (User, 2026-10-19) Superseded on 2026-10-21: see the next decision.
+- Decision: the interpretation timeout is 5 s, not 2.5 s, which puts the results target at about 5.5 s. `gpt-6-luna` measured about 2.3 s at p95 warm and more on a cold connection, so most Queries hit 2.5 s and fell back. `actions.ts`, the pre-flight, the PRD and the architecture (Open question 4) use 5 s. (User, 2026-10-21, commit 953c576)
 - Decision: "this weekend" typed on a Sunday means tonight: Sunday to Monday, 1 night (entry 3). (User, 2026-10-19)
 - Decision: Azure is confirmed: deployment `gpt-6-luna` and `text-embedding-3-large` in the same Foundry resource and region, with GPT-6 quota available (entry 2). (User, 2026-10-19)
 - Decision: keys. The presenter's key only; attendees see the MVP on a fresh clone; the deployment's tokens-per-minute quota is the spend cap; the key is rotated after the event (entry 2). (User, 2026-10-19)
