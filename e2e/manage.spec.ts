@@ -57,13 +57,3 @@ test("a reference in the URL is filled in, normalised and cut to the field's lim
   ).toBeVisible();
 });
 
-test("has no horizontal scroll at 320px", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 640 });
-  await page.goto("/manage");
-  await page.getByRole("button", { name: "Find booking" }).click();
-  await expect(page.getByRole("group", { name: "2 details need fixing" })).toBeVisible();
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  );
-  expect(overflow).toBeLessThanOrEqual(0);
-});

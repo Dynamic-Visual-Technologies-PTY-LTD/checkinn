@@ -22,10 +22,6 @@ test("UJ-1 and the Booking lookup complete with the network blocked", async ({
   page,
   baseURL,
 }, testInfo) => {
-  test.skip(
-    testInfo.project.name !== "booking-desktop",
-    "On booking-mobile the phone journey books and cancels with the network blocked.",
-  );
   const network = await blockNetwork(page, baseURL);
   const stay = bookingStay(testInfo, 10, 2);
   const email = uniqueGuestEmail("offline");
