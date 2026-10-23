@@ -55,15 +55,15 @@ describe("resetDb", () => {
     const roomTypeCount = seed.hotels.flatMap((h) => h.roomTypes).length;
     const migrations = migrationRows(db);
     mutate(db);
-    expect(countHotels(db)).toBe(13);
+    expect(countHotels(db)).toBe(121);
 
     resetDb(db, seed);
 
-    expect(countHotels(db)).toBe(12);
+    expect(countHotels(db)).toBe(120);
     expect(db.select().from(roomTypes).all()).toHaveLength(roomTypeCount);
     const tiles = listCityTiles(db);
-    expect(tiles).toHaveLength(6);
-    expect(tiles.reduce((sum, tile) => sum + tile.hotelCount, 0)).toBe(12);
+    expect(tiles).toHaveLength(20);
+    expect(tiles.reduce((sum, tile) => sum + tile.hotelCount, 0)).toBe(120);
     expect(migrationRows(db)).toEqual(migrations);
   });
 
@@ -74,7 +74,7 @@ describe("resetDb", () => {
 
     resetDb(script, loadSeed());
 
-    expect(countHotels(server)).toBe(12);
+    expect(countHotels(server)).toBe(120);
     expect(
       server.select().from(hotels).where(eq(hotels.id, "hotel-extra")).get(),
     ).toBeUndefined();
@@ -114,6 +114,6 @@ describe("resetDb", () => {
     expect(() => resetDb(db, broken)).toThrow();
 
     expect(db.select().from(hotels).all()).toEqual(before);
-    expect(db.select().from(cities).all()).toHaveLength(6);
+    expect(db.select().from(cities).all()).toHaveLength(20);
   });
 });

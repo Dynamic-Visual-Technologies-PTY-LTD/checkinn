@@ -82,7 +82,7 @@ test("npm run db:reset while the server runs restores the seed and removes every
   const { stdout } = await execAsync("npm run db:reset", {
     env: { ...process.env, CHECKINN_DB_PATH: E2E_DB_PATH },
   });
-  expect(stdout).toContain(`Reset ${E2E_DB_PATH}: 6 cities, 12 hotels`);
+  expect(stdout).toContain(`Reset ${E2E_DB_PATH}: 20 cities, 120 hotels`);
   expect(bookingRows()).toBe(0);
 
   // The running server shows the seed on its next request.
@@ -100,6 +100,6 @@ test("npm run db:reset while the server runs restores the seed and removes every
   // A default search shows the whole catalog.
   await page.goto("/search");
   await expect(
-    page.getByRole("heading", { level: 1, name: "All destinations: 12 properties found" }),
+    page.getByRole("heading", { level: 1, name: "All destinations: 120 properties found" }),
   ).toBeVisible();
 });
