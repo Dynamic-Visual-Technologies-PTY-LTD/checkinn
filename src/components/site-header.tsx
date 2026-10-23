@@ -29,7 +29,7 @@ export function SiteHeader() {
         </Link>
         <Link
           href="/manage"
-          className="text-body-sm text-on-surface underline hover:text-tertiary"
+          className="inline-flex min-h-11 shrink-0 items-center rounded-lg border-2 border-primary bg-neutral px-space-md text-label-md text-on-surface uppercase transition-colors hover:border-tertiary hover:bg-tertiary hover:text-on-tertiary md:px-space-lg"
         >
           Manage booking
         </Link>

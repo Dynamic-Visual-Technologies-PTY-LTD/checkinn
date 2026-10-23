@@ -28,7 +28,7 @@ test("Home → Cape Town search → Hotel page → photo viewer, all with the ne
   await expect(page.getByRole("heading", { level: 1, name: "Find your stay." })).toBeVisible();
   const tiles = page
     .getByRole("region", { name: "Explore a city" })
-    .getByRole("link", { name: /^(.+), (\d+) hotels?$/ });
+    .getByRole("link", { name: /^(?!Photo credit: )/ });
   await expect(tiles).toHaveCount(6);
   await expectPlaceholders(tiles, 6);
   for (const city of ["Cape Town", "Johannesburg", "Durban", "Pretoria", "Stellenbosch", "Gqeberha"]) {

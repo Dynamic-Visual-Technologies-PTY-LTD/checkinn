@@ -507,7 +507,7 @@ describe("Results", () => {
     ).toBeInTheDocument();
     const explore = screen.getByRole("region", { name: "Explore a city" });
     expect(
-      within(explore).getByRole("link", { name: "Cape Town, 2 hotels" }),
+      within(explore).getByRole("link", { name: "Cape Town" }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("article")).toBeNull();
   });

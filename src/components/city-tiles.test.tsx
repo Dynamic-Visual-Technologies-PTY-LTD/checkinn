@@ -40,13 +40,13 @@ describe("CityTiles", () => {
     );
 
     expect(
-      screen.getByRole("link", { name: "Cape Town, 2 hotels" }),
+      screen.getByRole("link", { name: "Cape Town" }),
     ).toHaveAttribute(
       "href",
       "/search?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=3&rooms=2",
     );
     expect(
-      screen.getByRole("link", { name: "Gqeberha, 1 hotel" }),
+      screen.getByRole("link", { name: "Gqeberha" }),
     ).toHaveAttribute(
       "href",
       "/search?q=Gqeberha&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=3&rooms=2",
@@ -57,16 +57,16 @@ describe("CityTiles", () => {
     render(<CityTiles tiles={tiles} />);
 
     expect(
-      screen.getByRole("link", { name: "Cape Town, 2 hotels" }),
+      screen.getByRole("link", { name: "Cape Town" }),
     ).toHaveAttribute("href", "/search?q=Cape+Town&adults=2&children=0&rooms=1");
   });
 
-  it("shows the City name, count and photo in the tile", () => {
+  it("shows the City name and photo in the tile, without a Hotel count", () => {
     render(<CityTiles tiles={tiles} />);
 
-    const tile = screen.getByRole("link", { name: "Cape Town, 2 hotels" });
+    const tile = screen.getByRole("link", { name: "Cape Town" });
     expect(within(tile).getByText("Cape Town")).toBeInTheDocument();
-    expect(within(tile).getByText("2 hotels")).toBeInTheDocument();
+    expect(within(tile).queryByText(/hotels?$/)).toBeNull();
     expect(
       within(tile).getByRole("img", { name: "Cape Town destination photograph" }),
     ).toHaveAttribute("src", sizedPhotoUrl(tiles[0].image.url));
@@ -77,14 +77,14 @@ describe("CityTiles", () => {
 
     const credit = screen.getByRole("link", { name: "Photo credit: Cape Town" });
     expect(credit).toHaveAttribute("href", tiles[0].image.sourceUrl);
-    const tile = screen.getByRole("link", { name: "Cape Town, 2 hotels" });
+    const tile = screen.getByRole("link", { name: "Cape Town" });
     expect(within(tile).queryByRole("link", { name: "Photo credit: Cape Town" })).toBeNull();
   });
 
-  it("keeps the name, count and credit when the photo fails", () => {
+  it("keeps the name and credit when the photo fails", () => {
     render(<CityTiles tiles={tiles} />);
 
-    const tile = screen.getByRole("link", { name: "Cape Town, 2 hotels" });
+    const tile = screen.getByRole("link", { name: "Cape Town" });
     fireEvent.error(
       within(tile).getByRole("img", { name: "Cape Town destination photograph" }),
     );
@@ -94,7 +94,6 @@ describe("CityTiles", () => {
     });
     expect(placeholder.tagName).toBe("DIV");
     expect(within(tile).getByText("Cape Town")).toBeVisible();
-    expect(within(tile).getByText("2 hotels")).toBeVisible();
     expect(
       screen.getByRole("link", { name: "Photo credit: Cape Town" }),
     ).toBeInTheDocument();

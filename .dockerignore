@@ -1,0 +1,32 @@
+# Dependencies and build output are recreated inside the image.
+node_modules
+.next
+*.tsbuildinfo
+next-env.d.ts
+
+# Local data and secrets never enter the image.
+data/*.db*
+*.db
+*.db-shm
+*.db-wal
+.env*
+
+# End-to-end tests and test output. playwright.config.ts imports from e2e/,
+# so it is left out too, or the build's type check would fail.
+e2e
+playwright.config.ts
+coverage
+playwright-report
+test-results
+blob-report
+.vitest
+
+# Tooling, planning and repository metadata.
+_bmad*
+.git
+.github
+.agents
+.claude
+.codegraph
+.vscode
+infra
