@@ -51,6 +51,11 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      # npm ci runs node-gyp for better-sqlite3, and the image has no C/C++
+      # toolchain. The container runs as root, so no sudo.
+      - name: Install build tools
+        run: apt-get update && apt-get install -y --no-install-recommends build-essential
+
       - run: npm ci
 
       - name: Build
