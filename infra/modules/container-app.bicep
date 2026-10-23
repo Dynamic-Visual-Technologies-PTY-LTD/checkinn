@@ -31,6 +31,9 @@ param embeddingsEndpoint string
 @description('Foundry embedding deployment name. The app does not read it yet.')
 param embeddingsDeploymentName string
 
+@description('Foundry chat deployment name, on the same endpoint as the embeddings. The app does not read it yet.')
+param chatDeploymentName string
+
 @description('Tags applied to every resource.')
 param tags object
 
@@ -136,6 +139,10 @@ resource containerApp 'Microsoft.App/containerApps@2026-01-01' = {
               {
                 name: 'CHECKINN_EMBEDDINGS_DEPLOYMENT'
                 value: embeddingsDeploymentName
+              }
+              {
+                name: 'CHECKINN_CHAT_DEPLOYMENT'
+                value: chatDeploymentName
               }
             ],
             placeholderEnv

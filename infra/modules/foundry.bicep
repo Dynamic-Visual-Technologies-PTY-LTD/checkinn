@@ -1,6 +1,7 @@
 // Microsoft Foundry for the planned RAG search: one AIServices account with
-// project management on, one project and one text-embedding-3-small
-// deployment. Key auth is off; the container app signs in with its managed identity.
+// project management on, one project, one text-embedding-3-small deployment
+// and one gpt-6-luna chat deployment. Key auth is off; the container app signs
+// in with its managed identity.
 
 @description('Azure region for Foundry. Embeddings are not offered in South Africa North.')
 param location string
@@ -17,6 +18,13 @@ param embeddingDeploymentName string = 'text-embedding-3-small'
 @description('Embedding throughput in thousands of tokens per minute. Billing is per token, not per unit of capacity.')
 @minValue(1)
 param embeddingCapacity int = 10
+
+@description('Name of the chat deployment the app will call.')
+param chatDeploymentName string = 'gpt-6-luna'
+
+@description('Chat throughput in thousands of tokens per minute. Billing is per token, not per unit of capacity.')
+@minValue(1)
+param chatCapacity int = 10
 
 @description('Principal ID of the container app user-assigned identity.')
 param appPrincipalId string
@@ -82,6 +90,28 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   ]
 }
 
+resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2026-05-01' = {
+  parent: account
+  name: chatDeploymentName
+  tags: tags
+  sku: {
+    name: 'GlobalStandard'
+    capacity: chatCapacity
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'gpt-6-luna'
+      version: '2026-09-22'
+    }
+    versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
+  }
+  // The account accepts one change at a time.
+  dependsOn: [
+    embeddingDeployment
+  ]
+}
+
 resource appOpenAiUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(account.id, appPrincipalId, openAiUserRoleId)
   scope: account
@@ -96,3 +126,4 @@ output accountName string = account.name
 output projectName string = project.name
 output endpoint string = account.properties.endpoints['OpenAI Language Model Instance API']
 output embeddingDeploymentName string = embeddingDeployment.name
+output chatDeploymentName string = chatDeployment.name

@@ -1,5 +1,6 @@
 // The identity the container app runs as. It pulls the image from the
-// registry (AcrPull) and, through foundry.bicep, calls the embedding model.
+// registry (AcrPull) and, through foundry.bicep, calls the embedding and chat
+// models.
 
 @description('Azure region for the identity.')
 param location string
