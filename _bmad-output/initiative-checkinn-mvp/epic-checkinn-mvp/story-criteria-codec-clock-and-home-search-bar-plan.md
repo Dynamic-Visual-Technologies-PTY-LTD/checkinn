@@ -3,7 +3,7 @@ title: 'Criteria codec, clock and Home search bar'
 type: 'feature'
 ticket: '5'
 created: '2026-10-13'
-status: 'built'
+status: done
 baseline_revision: 'd72f269937b08fcdb49c39668646954fb39b4092'
 route: 'full'
 route_source: 'auto'

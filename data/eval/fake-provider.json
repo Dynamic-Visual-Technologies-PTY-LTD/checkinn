@@ -1,0 +1,73 @@
+{
+  "interpretations": {
+    "pet friendly family place in stellenbosch for 4 next weekend, up to r2000 a night": {
+      "destination": "Stellenbosch",
+      "outOfCatalogPlace": null,
+      "relativeStay": "next-weekend",
+      "checkIn": null,
+      "checkOut": null,
+      "stayPhrase": "next weekend",
+      "adults": 4,
+      "children": null,
+      "rooms": null,
+      "partyPhrase": "for 4",
+      "maxPrice": 2000,
+      "petsAllowed": true,
+      "childrenAllowed": null,
+      "smokingAllowed": null,
+      "preferences": "pet friendly family place"
+    },
+    "quiet business hotel in gauteng with a gym and meeting rooms": {
+      "destination": "Gauteng",
+      "outOfCatalogPlace": null,
+      "relativeStay": null,
+      "checkIn": null,
+      "checkOut": null,
+      "stayPhrase": null,
+      "adults": null,
+      "children": null,
+      "rooms": null,
+      "partyPhrase": null,
+      "maxPrice": null,
+      "petsAllowed": null,
+      "childrenAllowed": null,
+      "smokingAllowed": null,
+      "preferences": "quiet business hotel with a gym and meeting rooms"
+    },
+    "ski chalet with a fireplace": {
+      "destination": null,
+      "outOfCatalogPlace": null,
+      "relativeStay": null,
+      "checkIn": null,
+      "checkOut": null,
+      "stayPhrase": null,
+      "adults": null,
+      "children": null,
+      "rooms": null,
+      "partyPhrase": null,
+      "maxPrice": null,
+      "petsAllowed": null,
+      "childrenAllowed": null,
+      "smokingAllowed": null,
+      "preferences": "ski chalet with a fireplace"
+    },
+    "relaxed lodge with a pool near kruger": {
+      "destination": null,
+      "outOfCatalogPlace": "Kruger",
+      "relativeStay": null,
+      "checkIn": null,
+      "checkOut": null,
+      "stayPhrase": null,
+      "adults": null,
+      "children": null,
+      "rooms": null,
+      "partyPhrase": null,
+      "maxPrice": null,
+      "petsAllowed": null,
+      "childrenAllowed": null,
+      "smokingAllowed": null,
+      "preferences": "relaxed lodge with a pool"
+    }
+  },
+  "reasons": {}
+}

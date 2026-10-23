@@ -15,7 +15,7 @@
 - Keep it small and readable. Prefer the simple solution over the clever one.
 - The repo is public. No secrets, client names or internal material.
 
-**Current state.** Guests can search, see results, open a Hotel page with its photos, and choose rooms. Reserve leads to Booking details and a confirmation with a booking reference. Guests can look up a Booking from Manage booking and cancel it within its policy. All MVP stories are built; the expo dry-run in `_bmad-output/initiative-checkinn-mvp/epic-checkinn-mvp/expo-dry-run-checklist.md` has not been performed yet. Intelligent search is not started. The catalog lives in SQLite, seeded from `data/seed/hotel-booking-demo.json`. Work follows the tickets in `_bmad-output/initiative-checkinn-mvp/`.
+**Current state.** Guests can search, see results, open a Hotel page with its photos, and choose rooms. Reserve leads to Booking details and a confirmation with a booking reference. Guests can look up a Booking from Manage booking and cancel it within its policy. All MVP stories are built; the expo dry-run in `_bmad-output/initiative-checkinn-mvp/epic-checkinn-mvp/expo-dry-run-checklist.md` has not been performed yet. Smart search (epic-smart-search) is built: with a Provider configured, a guest describes their stay in plain words, the Query is interpreted into the Search bar and Criteria chips, Hotels are filtered by Hard criteria, and the Best-fit room is shown on cards and pre-selected on the Hotel page; any Provider failure falls back to the usual results. With no Provider configured, which is the fresh-clone default, Smart search is off and the app is the MVP. Embeddings, Relevance, Match reasons and the evals (epic-smart-search-quality) are not started. The catalog lives in SQLite, seeded from `data/seed/hotel-booking-demo.json`. Work follows the tickets in `_bmad-output/initiative-checkinn-mvp/` and `_bmad-output/initiative-checkinn-smart-search/`.
 
 ## Technology Stack
 
@@ -34,6 +34,7 @@
 | Database | SQLite, embedded in the app | via `better-sqlite3` 13.0.3 |
 | Data access | Drizzle ORM, with `drizzle-kit` for migrations | 0.45.4 / 0.31.11 |
 | Scripts | `tsx` | 4.23.15 |
+| Smart search Provider | Azure AI Foundry through the `openai` SDK, signed in with a key or `@azure/identity` managed identity; optional, off unless configured | 7.28.0 / 4.14.0 |
 | CI | GitHub Actions | `.github/workflows/ci.yml` |
 
 Agreed but **not installed yet**:
@@ -109,10 +110,13 @@ import { formatPrice } from "../../../lib/format"; // no
 | Serve the production build | `npm start` |
 | Reset the database to the seed (safe while the app runs) | `npm run db:reset` |
 | Generate a migration after a schema change | `npm run db:generate` |
+| Check the Azure Provider deployments (needs a key in `.env.local`) | `npm run search:preflight` |
+
+Smart search is configured by environment variables, listed with their meaning in `.env.example`: `CHECKINN_PROVIDER` (`azure`, `fake` or `off`), the `AZURE_OPENAI_*` and `AZURE_CLIENT_ID` settings, and `CHECKINN_SEARCH_DEBUG`. Put real values in `.env.local`, which is never committed. Nothing is required: unset, Smart search is off. `CHECKINN_PROVIDER=fake` answers from `data/eval/fake-provider.json` with no outbound request, for e2e and local demos.
 
 `npm run typecheck` runs `next typegen` first, because Next.js generates the route and layout prop types that `tsc` needs. Plain `tsc --noEmit` fails on a clean checkout.
 
-`npm run test:e2e` never reuses a running server. It runs `npm run build`, then `npm start` on port 3100 against a temporary database in the OS temp folder, and resets that database in global setup, so `data/checkinn.db` and a dev server on port 3000 are left alone. With `CI` set it skips the build, so run `npm run build` first. Specs that create or cancel Bookings go in `e2e/booking/` and run serially in the `booking` project, after the read-only `chromium` project finishes; use `uniqueGuestEmail()` from `e2e/support/guest.ts` in them. CI runs the end-to-end tests as a separate `e2e` job, inside the Playwright container image, whose tag must match the installed `@playwright/test` version.
+`npm run test:e2e` never reuses a running server. It runs `npm run build`, then `npm start` on port 3100 against a temporary database in the OS temp folder, and resets that database in global setup, so `data/checkinn.db` and a dev server on port 3000 are left alone. With `CI` set it skips the build, so run `npm run build` first. Specs that create or cancel Bookings go in `e2e/booking/` and run serially in the `booking` project, after the read-only `chromium` project finishes; use `uniqueGuestEmail()` from `e2e/support/guest.ts` in them. The MVP server on port 3100 runs with Smart search off. Smart search specs go in `e2e/smart/` and run in the `smart` project against a second server on port 3101, started from the same build with the fake Provider and its own temporary database. CI runs the end-to-end tests as a separate `e2e` job, inside the Playwright container image, whose tag must match the installed `@playwright/test` version.
 
 The end-to-end suite is desktop only and kept small: guest journeys and flows that need a real browser. Phone layouts, breakpoints and styling details belong in component tests.
 

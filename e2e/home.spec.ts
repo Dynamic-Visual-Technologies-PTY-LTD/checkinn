@@ -234,6 +234,21 @@ test.describe("Home page", () => {
     await expect(bar.getByRole("button", { name: "Search" })).toBeVisible();
   });
 
+  test("has no Smart search box without a Provider, on Home or Search results", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(searchBar(page)).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Describe your stay" })).toHaveCount(0);
+
+    // Smart search parameters in a URL are ignored.
+    await page.goto(
+      `${searchHref({ ...homeDefaults(), q: "Cape Town" })}&sq=quiet+hotel&smart=1`,
+    );
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Describe your stay" })).toHaveCount(0);
+  });
+
   test("searching puts every criterion in the URL and Back returns Home", async ({
     page,
   }) => {

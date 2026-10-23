@@ -3,7 +3,12 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
 import { loadSeed } from "@/db/seed";
 import { createTestDb } from "@/db/test-db";
-import { countHotels, listCityNames, listCityTiles } from "./catalog.repo";
+import {
+  countHotels,
+  listCityNames,
+  listCityTiles,
+  listInterpretationCatalog,
+} from "./catalog.repo";
 
 let db: Db;
 
@@ -55,5 +60,35 @@ describe("listCityNames", () => {
     expect(listCityNames(db)).toEqual(
       seed.cities.map((city) => ({ name: city.name, aliases: city.aliases })),
     );
+  });
+});
+
+describe("listInterpretationCatalog", () => {
+  it("lists every Hotel with its City, province and Room type sizes", () => {
+    const catalog = listInterpretationCatalog(db);
+
+    expect(catalog).toHaveLength(12);
+    expect(catalog.find((hotel) => hotel.name === "Goldleaf Business Hotel")).toEqual({
+      name: "Goldleaf Business Hotel",
+      area: "Sandton",
+      cityName: "Johannesburg",
+      cityAliases: [],
+      province: "Gauteng",
+      roomTypes: expect.arrayContaining([{ maxGuests: 2 }, { maxGuests: 4 }]),
+    });
+    expect(catalog.find((hotel) => hotel.cityName === "Gqeberha")?.cityAliases).toEqual([
+      "Port Elizabeth",
+    ]);
+  });
+
+  it("holds each Hotel's seed Room types", () => {
+    const seed = loadSeed();
+    const catalog = listInterpretationCatalog(db);
+    for (const hotel of seed.hotels) {
+      const entry = catalog.find((item) => item.name === hotel.name);
+      expect(entry?.roomTypes.map((type) => type.maxGuests).sort()).toEqual(
+        hotel.roomTypes.map((type) => type.maxGuests).sort(),
+      );
+    }
   });
 });

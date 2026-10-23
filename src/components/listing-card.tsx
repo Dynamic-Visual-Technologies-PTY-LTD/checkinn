@@ -3,7 +3,11 @@ import { secondaryButton } from "@/components/button-styles";
 import { Icon } from "@/components/icons/icons";
 import { RemoteImage } from "@/components/remote-image";
 import { Stars } from "@/components/stars";
-import type { ListingCard as ListingCardModel } from "@/domain/types";
+import type {
+  BestFitRoom,
+  ListingCard as ListingCardModel,
+  ScoreBreakdown as ScoreBreakdownModel,
+} from "@/domain/types";
 import { formatZar, spokenZar } from "@/lib/format";
 
 type ListingCardProps = {
@@ -79,10 +83,60 @@ function Cancellation({ card }: { card: ListingCardModel }) {
   );
 }
 
+/** "Family Room · 1 room · sleeps 4" (EXPERIENCE.md Best-fit room line). */
+export function bestFitLine(room: BestFitRoom): string {
+  return `${room.name} · ${counted(room.rooms, "room", "rooms")} · sleeps ${room.sleeps}`;
+}
+
+const BREAKDOWN_ROWS: [label: string, key: keyof ScoreBreakdownModel][] = [
+  ["Relevance, meaning", "meaning"],
+  ["Relevance, exact words", "exact"],
+  ["Review score signal", "reviewSignal"],
+  ["Price signal", "priceSignal"],
+  ["Ranking blend score", "score"],
+];
+
+/**
+ * The Score breakdown (FR-20, DESIGN.md score-breakdown): a display-only
+ * table for the presenter, shown only under the server debug flag. It sits
+ * outside the card link and is never focusable.
+ */
+function ScoreBreakdown({ name, breakdown }: { name: string; breakdown: ScoreBreakdownModel }) {
+  return (
+    <div className="relative min-w-0 rounded-sm border border-primary bg-surface p-space-sm text-body-sm text-on-surface-muted md:col-span-2 lg:col-span-3">
+      <table className="w-full border-collapse">
+        <caption className="pb-space-xs text-left">Score breakdown, {name}</caption>
+        <thead>
+          <tr className="border-b border-outline">
+            <td />
+            <th scope="col" className="py-space-xs text-right font-normal">
+              Score
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {BREAKDOWN_ROWS.map(([label, key]) => (
+            <tr key={key} className="border-b border-outline last:border-b-0">
+              <th scope="row" className="py-space-xs pr-space-sm text-left font-normal">
+                {label}
+              </th>
+              <td className="py-space-xs text-right tabular-nums">{breakdown[key].toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /**
  * A Listing card (FR-6, DESIGN.md Listing card). The hotel name is the only
  * link, stretched over the card, so the whole card is clickable but reads as
  * one link. "See availability" is a visual label only.
+ *
+ * Under Smart search the price block starts with the Best-fit room line and
+ * the price is that room's, with no "from" (FR-14). The Score breakdown, when
+ * present, sits at the bottom across the full card width (FR-20).
  */
 export function ListingCard({ card, href }: ListingCardProps) {
   return (
@@ -139,8 +193,12 @@ export function ListingCard({ card, href }: ListingCardProps) {
       </div>
 
       <div className="flex flex-col items-start justify-end gap-space-xs md:col-span-2 md:items-end md:text-right lg:col-span-1">
+        {card.bestFit && (
+          <p className="text-body-sm text-on-surface-muted">{bestFitLine(card.bestFit)}</p>
+        )}
         <p className="text-body-sm text-on-surface-muted">
-          {counted(card.nights, "night", "nights")}, {counted(card.adults, "adult", "adults")}: from
+          {counted(card.nights, "night", "nights")}, {counted(card.adults, "adult", "adults")}
+          {card.bestFit ? "" : ": from"}
         </p>
         <p className="text-price-lg whitespace-nowrap">
           <Rand amount={card.totalRand} />
@@ -155,6 +213,8 @@ export function ListingCard({ card, href }: ListingCardProps) {
           See availability
         </span>
       </div>
+
+      {card.breakdown && <ScoreBreakdown name={card.name} breakdown={card.breakdown} />}
     </article>
   );
 }

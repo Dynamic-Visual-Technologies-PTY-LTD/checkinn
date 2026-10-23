@@ -1,0 +1,1678 @@
+diff --git a/e2e/smart/fallback.spec.ts b/e2e/smart/fallback.spec.ts
+new file mode 100644
+index 0000000..3489600
+--- /dev/null
++++ b/e2e/smart/fallback.spec.ts
+@@ -0,0 +1,192 @@
++import { expect, type Page, test } from "@playwright/test";
++import { blockSeedPhotos } from "../support/network";
++
++// Runs on the Smart server (port 3101), whose Provider is the fake. The fake
++// throws UNAVAILABLE for a Query missing from data/eval/fake-provider.json,
++// which is how these specs reach the fallback page. The UJ-1 Query is a
++// fixture. Read-only: it never books.
++const UNKNOWN = "a castle on the moon with a moat";
++const UJ1 = "pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night";
++const FALLBACK =
++  "Smart search isn't available right now, so these results are in the usual order.";
++
++const smartBox = (page: Page) => page.getByRole("textbox", { name: "Describe your stay" });
++const heading = (page: Page) => page.getByRole("heading", { level: 1 });
++const tryAgain = (page: Page) => page.getByRole("button", { name: "Try again" });
++const notice = (page: Page) => page.locator("#notice-fallback");
++
++function params(page: Page): URLSearchParams {
++  return new URL(page.url()).searchParams;
++}
++
++/** On a phone the Search bar starts as a summary; expand it first. */
++async function searchBar(page: Page, isMobile: boolean) {
++  if (isMobile) await page.getByRole("button", { name: /^Change search/ }).click();
++  return page.getByRole("search", { name: "Search hotels" });
++}
++
++/** Holds every server action back until `release` is called. */
++async function holdActions(page: Page) {
++  let release: () => void = () => {};
++  const held = new Promise<void>((resolve) => {
++    release = resolve;
++  });
++  await page.route("**/*", async (route) => {
++    const request = route.request();
++    if (request.method() === "POST" && request.headers()["next-action"]) await held;
++    await route.fallback();
++  });
++  return () => release();
++}
++
++/** Counts server action calls from now on. */
++function countActions(page: Page) {
++  const count = { actions: 0 };
++  page.on("request", (request) => {
++    if (request.method() === "POST" && request.headers()["next-action"]) count.actions += 1;
++  });
++  return count;
++}
++
++async function expectFallbackPage(page: Page, query: string) {
++  await expect(heading(page)).toHaveText("All destinations: 12 properties found");
++  await expect(notice(page)).toContainText(FALLBACK);
++  await expect(heading(page)).toHaveAttribute("aria-describedby", "notice-fallback");
++  await expect(notice(page).getByRole("button", { name: "Try again" })).toBeVisible();
++  await expect(smartBox(page)).toHaveValue(query);
++  // MVP cards: no chips, no Best-fit room line, prices "from".
++  await expect(page.getByRole("list", { name: "Your filters" })).toHaveCount(0);
++  await expect(page.getByRole("article")).toHaveCount(12);
++  await expect(page.getByRole("article").getByText(/ · sleeps \d/)).toHaveCount(0);
++  await expect(page.getByRole("article").first()).toContainText(": from");
++}
++
++test.describe("Fallback and Try again", () => {
++  test.beforeEach(async ({ page }) => {
++    await blockSeedPhotos(page);
++  });
++
++  test("an unknown Query falls back; reload keeps it; Try again fails back to it", async ({
++    page,
++  }) => {
++    await page.goto("/");
++    await smartBox(page).fill(UNKNOWN);
++    await smartBox(page).press("Enter");
++
++    await page.waitForURL(/\/search\?/);
++    const url = params(page);
++    expect(url.get("sq")).toBe(UNKNOWN);
++    expect(url.get("fallback")).toBe("1");
++    for (const name of ["smart", "prefs", "maxPrice", "policy", "place", "ignored", "q"]) {
++      expect(url.has(name)).toBe(false);
++    }
++    expect(url.get("adults")).toBe("2");
++    await expectFallbackPage(page, UNKNOWN);
++    await expect(heading(page)).toBeFocused();
++
++    // Reload shows the same page, with no Query interpretation.
++    const count = countActions(page);
++    const fallbackUrl = page.url();
++    await page.reload();
++    await expectFallbackPage(page, UNKNOWN);
++    expect(page.url()).toBe(fallbackUrl);
++    expect(count.actions).toBe(0);
++
++    // Try again runs the Submitting state, then lands on the fallback again.
++    const release = await holdActions(page);
++    await tryAgain(page).click();
++    await expect(
++      page.getByRole("status").filter({ hasText: "Reading your search…" }),
++    ).toBeVisible();
++    await expect(smartBox(page)).toHaveAttribute("readonly", "");
++    await expect(smartBox(page)).toHaveValue(UNKNOWN);
++    // The listing, notice included, becomes the skeleton cards meanwhile.
++    await expect(page.locator('[aria-busy="true"]')).toHaveCount(1);
++    await expect(heading(page)).toHaveCount(0);
++    release();
++
++    await expect(page.getByRole("status").filter({ hasText: "Reading your search…" })).toHaveCount(
++      0,
++    );
++    expect(page.url()).toBe(fallbackUrl);
++    await expectFallbackPage(page, UNKNOWN);
++    await expect(heading(page)).toBeFocused();
++    expect(count.actions).toBe(1);
++  });
++
++  test("Try again on a fallback URL whose Query is known gives Smart results", async ({
++    page,
++  }) => {
++    await page.goto(`/search?${new URLSearchParams({ sq: UJ1, fallback: "1" })}`);
++    await expect(notice(page)).toContainText(FALLBACK);
++    await expect(smartBox(page)).toHaveValue(UJ1);
++
++    await tryAgain(page).click();
++    await page.waitForURL((url) => url.searchParams.get("smart") === "1");
++    expect(params(page).has("fallback")).toBe(false);
++    expect(params(page).get("q")).toBe("Stellenbosch");
++    await expect(heading(page)).toHaveText("1 property found");
++    await expect(heading(page)).toBeFocused();
++    await expect(page.getByRole("article").getByRole("link")).toHaveText([
++      "Winelands Family Lodge",
++    ]);
++    await expect(notice(page)).toHaveCount(0);
++    await expect(smartBox(page)).toHaveValue(UJ1);
++  });
++
++  test("a Search bar Search on the fallback page is the MVP search with the Query kept", async ({
++    page,
++    isMobile,
++  }) => {
++    await page.goto(`/search?${new URLSearchParams({ sq: UNKNOWN, fallback: "1" })}`);
++    await expect(notice(page)).toContainText(FALLBACK);
++
++    const count = countActions(page);
++    const bar = await searchBar(page, isMobile);
++    await bar.getByRole("button", { name: /^Occupancy/ }).click();
++    await page.getByRole("button", { name: "Increase adults" }).click();
++    await page.getByRole("button", { name: "Done" }).click();
++    await bar.getByRole("button", { name: "Search", exact: true }).click();
++
++    await page.waitForURL((url) => url.searchParams.get("adults") === "3");
++    expect(params(page).has("fallback")).toBe(false);
++    expect(params(page).has("smart")).toBe(false);
++    expect(params(page).get("sq")).toBe(UNKNOWN);
++    await expect(heading(page)).toHaveText(/properties found/);
++    await expect(notice(page)).toHaveCount(0);
++    await expect(tryAgain(page)).toHaveCount(0);
++    await expect(smartBox(page)).toHaveValue(UNKNOWN);
++    expect(count.actions).toBe(0);
++  });
++
++  test("a fallback URL with Hard criteria filters by them and shows their chips", async ({
++    page,
++  }) => {
++    await page.goto(
++      `/search?${new URLSearchParams({
++        q: "Stellenbosch",
++        adults: "4",
++        sq: UNKNOWN,
++        fallback: "1",
++        maxPrice: "2000",
++        policy: "pets",
++      })}`,
++    );
++    await expect(notice(page)).toContainText(FALLBACK);
++    await expect(heading(page)).toHaveText("1 property found");
++    await expect(page.getByRole("article").getByRole("link")).toHaveText([
++      "Winelands Family Lodge",
++    ]);
++    await expect(page.getByRole("list", { name: "Your filters" }).getByRole("button")).toHaveCount(
++      2,
++    );
++    await expect(page.getByRole("article").getByText(/ · sleeps \d/)).toHaveCount(0);
++  });
++
++  test("fallback without a Query is ignored", async ({ page }) => {
++    await page.goto("/search?fallback=1");
++    await expect(heading(page)).toHaveText("All destinations: 12 properties found");
++    await expect(notice(page)).toHaveCount(0);
++    await expect(smartBox(page)).toHaveValue("");
++  });
++});
+diff --git a/src/app/search/page.test.tsx b/src/app/search/page.test.tsx
+index 2d89363..7deef21 100644
+--- a/src/app/search/page.test.tsx
++++ b/src/app/search/page.test.tsx
+@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
+ import { defaultCriteria, smartCriteria } from "@/domain/criteria";
+ import type { CityTile, ListingCard, SearchCriteria } from "@/domain/types";
+ import { setViewportWidth } from "@/test/viewport";
++import { SmartSearchProvider } from "@/components/smart-search/smart-search-provider";
+ import SearchPage, { generateMetadata } from "./page";
+ import { Results, SearchResults } from "./search-results";
+ 
+@@ -362,6 +363,36 @@ describe("SearchResults with Smart search", () => {
+     expect(screen.queryByRole("list", { name: "Your filters" })).not.toBeInTheDocument();
+   });
+ 
++  it("shows chips on a fallback URL with Hard criteria, and the Query in the box", async () => {
++    mocks.getSmartSearchConfig.mockResolvedValue(true);
++    render(
++      await SearchResults({
++        searchParams: Promise.resolve({
++          ...smartParams,
++          smart: undefined,
++          sq: "a castle on the moon",
++          fallback: "1",
++          maxPrice: "2000",
++          policy: "pets",
++        }),
++      }),
++    );
++
++    expect(screen.getByRole("textbox", { name: "Describe your stay" })).toHaveValue(
++      "a castle on the moon",
++    );
++    expect(screen.getByRole("list", { name: "Your filters" })).toBeInTheDocument();
++    expect(mocks.searchHotels).toHaveBeenCalledWith(
++      expect.objectContaining({
++        smart: smartCriteria("a castle on the moon", false, {
++          fallback: true,
++          maxPriceRand: 2000,
++          policies: ["pets"],
++        }),
++      }),
++    );
++  });
++
+   it("drops stale Smart values silently and keeps the Query in the box", async () => {
+     mocks.getSmartSearchConfig.mockResolvedValue(true);
+     render(
+@@ -552,4 +583,82 @@ describe("Results", () => {
+       "We couldn't use 'for 0', so check who's staying.",
+     );
+   });
++
++  describe("the fallback notice", () => {
++    const FALLBACK =
++      "Smart search isn't available right now, so these results are in the usual order.";
++    const fallbackCriteria = () =>
++      criteria({ smart: smartCriteria("a castle on the moon", false, { fallback: true }) });
++
++    beforeEach(() => {
++      mocks.searchHotels.mockResolvedValue({
++        heading: "All destinations: 2 properties found",
++        cards: capeTownCards,
++        notices: [{ kind: "fallback" }],
++        mode: "fallback",
++        criteriaSummary: null,
++      });
++    });
++
++    it("describes the heading, with Try again after its text and before the cards", async () => {
++      render(
++        <SmartSearchProvider initialQuery="a castle on the moon">
++          {await Results({ criteria: fallbackCriteria() })}
++        </SmartSearchProvider>,
++      );
++
++      const heading = screen.getByRole("heading", {
++        level: 1,
++        name: "All destinations: 2 properties found",
++      });
++      expect(heading).toHaveAttribute("aria-describedby", "notice-fallback");
++      expect(heading).toHaveAccessibleDescription(expect.stringContaining(FALLBACK));
++      const message = screen.getByText(FALLBACK);
++      expect(message.closest("#notice-fallback")).not.toBeNull();
++      const tryAgain = screen.getByRole("button", { name: "Try again" });
++      expect(tryAgain.closest("#notice-fallback")).not.toBeNull();
++      expect(heading.compareDocumentPosition(tryAgain) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
++      expect(message.compareDocumentPosition(tryAgain) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
++      const [firstCard] = screen.getAllByRole("article");
++      expect(tryAgain.compareDocumentPosition(firstCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
++    });
++
++    it("shows MVP cards: from prices and no Best-fit line", async () => {
++      render(
++        <SmartSearchProvider initialQuery="a castle on the moon">
++          {await Results({ criteria: fallbackCriteria() })}
++        </SmartSearchProvider>,
++      );
++
++      for (const article of screen.getAllByRole("article")) {
++        expect(within(article).getByText(/: from/)).toBeInTheDocument();
++        expect(within(article).queryByText(/ · sleeps /)).toBeNull();
++      }
++      expect(screen.getByRole("link", { name: "Harbourlight Retreat" })).not.toHaveAttribute(
++        "href",
++        expect.stringContaining("bestFit"),
++      );
++    });
++
++    it("shows the notice in the no-results state too", async () => {
++      mocks.searchHotels.mockResolvedValue({
++        heading: null,
++        cards: [],
++        notices: [{ kind: "fallback" }],
++        mode: "fallback",
++        criteriaSummary: null,
++      });
++      render(
++        <SmartSearchProvider initialQuery="a castle on the moon">
++          {await Results({ criteria: fallbackCriteria() })}
++        </SmartSearchProvider>,
++      );
++
++      expect(screen.getByRole("heading", { level: 1 })).toHaveAttribute(
++        "aria-describedby",
++        "notice-fallback",
++      );
++      expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
++    });
++  });
+ });
+diff --git a/src/app/search/search-results.tsx b/src/app/search/search-results.tsx
+index 46e980f..9bca378 100644
+--- a/src/app/search/search-results.tsx
++++ b/src/app/search/search-results.tsx
+@@ -9,6 +9,7 @@ import { SearchStateProvider } from "@/components/search-state";
+ import { CriteriaChips } from "@/components/smart-search/criteria-chips";
+ import { ResultsHeading } from "@/components/smart-search/results-heading";
+ import { SmartSearchBox } from "@/components/smart-search/smart-search-box";
++import { TryAgain } from "@/components/smart-search/try-again";
+ import {
+   ResultsStatus,
+   SmartPendingResults,
+@@ -23,6 +24,7 @@ import {
+   STALE_LINK_MESSAGE,
+ } from "@/domain/criteria";
+ import { searchMode } from "@/domain/hard-criteria";
++import type { SearchBarCriteria } from "@/domain/interpretation";
+ import type { SearchCriteria, SmartNotice } from "@/domain/types";
+ import { getCityTiles, getSmartSearchConfig, searchHotels } from "@/features/search/queries";
+ 
+@@ -111,11 +113,17 @@ export async function SearchResults({ searchParams }: { searchParams: SearchPara
+ 
+ /** A Smart search notice's stable id (EXPERIENCE.md Notices). */
+ function noticeId(notice: SmartNotice): string {
++  if (notice.kind === "fallback") return "notice-fallback";
+   return notice.kind === "place" ? "notice-place" : "notice-value";
+ }
+ 
++/** The fallback notice's copy (EXPERIENCE.md Voice and Tone). */
++export const FALLBACK_MESSAGE =
++  "Smart search isn't available right now, so these results are in the usual order.";
++
+ /** A Smart search notice's copy (EXPERIENCE.md Voice and Tone). */
+ export function noticeMessage(notice: SmartNotice): string {
++  if (notice.kind === "fallback") return FALLBACK_MESSAGE;
+   if (notice.kind === "place") {
+     return `We don't have hotels in ${notice.place}, so we're showing all cities.`;
+   }
+@@ -128,15 +136,22 @@ function noticeIds(notices: readonly SmartNotice[]): string {
+   return notices.map(noticeId).join(" ");
+ }
+ 
++/** What Try again resubmits: the URL's Query and its Search bar values. */
++type Retry = { query: string; current: SearchBarCriteria };
++
+ /**
+  * The Smart search notices after the result heading (EXPERIENCE.md Notices):
+- * the MVP `notice`, display only, never taking focus.
++ * the MVP `notice`, display only, never taking focus. The fallback notice
++ * holds Try again after its text (EXPERIENCE.md Fallback notice), so it comes
++ * after the heading and before the cards in the tab order.
+  */
+ function Notices({
+   notices,
++  retry,
+   className = "mt-space-md",
+ }: {
+   notices: readonly SmartNotice[];
++  retry: Retry | null;
+   /** The space above the notices; none where a parent's gap already gives it. */
+   className?: string;
+ }) {
+@@ -150,7 +165,14 @@ function Notices({
+           className="flex items-start gap-space-sm rounded-md border border-primary bg-surface p-space-md"
+         >
+           <Icon name="info" className="mt-0.5 shrink-0" />
+-          <p>{noticeMessage(notice)}</p>
++          {notice.kind === "fallback" && retry ? (
++            <div className="flex flex-1 flex-col items-start gap-space-sm md:flex-row md:items-center md:justify-between">
++              <p>{noticeMessage(notice)}</p>
++              <TryAgain query={retry.query} current={retry.current} />
++            </div>
++          ) : (
++            <p>{noticeMessage(notice)}</p>
++          )}
+         </div>
+       ))}
+     </div>
+@@ -168,6 +190,12 @@ export const NO_RESULTS_HINT = "Try another city, other dates or fewer rooms.";
+  */
+ export async function Results({ criteria }: { criteria: SearchCriteria }) {
+   const { heading, cards, notices, criteriaSummary } = await searchHotels(criteria);
++  const retry: Retry | null = criteria.smart
++    ? {
++        query: criteria.smart.query,
++        current: { q: criteria.q, stay: criteria.stay, party: criteria.party },
++      }
++    : null;
+ 
+   if (!heading) {
+     const tiles = await getCityTiles();
+@@ -175,7 +203,7 @@ export async function Results({ criteria }: { criteria: SearchCriteria }) {
+       <>
+         <div className="mt-space-xl flex flex-col gap-space-md">
+           <ResultsHeading describedBy={noticeIds(notices)}>Nothing matches that search.</ResultsHeading>
+-          <Notices notices={notices} className="" />
++          <Notices notices={notices} retry={retry} className="" />
+           <p className="text-body-lg">{criteriaSummary ?? NO_RESULTS_HINT}</p>
+         </div>
+         <ExploreSection>
+@@ -190,7 +218,7 @@ export async function Results({ criteria }: { criteria: SearchCriteria }) {
+     <>
+       <div className="mt-space-xl">
+         <ResultsHeading describedBy={noticeIds(notices)}>{heading}</ResultsHeading>
+-        <Notices notices={notices} />
++        <Notices notices={notices} retry={retry} />
+       </div>
+       <ul className="mt-space-lg flex flex-col gap-space-md">
+         {cards.map((card) => (
+diff --git a/src/components/smart-search/try-again.test.tsx b/src/components/smart-search/try-again.test.tsx
+new file mode 100644
+index 0000000..9515290
+--- /dev/null
++++ b/src/components/smart-search/try-again.test.tsx
+@@ -0,0 +1,88 @@
++import { act, fireEvent, render, screen } from "@testing-library/react";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { SearchStateProvider } from "@/components/search-state";
++import type { SearchBarCriteria } from "@/domain/interpretation";
++import type { ActionResult } from "@/domain/types";
++import { SmartSearchBox } from "./smart-search-box";
++import { SmartSearchProvider } from "./smart-search-provider";
++import { TryAgain } from "./try-again";
++
++const mocks = vi.hoisted(() => ({ submitQuery: vi.fn() }));
++vi.mock("@/features/search/actions", () => ({ submitQuery: mocks.submitQuery }));
++
++const QUERY = "a castle on the moon";
++const current: SearchBarCriteria = {
++  q: "Durban",
++  stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
++  party: { adults: 2, children: 1, rooms: 1 },
++};
++
++/* Each submitQuery call stays in flight until the test settles it. */
++let inFlight: ((result: ActionResult | undefined) => void)[] = [];
++
++function settleAll(result?: ActionResult) {
++  const calls = inFlight;
++  inFlight = [];
++  return act(async () => calls.forEach((settle) => settle(result)));
++}
++
++beforeEach(() => {
++  inFlight = [];
++  mocks.submitQuery.mockReset().mockImplementation(
++    () =>
++      new Promise<ActionResult | undefined>((resolve) => {
++        inFlight.push(resolve);
++      }),
++  );
++});
++
++afterEach(async () => {
++  await settleAll();
++});
++
++function renderFallback() {
++  return render(
++    <SmartSearchProvider initialQuery={QUERY}>
++      <SearchStateProvider initialStay={current.stay} initialParty={current.party}>
++        <SmartSearchBox initialQuery={QUERY} destination={current.q} />
++        <TryAgain query={QUERY} current={current} />
++      </SearchStateProvider>
++    </SmartSearchProvider>,
++  );
++}
++
++const tryAgain = () => screen.getByRole("button", { name: "Try again" });
++const box = () => screen.getByRole("textbox", { name: "Describe your stay" });
++
++describe("TryAgain", () => {
++  it("renders nothing without Smart search", () => {
++    render(<TryAgain query={QUERY} current={current} />);
++    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
++  });
++
++  it("resubmits the URL's Query with the URL's Search bar values", async () => {
++    renderFallback();
++    // Text edited in the box but not submitted is not what Try again sends.
++    fireEvent.change(box(), { target: { value: "something else" } });
++
++    fireEvent.click(tryAgain());
++
++    expect(mocks.submitQuery).toHaveBeenCalledExactlyOnceWith({ query: QUERY, current });
++    expect(await screen.findByText("Reading your search…")).toBeInTheDocument();
++    expect(box()).toHaveValue(QUERY);
++    expect(box()).toHaveAttribute("readonly");
++  });
++
++  it("is aria-disabled and ignores presses while pending", async () => {
++    renderFallback();
++    expect(tryAgain()).not.toHaveAttribute("aria-disabled");
++
++    fireEvent.click(tryAgain());
++    expect(tryAgain()).toHaveAttribute("aria-disabled", "true");
++    fireEvent.click(tryAgain());
++    expect(mocks.submitQuery).toHaveBeenCalledTimes(1);
++
++    await settleAll();
++    expect(tryAgain()).not.toHaveAttribute("aria-disabled");
++  });
++});
+diff --git a/src/components/smart-search/try-again.tsx b/src/components/smart-search/try-again.tsx
+new file mode 100644
+index 0000000..39cdec0
+--- /dev/null
++++ b/src/components/smart-search/try-again.tsx
+@@ -0,0 +1,35 @@
++"use client";
++
++import { secondaryButton } from "@/components/button-styles";
++import { useSmartSearch } from "@/components/smart-search/smart-search-context";
++import type { SearchBarCriteria } from "@/domain/interpretation";
++
++/** Muted and inert-looking while a Query is submitting; it stays focusable. */
++const busy =
++  "aria-disabled:cursor-default aria-disabled:border-on-surface-disabled aria-disabled:text-on-surface-muted aria-disabled:hover:bg-neutral aria-disabled:hover:text-on-surface-muted";
++
++/**
++ * The fallback notice's Try again button (EXPERIENCE.md Fallback notice). It
++ * resubmits the URL's Query with the URL's Search bar values through the same
++ * `submit` as the Smart search box, so the box shows that Query and the
++ * Submitting state runs. It is `aria-disabled`, and ignores presses, while a
++ * Query is submitting. Renders nothing without Smart search.
++ */
++export function TryAgain({ query, current }: { query: string; current: SearchBarCriteria }) {
++  const smart = useSmartSearch();
++  if (!smart) return null;
++  const { pending, submit } = smart;
++
++  return (
++    <button
++      type="button"
++      aria-disabled={pending || undefined}
++      onClick={() => {
++        if (!pending) submit(query, current);
++      }}
++      className={`${secondaryButton} ${busy} shrink-0`}
++    >
++      Try again
++    </button>
++  );
++}
+diff --git a/src/domain/criteria.test.ts b/src/domain/criteria.test.ts
+index 4e13fd9..83a66e1 100644
+--- a/src/domain/criteria.test.ts
++++ b/src/domain/criteria.test.ts
+@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
+ import type { SearchCriteria } from "@/domain/types";
+ import {
+   defaultCriteria,
++  fallbackHref,
+   hotelHref,
+   hotelQuery,
+   parseCriteria,
+@@ -496,6 +497,7 @@ describe("Smart search parameters", () => {
+           preferences: "quiet place Kruger",
+           maxPriceRand: 2000,
+           policies: ["smoking", "pets"],
++          fallback: true,
+           place: "Kruger",
+           ignored: "for 0",
+           ignoredKind: "party",
+@@ -503,10 +505,25 @@ describe("Smart search parameters", () => {
+       }),
+     ).toBe(
+       "/search?adults=2&children=0&rooms=1&sq=quiet+place&smart=1&prefs=quiet+place+Kruger" +
+-        "&maxPrice=2000&policy=pets%2Csmoking&place=Kruger&ignored=for+0&ignoredKind=party",
++        "&maxPrice=2000&policy=pets%2Csmoking&fallback=1&place=Kruger&ignored=for+0" +
++        "&ignoredKind=party",
+     );
+   });
+ 
++  it("parses fallback=1, and ignores any other fallback value", () => {
++    expect(parse({ sq: "quiet hotel", fallback: "1" }).criteria.smart).toEqual(
++      smartCriteria("quiet hotel", false, { fallback: true }),
++    );
++    for (const fallback of ["true", "0", "yes", "11"]) {
++      expect(parse({ sq: "quiet hotel", fallback }).criteria.smart?.fallback).toBe(false);
++    }
++  });
++
++  it("ignores fallback without sq", () => {
++    expect(parse({ fallback: "1" }).criteria.smart).toBeNull();
++    expect(parse({ sq: "   ", fallback: "1" }).criteria.smart).toBeNull();
++  });
++
+   it("leaves ignoredKind out for dates, the default", () => {
+     expect(
+       serializeCriteria({ smart: smartCriteria("quiet", true, { ignored: "last Tuesday" }) }),
+@@ -549,6 +566,7 @@ describe("Smart search parameters", () => {
+       preferences: "pet friendly family place",
+       maxPriceRand: 2000,
+       policies: ["pets"],
++      fallback: true,
+       place: "Kruger",
+       ignored: "for 0",
+       ignoredKind: "party",
+@@ -566,6 +584,7 @@ describe("Smart search parameters", () => {
+         preferences: "pet friendly",
+         maxPriceRand: 2000,
+         policies: ["pets"],
++        fallback: true,
+         place: "Kruger",
+         ignored: "for 0",
+         ignoredKind: "party",
+@@ -652,6 +671,19 @@ describe("Smart search URL changes (AD-21)", () => {
+     );
+   });
+ 
++  it("keeps fallback on a chip removal", () => {
++    const fallback = { ...smart, interpreted: false, fallback: true };
++    const href = withoutCriterion({ ...base, smart: fallback }, "maxPrice");
++    expect(new URLSearchParams(href.split("?")[1]).get("fallback")).toBe("1");
++  });
++
++  it("drops fallback, keeping sq, on a Search bar Search", () => {
++    const fallback = smartCriteria("a castle on the moon", false, { fallback: true });
++    expect(searchBarSearch({ ...base, smart: fallback }, { boxIsEmpty: false })).toBe(
++      `${mvp}&sq=a+castle+on+the+moon`,
++    );
++  });
++
+   it("drops every Smart parameter when the box is empty at Search time", () => {
+     expect(searchBarSearch({ ...base, smart }, { boxIsEmpty: true })).toBe(mvp);
+   });
+@@ -663,3 +695,30 @@ describe("Smart search URL changes (AD-21)", () => {
+     );
+   });
+ });
++
++describe("fallbackHref (AD-22)", () => {
++  const current = {
++    q: "Stellenbosch",
++    stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
++    party: { adults: 4, children: 0, rooms: 1 },
++  };
++
++  it("is the Search bar values, sq and fallback=1, through searchHref", () => {
++    expect(fallbackHref(current, "a castle on the moon")).toBe(
++      "/search?q=Stellenbosch&checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1" +
++        "&sq=a+castle+on+the+moon&fallback=1",
++    );
++    expect(fallbackHref(current, "a castle on the moon")).toBe(
++      searchHref({
++        ...current,
++        smart: smartCriteria("a castle on the moon", false, { fallback: true }),
++      }),
++    );
++  });
++
++  it("parses back to a fallback with no Hard criteria, Preferences or notices", () => {
++    const href = fallbackHref({ ...current, q: "" }, "quiet");
++    const parsed = parseCriteria(new URLSearchParams(href.split("?")[1]), today).criteria;
++    expect(parsed.smart).toEqual(smartCriteria("quiet", false, { fallback: true }));
++  });
++});
+diff --git a/src/domain/criteria.ts b/src/domain/criteria.ts
+index 4e5b09e..ccac12f 100644
+--- a/src/domain/criteria.ts
++++ b/src/domain/criteria.ts
+@@ -66,6 +66,7 @@ export function smartCriteria(
+     preferences: null,
+     maxPriceRand: null,
+     policies: [],
++    fallback: false,
+     place: null,
+     ignored: null,
+     ignoredKind: "dates",
+@@ -249,7 +250,8 @@ function noticeText(value: string | undefined): string | null {
+ /**
+  * The Smart search state in URL parameters (AD-21), or null. `sq` is the
+  * trimmed Query and is required: over 300 characters it is dropped, and so is
+- * every other Smart parameter. `smart` counts only as exactly `1`. Every
++ * every other Smart parameter. `smart` and `fallback` count only as exactly
++ * `1`. Every
+  * other invalid value is dropped silently: `prefs` over 300 characters, a
+  * `maxPrice` that is not a positive whole number, unknown `policy` entries,
+  * and a `place` or `ignored` that is not short, plain notice text.
+@@ -267,6 +269,7 @@ export function parseSmart(params: CriteriaParams): SmartCriteria | null {
+         : null,
+     maxPriceRand: parseMaxPrice(readText(params, "maxPrice")),
+     policies: parsePolicies(readText(params, "policy")),
++    fallback: readText(params, "fallback") === "1",
+     place: noticeText(readText(params, "place")),
+     ignored: noticeText(readText(params, "ignored")),
+     ignoredKind,
+@@ -366,6 +369,7 @@ function setSmart(params: URLSearchParams, smart: SmartCriteria) {
+   if (isMaxPrice(smart.maxPriceRand)) params.set("maxPrice", String(smart.maxPriceRand));
+   const policies = POLICY_CRITERIA.filter((policy) => smart.policies.includes(policy));
+   if (policies.length > 0) params.set("policy", policies.join(","));
++  if (smart.fallback) params.set("fallback", "1");
+   const place = smart.place?.trim();
+   if (place && isNoticeText(place)) params.set("place", place);
+   const ignored = smart.ignored?.trim();
+@@ -446,8 +450,10 @@ export function withoutCriterion(
+ 
+ /**
+  * The URL a Search bar Search pushes (AD-21, AD-33, FR-5). Under a Query it
+- * keeps `sq`, `smart`, `prefs`, `maxPrice` and `policy`, and drops `place`
+- * and `ignored`, so the Search re-runs without a new Query interpretation.
++ * keeps `sq`, `smart`, `prefs`, `maxPrice` and `policy`, and drops
++ * `fallback`, `place` and `ignored`, so the Search re-runs without a new
++ * Query interpretation; on a fallback URL that is the MVP search with the
++ * Query still in the box.
+  * With the Smart search box empty at Search time, or no Query, it is the MVP
+  * search URL.
+  */
+@@ -461,6 +467,20 @@ export function searchBarSearch(
+     q,
+     stay,
+     party,
+-    smart: { ...smart, place: null, ignored: null, ignoredKind: "dates" },
++    smart: { ...smart, fallback: false, place: null, ignored: null, ignoredKind: "dates" },
+   });
+ }
++
++/**
++ * The fallback URL (AD-22, EXPERIENCE.md Fallback URL): the Search bar's
++ * Destination, Stay and Party from before the submit, the Query for the box
++ * and `fallback=1`. No Preferences, Max price, Policy criteria or notices, so
++ * those of a previous Query are dropped.
++ */
++export function fallbackHref(
++  current: Pick<SearchCriteria, "q" | "stay" | "party">,
++  query: string,
++): string {
++  const { q, stay, party } = current;
++  return searchHref({ q, stay, party, smart: smartCriteria(query, false, { fallback: true }) });
++}
+diff --git a/src/domain/hard-criteria.test.ts b/src/domain/hard-criteria.test.ts
+index 7338069..8ed304b 100644
+--- a/src/domain/hard-criteria.test.ts
++++ b/src/domain/hard-criteria.test.ts
+@@ -87,6 +87,15 @@ describe("searchMode", () => {
+   it("is smart for an interpreted Query with a Provider", () => {
+     expect(searchMode(true, interpreted)).toBe("smart");
+   });
++
++  it("is fallback on a fallback URL, ahead of interpreted", () => {
++    expect(searchMode(true, smartCriteria("quiet", false, { fallback: true }))).toBe("fallback");
++    expect(searchMode(true, smartCriteria("quiet", true, { fallback: true }))).toBe("fallback");
++  });
++
++  it("is mvp on a fallback URL with no Provider", () => {
++    expect(searchMode(false, smartCriteria("quiet", false, { fallback: true }))).toBe("mvp");
++  });
+ });
+ 
+ describe("Criteria chip copy", () => {
+diff --git a/src/domain/hard-criteria.ts b/src/domain/hard-criteria.ts
+index 4110f0c..8cf3448 100644
+--- a/src/domain/hard-criteria.ts
++++ b/src/domain/hard-criteria.ts
+@@ -75,14 +75,16 @@ export function hotelQualifies(
+ }
+ 
+ /**
+- * How a search runs (AD-20): `mvp` with no Provider, no Smart search criteria
+- * or a Query that was not interpreted; otherwise `smart`. `runSmartSearch`
+- * decides the mode with this, and the page shows the Criteria chips only
+- * outside `mvp`.
++ * How a search runs (AD-20), the one mode rule: `mvp` with no Provider, no
++ * Smart search criteria, or a Query that is neither interpreted nor a
++ * fallback; `fallback` on a fallback URL, even an interpreted one; otherwise
++ * `smart`. `runSmartSearch` decides the mode with this, and the page shows
++ * the Criteria chips only outside `mvp`.
+  */
+ export function searchMode(hasProvider: boolean, smart: SmartCriteria | null): SearchMode {
+-  if (!hasProvider || !smart || !smart.interpreted) return "mvp";
+-  return "smart";
++  if (!hasProvider || !smart) return "mvp";
++  if (smart.fallback) return "fallback";
++  return smart.interpreted ? "smart" : "mvp";
+ }
+ 
+ const POLICY_LABELS: Record<PolicyCriterion, string> = {
+diff --git a/src/domain/interpretation.test.ts b/src/domain/interpretation.test.ts
+index 6eba493..c1d4da9 100644
+--- a/src/domain/interpretation.test.ts
++++ b/src/domain/interpretation.test.ts
+@@ -340,6 +340,21 @@ describe("smartNotices", () => {
+     ]);
+   });
+ 
++  it("puts the fallback notice first and keeps at most 2", () => {
++    expect(smartNotices(smartCriteria("quiet", false, { fallback: true }), "")).toEqual([
++      { kind: "fallback" },
++    ]);
++    expect(
++      smartNotices(
++        smartCriteria("quiet", false, { fallback: true, place: "Kruger", ignored: "for 0" }),
++        "",
++      ),
++    ).toEqual([{ kind: "fallback" }, { kind: "place", place: "Kruger" }]);
++    expect(
++      smartNotices(smartCriteria("quiet", true, { fallback: true, ignored: "for 0" }), "Durban"),
++    ).toEqual([{ kind: "fallback" }, { kind: "ignored", text: "for 0", about: "dates" }]);
++  });
++
+   it("gives no place notice when the URL has a Destination", () => {
+     expect(
+       smartNotices(smartCriteria("quiet", true, { place: "Kruger", ignored: "for 0" }), "Durban"),
+diff --git a/src/domain/interpretation.ts b/src/domain/interpretation.ts
+index 2382ddc..5239496 100644
+--- a/src/domain/interpretation.ts
++++ b/src/domain/interpretation.ts
+@@ -259,13 +259,15 @@ export function applyInterpretation(
+ 
+ /**
+  * The notices for Smart search criteria (AD-20, EXPERIENCE.md Notices): the
+- * unknown place, then the ignored value, at most 2. None without `smart`.
++ * fallback, then the unknown place, then the ignored value, at most 2. None
++ * without `smart`.
+  * The place notice says all cities are shown, so it needs an empty
+  * Destination `q`.
+  */
+ export function smartNotices(smart: SmartCriteria | null, q: string): SmartNotice[] {
+   if (!smart) return [];
+   const notices: SmartNotice[] = [];
++  if (smart.fallback) notices.push({ kind: "fallback" });
+   if (smart.place && !q.trim()) notices.push({ kind: "place", place: smart.place });
+   if (smart.ignored) notices.push({ kind: "ignored", text: smart.ignored, about: smart.ignoredKind });
+   return notices.slice(0, MAX_NOTICES);
+diff --git a/src/domain/types.ts b/src/domain/types.ts
+index 87f2182..df5a7fd 100644
+--- a/src/domain/types.ts
++++ b/src/domain/types.ts
+@@ -67,6 +67,11 @@ export type SmartCriteria = {
+   maxPriceRand: number | null;
+   /** Policy criteria (`policy`), in `POLICY_CRITERIA` order, each once. */
+   policies: PolicyCriterion[];
++  /**
++   * The fallback page (`fallback=1`, AD-21): Query interpretation failed, so
++   * the search runs in MVP order with the fallback notice.
++   */
++  fallback: boolean;
+   /** The out-of-catalog place (`place`) for its notice. */
+   place: string | null;
+   /** One phrase from the Query that could not be used (`ignored`), for its notice. */
+@@ -77,10 +82,12 @@ export type SmartCriteria = {
+ 
+ /**
+  * A Smart search notice on Search results (AD-20), shown after the result
+- * heading. `place` names the out-of-catalog place; `ignored` names the
+- * Guest's phrase and what it was about.
++ * heading. `fallback` says Smart search is not available right now; `place`
++ * names the out-of-catalog place; `ignored` names the Guest's phrase and what
++ * it was about.
+  */
+ export type SmartNotice =
++  | { kind: "fallback" }
+   | { kind: "place"; place: string }
+   | { kind: "ignored"; text: string; about: IgnoredKind };
+ 
+@@ -236,10 +243,11 @@ export type SearchResult = {
+ };
+ 
+ /**
+- * How `searchHotels` ran a search (AD-20): `mvp`, the MVP search unchanged,
+- * or `smart`, filtered by the Hard criteria (AD-23).
++ * How `searchHotels` ran a search (AD-20): `mvp`, the MVP search unchanged;
++ * `smart`, filtered by the Hard criteria (AD-23) in Ranking blend order; or
++ * `fallback`, filtered by the Hard criteria the URL holds, in MVP order.
+  */
+-export type SearchMode = "mvp" | "smart";
++export type SearchMode = "mvp" | "smart" | "fallback";
+ 
+ /** A City photo's credit on `/credits`: the source page holds the credit. */
+ export type CityPhotoCredit = {
+diff --git a/src/features/search/actions.test.ts b/src/features/search/actions.test.ts
+index 2c014da..d4e0a8d 100644
+--- a/src/features/search/actions.test.ts
++++ b/src/features/search/actions.test.ts
+@@ -32,7 +32,10 @@ vi.mock("@/features/search/provider/config", async (importOriginal) => {
+   };
+ });
+ 
++import { interpretationCache } from "@/features/search/cache";
+ import { ProviderError } from "@/features/search/provider/types";
++import { fallbackHref } from "@/domain/criteria";
++import { createFakeProvider } from "@/features/search/provider/fake";
+ import { submitQuery } from "./actions";
+ 
+ const UJ1 = "pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night";
+@@ -54,6 +57,7 @@ beforeEach(() => {
+   mocks.redirect.mockClear();
+   mocks.provider = undefined;
+   mocks.db = db;
++  interpretationCache.clear();
+ });
+ afterEach(() => {
+   vi.unstubAllEnvs();
+@@ -144,13 +148,14 @@ describe("submitQuery with the fake Provider", () => {
+     expect(url.searchParams.get("ignoredKind")).toBe("party");
+   });
+ 
+-  it("keeps the current criteria and sq, with no smart, for an unknown Query", async () => {
++  it("gives the fallback URL for an unknown Query: the current criteria, sq and fallback=1", async () => {
+     const error = vi.spyOn(console, "error").mockImplementation(() => {});
+     const url = await redirectedTo("a castle on the moon");
+     expect(url).toBe(
+       "/search?q=Cape+Town&checkIn=2026-10-16&checkOut=2026-10-17&adults=2&children=0&rooms=1" +
+-        "&sq=a+castle+on+the+moon",
++        "&sq=a+castle+on+the+moon&fallback=1",
+     );
++    expect(url).toBe(fallbackHref(current, "a castle on the moon"));
+     // Logged by code only, never the Query.
+     expect(JSON.stringify(error.mock.calls)).toContain("UNAVAILABLE");
+     expect(JSON.stringify(error.mock.calls)).not.toContain("castle");
+@@ -181,10 +186,51 @@ describe("submitQuery outcomes", () => {
+   it("treats a timeout like any Provider failure", async () => {
+     vi.spyOn(console, "error").mockImplementation(() => {});
+     mocks.provider = failingProvider(new DOMException("timed out", "TimeoutError"));
+-    const url = new URL(await redirectedTo(UJ1), "http://localhost");
+-    expect(url.searchParams.get("q")).toBe("Cape Town");
+-    expect(url.searchParams.get("sq")).toBe(UJ1);
+-    expect(url.searchParams.has("smart")).toBe(false);
++    expect(await redirectedTo(UJ1)).toBe(fallbackHref(current, UJ1));
++  });
++
++  it.each(["TIMEOUT", "RATE_LIMITED", "UNAVAILABLE", "INVALID_OUTPUT"] as const)(
++    "gives the fallback URL, with no smart or Hard criteria, for %s",
++    async (code) => {
++      const error = vi.spyOn(console, "error").mockImplementation(() => {});
++      mocks.provider = failingProvider(new ProviderError(code));
++      const url = new URL(await redirectedTo(UJ1), "http://localhost");
++      expect(url.searchParams.get("fallback")).toBe("1");
++      for (const key of ["smart", "prefs", "maxPrice", "policy", "place", "ignored"]) {
++        expect(url.searchParams.has(key)).toBe(false);
++      }
++      expect(JSON.stringify(error.mock.calls)).toContain(code);
++      expect(JSON.stringify(error.mock.calls)).not.toContain("Stellenbosch");
++    },
++  );
++
++  it("gives the fallback URL after the timeout when interpret never settles", async () => {
++    vi.spyOn(console, "error").mockImplementation(() => {});
++    // A short timeout stands in for 2.5 s; the Provider ignores the signal.
++    const timeout = AbortSignal.timeout.bind(AbortSignal);
++    vi.spyOn(AbortSignal, "timeout").mockImplementation(() => timeout(20));
++    mocks.provider = {
++      ...failingProvider(new Error("unused")),
++      interpret: () => new Promise(() => {}),
++    };
++    expect(await redirectedTo(UJ1)).toBe(fallbackHref(current, UJ1));
++  });
++
++  it("makes one interpret call for two concurrent identical submits", async () => {
++    vi.spyOn(console, "warn").mockImplementation(() => {});
++    vi.stubEnv("CHECKINN_PROVIDER", "fake");
++    const fake = createFakeProvider();
++    const interpret = vi.fn(fake.interpret);
++    mocks.provider = { ...fake, interpret };
++    const results = await Promise.allSettled([
++      submitQuery({ query: UJ1, current }),
++      submitQuery({ query: UJ1, current }),
++    ]);
++    expect(results.map((result) => result.status)).toEqual(["rejected", "rejected"]);
++    expect(interpret).toHaveBeenCalledTimes(1);
++    expect(mocks.redirect).toHaveBeenCalledTimes(2);
++    expect(mocks.redirect.mock.calls[0][0]).toBe(mocks.redirect.mock.calls[1][0]);
++    expect(mocks.redirect.mock.calls[0][0]).toContain("smart=1");
+   });
+ 
+   it("passes interpretation a 2.5 s signal", async () => {
+diff --git a/src/features/search/actions.ts b/src/features/search/actions.ts
+index a88ca7f..b6dab97 100644
+--- a/src/features/search/actions.ts
++++ b/src/features/search/actions.ts
+@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
+ import { getDb } from "@/db/client";
+ import { todayIn } from "@/domain/clock";
+ import {
++  fallbackHref,
+   MAX_QUERY_LENGTH,
+   parseCriteria,
+   searchHref,
+@@ -64,7 +65,11 @@ function reparse(current: SearchBarCriteria | undefined): SearchBarCriteria {
+   return { q: criteria.q, stay: criteria.stay, party: criteria.party };
+ }
+ 
+-/** Where a submitted Query leads. */
++/**
++ * Where a submitted Query leads (AD-22 Outcomes): the Smart search URL; the
++ * fallback URL for any Provider failure, the 2.5 s timeout included; or, with
++ * no Provider, the MVP URL. Any other error is thrown.
++ */
+ async function queryTarget(query: string, current: SearchBarCriteria): Promise<string> {
+   const provider = getProvider();
+   // No Provider configured (a crafted call): the MVP URL, and no request (AD-31).
+@@ -84,9 +89,10 @@ async function queryTarget(query: string, current: SearchBarCriteria): Promise<s
+   } catch (error) {
+     const code = providerFailure(error);
+     if (!code) throw error;
++    // The code only, never the Query (AD-29).
+     console.error("submitQuery interpretation failed", code);
+-    // Until story 1.7: the pre-submit criteria with the Query kept for the box.
+-    return searchHref({ ...current, smart: smartCriteria(query, false) });
++    // The pre-submit Search bar values, the Query for the box and fallback=1.
++    return fallbackHref(current, query);
+   }
+ }
+ 
+@@ -94,9 +100,11 @@ async function queryTarget(query: string, current: SearchBarCriteria): Promise<s
+  * Submit a Query from the Smart search box (AD-22). Interprets it once and
+  * redirects to `/search` with `sq`, `smart=1`, the interpreted Destination,
+  * Stay and Party, and the Smart search parameters: Preferences, Max price,
+- * Policy criteria, and the place and ignored value for their notices. An empty Query, or one over 300 characters,
+- * returns `VALIDATION`. A Provider failure keeps the current criteria and
+- * the Query; no Provider gives the MVP URL.
++ * Policy criteria, and the place and ignored value for their notices. An
++ * empty Query, or one over 300 characters, returns `VALIDATION`. A Provider
++ * failure or the 2.5 s timeout redirects to the fallback URL: the current
++ * criteria, the Query and `fallback=1`. No Provider gives the MVP URL; any
++ * other error is `SERVER_ERROR`.
+  */
+ export async function submitQuery(input: SubmitQueryInput): Promise<ActionResult> {
+   let target: string;
+diff --git a/src/features/search/cache.test.ts b/src/features/search/cache.test.ts
+new file mode 100644
+index 0000000..54ab333
+--- /dev/null
++++ b/src/features/search/cache.test.ts
+@@ -0,0 +1,119 @@
++// @vitest-environment node
++import { beforeEach, describe, expect, it, vi } from "vitest";
++import {
++  boundedCache,
++  CACHE_MAX_ENTRIES,
++  interpretationCache,
++  interpretationKey,
++} from "./cache";
++
++let n = 0;
++/** A fresh cache name per test, so the globalThis maps never collide. */
++const fresh = <V>(max: number) => boundedCache<string, V>(`test-${++n}`, max);
++
++describe("boundedCache (AD-28)", () => {
++  it("returns the cached promise on a hit, without calling create again", async () => {
++    const cache = fresh<number>(3);
++    const create = vi.fn(async () => 1);
++    expect(await cache.getOrCreate("a", create)).toBe(1);
++    expect(await cache.getOrCreate("a", create)).toBe(1);
++    expect(create).toHaveBeenCalledTimes(1);
++  });
++
++  it("shares one in-flight call between concurrent misses", async () => {
++    const cache = fresh<string>(3);
++    let resolve: (value: string) => void = () => {};
++    const create = vi.fn(
++      () =>
++        new Promise<string>((done) => {
++          resolve = done;
++        }),
++    );
++    const first = cache.getOrCreate("a", create);
++    const second = cache.getOrCreate("a", create);
++    resolve("value");
++    expect(await Promise.all([first, second])).toEqual(["value", "value"]);
++    expect(create).toHaveBeenCalledTimes(1);
++  });
++
++  it("evicts a rejected promise, so the next call tries again and is cached", async () => {
++    const cache = fresh<string>(3);
++    const create = vi
++      .fn<() => Promise<string>>()
++      .mockRejectedValueOnce(new Error("down"))
++      .mockResolvedValue("up");
++    await expect(cache.getOrCreate("a", create)).rejects.toThrow("down");
++    expect(cache.size).toBe(0);
++    expect(await cache.getOrCreate("a", create)).toBe("up");
++    expect(await cache.getOrCreate("a", create)).toBe("up");
++    expect(create).toHaveBeenCalledTimes(2);
++  });
++
++  it("evicts a key only while it still holds that promise", async () => {
++    const cache = fresh<string>(3);
++    const stale = cache.getOrCreate("a", () => new Promise<string>(() => {}));
++    cache.evict("a", stale);
++    expect(cache.size).toBe(0);
++
++    const newer = cache.getOrCreate("a", async () => "newer");
++    cache.evict("a", stale);
++    expect(cache.size).toBe(1);
++    expect(await cache.getOrCreate("a", async () => "other")).toBe("newer");
++    expect(await newer).toBe("newer");
++  });
++
++  it("turns a synchronous throw into an evicted rejection", async () => {
++    const cache = fresh<string>(3);
++    await expect(
++      cache.getOrCreate("a", () => {
++        throw new Error("sync");
++      }),
++    ).rejects.toThrow("sync");
++    expect(cache.size).toBe(0);
++  });
++
++  it("holds at most max entries, evicting the least recently used", async () => {
++    const cache = fresh<string>(2);
++    const create = vi.fn(async () => "v");
++    await cache.getOrCreate("a", create);
++    await cache.getOrCreate("b", create);
++    // Touch a, so b is the oldest.
++    await cache.getOrCreate("a", create);
++    await cache.getOrCreate("c", create);
++    expect(cache.size).toBe(2);
++    expect(create).toHaveBeenCalledTimes(3);
++
++    await cache.getOrCreate("a", create);
++    expect(create).toHaveBeenCalledTimes(3);
++    await cache.getOrCreate("b", create);
++    expect(create).toHaveBeenCalledTimes(4);
++  });
++
++  it("keeps one map per name on globalThis", async () => {
++    const name = `shared-${++n}`;
++    const create = vi.fn(async () => 1);
++    await boundedCache<string, number>(name, 2).getOrCreate("a", create);
++    await boundedCache<string, number>(name, 2).getOrCreate("a", create);
++    expect(create).toHaveBeenCalledTimes(1);
++  });
++});
++
++describe("interpretationCache", () => {
++  beforeEach(() => interpretationCache.clear());
++
++  it("holds 500 entries", () => {
++    expect(CACHE_MAX_ENTRIES).toBe(500);
++  });
++
++  it("is keyed by the normalised Query and today", () => {
++    expect(interpretationKey("quiet hotel", "2026-10-15")).toBe(
++      interpretationKey("quiet hotel", "2026-10-15"),
++    );
++    expect(interpretationKey("quiet hotel", "2026-10-15")).not.toBe(
++      interpretationKey("quiet hotel", "2026-10-16"),
++    );
++    expect(interpretationKey("quiet hotel", "2026-10-15")).not.toBe(
++      interpretationKey("quiet hotels", "2026-10-15"),
++    );
++  });
++});
+diff --git a/src/features/search/cache.ts b/src/features/search/cache.ts
+new file mode 100644
+index 0000000..9156d20
+--- /dev/null
++++ b/src/features/search/cache.ts
+@@ -0,0 +1,98 @@
++/**
++ * Smart search caches (AD-28): bounded LRU maps in this one process (AD-12),
++ * held on `globalThis` so a dev reload of this module keeps them. Each map
++ * stores the in-flight promise, so concurrent misses share one Provider call;
++ * a rejected promise is evicted, so errors are never cached. Keys are built
++ * from `normaliseText` output by the caller. Nothing here uses `"use cache"`.
++ */
++import type { Interpretation } from "@/domain/interpretation";
++
++/** Entries each cache keeps before evicting the least recently used (AD-28). */
++export const CACHE_MAX_ENTRIES = 500;
++
++export type BoundedCache<K, V> = {
++  /**
++   * The cached promise for `key`, touched as most recently used, or a new one
++   * from `create`, stored at once so concurrent callers share it. It is
++   * evicted if it rejects.
++   */
++  getOrCreate(key: K, create: () => Promise<V>): Promise<V>;
++  /**
++   * Removes `key` only while it still holds `promise`, so a newer call for
++   * the same key is never removed.
++   */
++  evict(key: K, promise: Promise<V>): void;
++  /** How many entries it holds. */
++  readonly size: number;
++  /** Empties it. For tests. */
++  clear(): void;
++};
++
++const holder = globalThis as typeof globalThis & {
++  __checkinnCaches?: Map<string, Map<unknown, Promise<unknown>>>;
++};
++
++/**
++ * A bounded LRU promise cache named `name`, holding at most `max` entries.
++ * One map per name per process.
++ */
++export function boundedCache<K, V>(name: string, max: number): BoundedCache<K, V> {
++  function store(): Map<K, Promise<V>> {
++    holder.__checkinnCaches ??= new Map();
++    let map = holder.__checkinnCaches.get(name);
++    if (!map) {
++      map = new Map();
++      holder.__checkinnCaches.set(name, map);
++    }
++    return map as Map<K, Promise<V>>;
++  }
++
++  function evict(key: K, promise: Promise<V>) {
++    const current = store();
++    if (current.get(key) === promise) current.delete(key);
++  }
++
++  return {
++    getOrCreate(key, create) {
++      const map = store();
++      const hit = map.get(key);
++      if (hit) {
++        // Touch: re-inserting moves it to the most recently used end.
++        map.delete(key);
++        map.set(key, hit);
++        return hit;
++      }
++      // An async wrapper turns a synchronous throw into a rejection.
++      const promise = (async () => create())();
++      map.set(key, promise);
++      while (map.size > max) {
++        const oldest = map.keys().next();
++        if (oldest.done) break;
++        map.delete(oldest.value);
++      }
++      promise.catch(() => evict(key, promise));
++      return promise;
++    },
++    evict,
++    get size() {
++      return store().size;
++    },
++    clear() {
++      store().clear();
++    },
++  };
++}
++
++/**
++ * The Provider's raw interpretation (AD-22, AD-28), keyed by
++ * `interpretationKey`. `applyInterpretation` still runs on every submit.
++ */
++export const interpretationCache = boundedCache<string, Interpretation>(
++  "interpretation",
++  CACHE_MAX_ENTRIES,
++);
++
++/** The interpretation cache key: today and the normalised Query. */
++export function interpretationKey(normalisedQuery: string, today: string): string {
++  return `${today}\n${normalisedQuery}`;
++}
+diff --git a/src/features/search/smart-search.test.ts b/src/features/search/smart-search.test.ts
+index 444f7ab..baa25d4 100644
+--- a/src/features/search/smart-search.test.ts
++++ b/src/features/search/smart-search.test.ts
+@@ -1,12 +1,15 @@
+ // @vitest-environment node
+-import { afterEach, beforeEach, describe, expect, it } from "vitest";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import type { Db } from "@/db/client";
+ import { createTestDb, insertTestBooking } from "@/db/test-db";
+ import { defaultCriteria, smartCriteria } from "@/domain/criteria";
+ import type { Party, SearchCriteria, SmartCriteria } from "@/domain/types";
++import { listCityNames, listInterpretationCatalog } from "@/features/hotels/catalog.repo";
++import { interpretationCache } from "@/features/search/cache";
+ import { createFakeProvider } from "@/features/search/provider/fake";
++import { type Provider, ProviderError } from "@/features/search/provider/types";
+ import { searchCatalog } from "@/features/search/search.repo";
+-import { runSmartSearch } from "./smart-search";
++import { interpretQuery, runSmartSearch } from "./smart-search";
+ 
+ const NBSP = " ";
+ const TODAY = "2026-10-13";
+@@ -219,3 +222,193 @@ describe("runSmartSearch in mvp mode", () => {
+     }
+   });
+ });
++
++describe("runSmartSearch in fallback mode", () => {
++  const twoAdults: Party = { adults: 2, children: 0, rooms: 1 };
++  const unknown = (values: Partial<SmartCriteria> = {}) =>
++    smartCriteria("a castle on the moon", false, { fallback: true, ...values });
++
++  it("Unknown Query from Home: all 12 properties in MVP order, as MVP cards, with the notice", () => {
++    const criteria: SearchCriteria = {
++      ...defaultCriteria(TODAY),
++      stay: weekend,
++      party: twoAdults,
++      smart: unknown(),
++    };
++    const result = runSmartSearch(db, provider, criteria, TODAY, NOW, { debug: true });
++
++    expect(result.mode).toBe("fallback");
++    expect(result.heading).toBe("All destinations: 12 properties found");
++    expect(result.notices).toEqual([{ kind: "fallback" }]);
++    expect(result.criteriaSummary).toBeNull();
++    // With no Hard criteria but the Party's, the MVP search for 2 adults.
++    expect(result.cards).toEqual(searchCatalog(db, { ...criteria, smart: null }, NOW).cards);
++    for (const card of result.cards) {
++      expect(card.bestFit).toBeUndefined();
++      expect(card.breakdown).toBeUndefined();
++    }
++  });
++
++  it("filters by the Hard criteria the URL holds, priced from the cheapest qualifying type", () => {
++    const result = runSmartSearch(
++      db,
++      provider,
++      uj1({}, { smart: unknown({ maxPriceRand: 2000, policies: ["pets"] }) }),
++      TODAY,
++      NOW,
++    );
++    expect(result.mode).toBe("fallback");
++    expect(result.cards.map((card) => card.name)).toEqual(["Winelands Family Lodge"]);
++    expect(result.cards[0]).toMatchObject({ nightlyRand: 2000, totalRand: 4000 });
++    expect(result.cards[0].bestFit).toBeUndefined();
++  });
++
++  it("orders by the MVP rank, not the Ranking blend", () => {
++    expect(names(uj1({}, { smart: unknown() }))).toEqual([
++      "Oak & Vine Manor",
++      "Winelands Family Lodge",
++    ]);
++  });
++
++  it("filters by Party capacity, which the MVP search ignores", () => {
++    const criteria = uj1({}, { party: { adults: 6, children: 0, rooms: 1 }, smart: unknown() });
++    const fallback = runSmartSearch(db, provider, criteria, TODAY, NOW);
++    const mvp = searchCatalog(db, { ...criteria, smart: null }, NOW);
++    expect(fallback.cards.length).toBeLessThan(mvp.cards.length);
++  });
++
++  it("takes priority over interpreted", () => {
++    const result = runSmartSearch(db, provider, uj1({ fallback: true }), TODAY, NOW);
++    expect(result.mode).toBe("fallback");
++    expect(result.notices[0]).toEqual({ kind: "fallback" });
++    expect(result.cards.every((card) => card.bestFit === undefined)).toBe(true);
++  });
++
++  it("names the Hard criteria when nothing is found", () => {
++    const result = runSmartSearch(
++      db,
++      provider,
++      uj1({}, { q: "", smart: unknown({ policies: ["smoking"] }) }),
++      TODAY,
++      NOW,
++    );
++    expect(result.heading).toBeNull();
++    expect(result.cards).toEqual([]);
++    expect(result.criteriaSummary).toBe(
++      "We looked for Smoking allowed. Remove a filter, or try other dates or another city.",
++    );
++  });
++
++  it("is mvp with no Provider", () => {
++    const result = runSmartSearch(db, null, uj1({}, { smart: unknown() }), TODAY, NOW);
++    expect(result.mode).toBe("mvp");
++    expect(result.notices).toEqual([]);
++  });
++});
++
++describe("interpretQuery (AD-22, AD-28)", () => {
++  const UJ1 = "pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night";
++  const current = { q: "", stay: weekend, party: { adults: 2, children: 0, rooms: 1 } };
++  const catalog = () => ({ cities: listCityNames(db), hotels: listInterpretationCatalog(db) });
++  const fake = createFakeProvider();
++  const signal = () => new AbortController().signal;
++
++  beforeEach(() => interpretationCache.clear());
++  afterEach(() => interpretationCache.clear());
++
++  function counting(interpret: Provider["interpret"]) {
++    const spy = vi.fn(interpret);
++    return { provider: { ...fake, interpret: spy } satisfies Provider, spy };
++  }
++
++  it("makes one Provider call for the same normalised Query on the same day", async () => {
++    const { provider, spy } = counting(fake.interpret);
++    const first = await interpretQuery(provider, UJ1, current, catalog(), TODAY, signal());
++    const again = `  ${UJ1.toUpperCase()} `;
++    const second = await interpretQuery(provider, again, current, catalog(), TODAY, signal());
++    expect(spy).toHaveBeenCalledTimes(1);
++    expect(second).toEqual(first);
++    expect(first.q).toBe("Stellenbosch");
++  });
++
++  it("still applies the interpretation to each submit's own criteria", async () => {
++    const { provider, spy } = counting(fake.interpret);
++    const query = "quiet business hotel in Gauteng with a gym and meeting rooms";
++    await interpretQuery(provider, query, current, catalog(), TODAY, signal());
++    const other = { ...current, party: { adults: 3, children: 0, rooms: 1 } };
++    const second = await interpretQuery(provider, query, other, catalog(), TODAY, signal());
++    expect(spy).toHaveBeenCalledTimes(1);
++    expect(second.party.adults).toBe(3);
++  });
++
++  it("shares one call between concurrent identical submits", async () => {
++    const { provider, spy } = counting(fake.interpret);
++    await Promise.all([
++      interpretQuery(provider, UJ1, current, catalog(), TODAY, signal()),
++      interpretQuery(provider, UJ1, current, catalog(), TODAY, signal()),
++    ]);
++    expect(spy).toHaveBeenCalledTimes(1);
++  });
++
++  it("never caches a rejection", async () => {
++    let calls = 0;
++    const { provider, spy } = counting(async (...args) => {
++      calls += 1;
++      if (calls === 1) throw new ProviderError("RATE_LIMITED");
++      return fake.interpret(...args);
++    });
++    await expect(
++      interpretQuery(provider, UJ1, current, catalog(), TODAY, signal()),
++    ).rejects.toMatchObject({ code: "RATE_LIMITED" });
++    await interpretQuery(provider, UJ1, current, catalog(), TODAY, signal());
++    await interpretQuery(provider, UJ1, current, catalog(), TODAY, signal());
++    expect(spy).toHaveBeenCalledTimes(2);
++  });
++
++  it("calls again on a different day", async () => {
++    const { provider, spy } = counting(fake.interpret);
++    await interpretQuery(provider, UJ1, current, catalog(), TODAY, signal());
++    await interpretQuery(provider, UJ1, current, catalog(), "2026-10-14", signal());
++    expect(spy).toHaveBeenCalledTimes(2);
++  });
++
++  it("rejects with TIMEOUT when the signal aborts, even if the Provider ignores it", async () => {
++    const { provider } = counting(() => new Promise(() => {}));
++    const error = await interpretQuery(
++      provider,
++      UJ1,
++      current,
++      catalog(),
++      TODAY,
++      AbortSignal.timeout(20),
++    ).catch((caught: unknown) => caught);
++    expect(error).toBeInstanceOf(ProviderError);
++    expect(error).toMatchObject({ code: "TIMEOUT" });
++  });
++
++  it("evicts a timed-out call, so the next submit calls again and caches its success", async () => {
++    let calls = 0;
++    const { provider, spy } = counting((...args) => {
++      calls += 1;
++      return calls === 1 ? new Promise(() => {}) : fake.interpret(...args);
++    });
++    await expect(
++      interpretQuery(provider, UJ1, current, catalog(), TODAY, AbortSignal.timeout(20)),
++    ).rejects.toMatchObject({ code: "TIMEOUT" });
++    expect(interpretationCache.size).toBe(0);
++
++    const second = await interpretQuery(provider, UJ1, current, catalog(), TODAY, signal());
++    expect(second.q).toBe("Stellenbosch");
++    await interpretQuery(provider, UJ1, current, catalog(), TODAY, signal());
++    expect(spy).toHaveBeenCalledTimes(2);
++  });
++
++  it("rejects with TIMEOUT at once for an aborted signal", async () => {
++    const controller = new AbortController();
++    controller.abort();
++    const { provider } = counting(fake.interpret);
++    await expect(
++      interpretQuery(provider, UJ1, current, catalog(), TODAY, controller.signal),
++    ).rejects.toMatchObject({ code: "TIMEOUT" });
++  });
++});
+diff --git a/src/features/search/smart-search.ts b/src/features/search/smart-search.ts
+index 1918386..5cc6b13 100644
+--- a/src/features/search/smart-search.ts
++++ b/src/features/search/smart-search.ts
+@@ -19,12 +19,29 @@ import {
+ } from "@/domain/hard-criteria";
+ import { smartNotices } from "@/domain/interpretation";
+ import { CITY_NICKNAMES } from "@/domain/nicknames";
++import { fromPrice } from "@/domain/pricing";
+ import { rankByBlend } from "@/domain/ranking";
+-import { heading } from "@/domain/search";
++import { heading, rank } from "@/domain/search";
+ import { normaliseText } from "@/domain/text";
+-import type { IsoDate, ListingCard, SearchCriteria, SearchResult } from "@/domain/types";
+-import type { InterpretationContext, Provider } from "@/features/search/provider/types";
+-import { searchCatalog, smartCandidates } from "@/features/search/search.repo";
++import type {
++  IsoDate,
++  ListingCard,
++  Party,
++  SearchCriteria,
++  SearchResult,
++  SmartCriteria,
++} from "@/domain/types";
++import { interpretationCache, interpretationKey } from "@/features/search/cache";
++import {
++  type InterpretationContext,
++  type Provider,
++  ProviderError,
++} from "@/features/search/provider/types";
++import {
++  searchCatalog,
++  type SmartCandidate,
++  smartCandidates,
++} from "@/features/search/search.repo";
+ 
+ /** What interpretation needs from the catalog. */
+ export type InterpretationCatalog = {
+@@ -33,11 +50,40 @@ export type InterpretationCatalog = {
+   hotels: InterpretationHotel[];
+ };
+ 
++/**
++ * `promise`, or a `ProviderError("TIMEOUT")` as soon as `signal` aborts, even
++ * when whatever made `promise` ignores the signal.
++ */
++function raceSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
++  if (signal.aborted) return Promise.reject(new ProviderError("TIMEOUT"));
++  return new Promise<T>((resolve, reject) => {
++    const onAbort = () => reject(new ProviderError("TIMEOUT"));
++    signal.addEventListener("abort", onAbort, { once: true });
++    promise.then(
++      (value) => {
++        signal.removeEventListener("abort", onAbort);
++        resolve(value);
++      },
++      (error: unknown) => {
++        signal.removeEventListener("abort", onAbort);
++        reject(error);
++      },
++    );
++  });
++}
++
+ /**
+  * Query interpretation (AD-22), the only caller of `Provider.interpret`:
+  * normalises the Query, asks the Provider with today, the Cities and the
+  * nickname map, then applies its untrusted output to the current criteria.
+- * Provider failures throw `ProviderError`.
++ *
++ * The Provider's raw output comes through the interpretation cache (AD-28),
++ * keyed by the normalised Query and today, so a repeated or concurrent
++ * identical Query makes one call; `applyInterpretation` still runs every
++ * time. When `signal` aborts it rejects with `ProviderError("TIMEOUT")`, even
++ * if the Provider ignores the signal, and evicts that call from the cache
++ * (unless a newer call has replaced it), so a call that never settles is
++ * never pinned there. Provider failures throw `ProviderError`.
+  */
+ export async function interpretQuery(
+   provider: Provider,
+@@ -52,14 +98,51 @@ export async function interpretQuery(
+     cities: catalog.cities,
+     nicknames: { ...CITY_NICKNAMES },
+   };
+-  const raw = await provider.interpret(normaliseText(query), context, signal);
++  const normalised = normaliseText(query);
++  const key = interpretationKey(normalised, today);
++  const call = interpretationCache.getOrCreate(key, () =>
++    provider.interpret(normalised, context, signal),
++  );
++  let raw: Awaited<typeof call>;
++  try {
++    raw = await raceSignal(call, signal);
++  } catch (error) {
++    // A call that lost the race may never settle: never pin it in the cache.
++    if (signal.aborted) interpretationCache.evict(key, call);
++    throw error;
++  }
+   return applyInterpretation(raw, current, catalog, today);
+ }
+ 
++/** The candidates that meet the Hard criteria (AD-23), each with its qualifying Room types. */
++function qualifyingCandidates(
++  candidates: readonly SmartCandidate[],
++  party: Party,
++  smart: SmartCriteria,
++) {
++  const found: { candidate: SmartCandidate; qualifying: SmartCandidate["roomTypes"] }[] = [];
++  for (const candidate of candidates) {
++    const qualifying = qualifyingRoomTypes(
++      candidate.roomTypes,
++      candidate.availability,
++      party,
++      smart.maxPriceRand,
++    );
++    if (hotelQualifies(candidate, qualifying, smart.policies)) found.push({ candidate, qualifying });
++  }
++  return found;
++}
++
+ /**
+  * Runs a search (AD-20), the one place its mode is decided:
+- * - `mvp` with no Provider, no Smart search criteria, or a Query that was not
+- *   interpreted: the MVP `searchCatalog` result, unchanged, with no notices.
++ * - `mvp` with no Provider, no Smart search criteria, or a Query that is
++ *   neither interpreted nor a fallback: the MVP `searchCatalog` result,
++ *   unchanged, with no notices.
++ * - `fallback` on a fallback URL: the Hard criteria the URL holds (AD-23:
++ *   Party capacity and Availability always, Max price and Policy criteria if
++ *   present), in MVP `rank` order, as MVP cards priced "from" the cheapest
++ *   qualifying Room type, with no Best-fit room. The fallback notice comes
++ *   first.
+  * - `smart`: the MVP Destination and Stay match, narrowed by the Hard
+  *   criteria (AD-23). Each card carries its Best-fit room and is priced from
+  *   it, and the cards are in Ranking blend order (AD-26). Relevance is 0, and
+@@ -81,22 +164,37 @@ export function runSmartSearch(
+   { debug = false }: { debug?: boolean } = {},
+ ): SearchResult {
+   const { smart, stay, party, q } = criteria;
+-  if (searchMode(provider !== null, smart) === "mvp" || !smart) {
++  const mode = searchMode(provider !== null, smart);
++  if (mode === "mvp" || !smart) {
+     return { ...searchCatalog(db, criteria, now), mode: "mvp", criteriaSummary: null };
+   }
+ 
+   const notices = smartNotices(smart, q);
+-  if (!stay) return { heading: null, cards: [], notices, mode: "smart", criteriaSummary: null };
++  if (!stay) return { heading: null, cards: [], notices, mode, criteriaSummary: null };
++  const found = qualifyingCandidates(smartCandidates(db, criteria, now), party, smart);
++
++  if (mode === "fallback") {
++    const cards: ListingCard[] = [];
++    for (const { candidate, qualifying } of found) {
++      const price = fromPrice(
++        qualifying.map((type) => type.nightlyRand),
++        candidate.card.nights,
++        party.rooms,
++      );
++      if (price) cards.push({ ...candidate.card, ...price });
++    }
++    const ranked = rank(cards);
++    return {
++      heading: heading(q, ranked),
++      cards: ranked,
++      notices,
++      mode,
++      criteriaSummary: ranked.length === 0 ? hardCriteriaSummary(q, smart) : null,
++    };
++  }
+ 
+   const priced: { item: ListingCard; relevance: number }[] = [];
+-  for (const candidate of smartCandidates(db, criteria, now)) {
+-    const qualifying = qualifyingRoomTypes(
+-      candidate.roomTypes,
+-      candidate.availability,
+-      party,
+-      smart.maxPriceRand,
+-    );
+-    if (!hotelQualifies(candidate, qualifying, smart.policies)) continue;
++  for (const { candidate, qualifying } of found) {
+     // No Room-type meanings until Relevance exists, so the cheapest wins.
+     const room = bestFit(qualifying, new Map(), party.rooms, candidate.card.nights);
+     if (!room) continue;

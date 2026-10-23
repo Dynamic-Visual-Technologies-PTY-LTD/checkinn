@@ -5,7 +5,7 @@ import { createTestDb, insertTestBooking } from "@/db/test-db";
 import { defaultCriteria } from "@/domain/criteria";
 import type { SearchCriteria } from "@/domain/types";
 import { formatZar, stayPriceLine } from "@/lib/format";
-import { searchCatalog } from "./search.repo";
+import { searchCatalog, smartCandidates } from "./search.repo";
 
 let db: Db;
 
@@ -97,6 +97,7 @@ describe("searchCatalog", () => {
     expect(searchCatalog(db, criteria({ q: "Bloemfontein" }), NOW)).toEqual({
       heading: null,
       cards: [],
+      notices: [],
     });
   });
 
@@ -104,6 +105,7 @@ describe("searchCatalog", () => {
     expect(searchCatalog(db, criteria({ q: "Cape Town", stay: null }), NOW)).toEqual({
       heading: null,
       cards: [],
+      notices: [],
     });
   });
 
@@ -177,5 +179,45 @@ describe("searchCatalog", () => {
     const [card] = searchCatalog(db, criteria({ q: "Harbourlight" }), NOW).cards;
 
     expect(card).toMatchObject({ nightlyRand: 3000, totalRand: 6000 });
+  });
+});
+
+describe("smartCandidates", () => {
+  it("gives each Destination-matching Hotel with its card, policies, Room types and Availability", () => {
+    const candidates = smartCandidates(db, criteria({ q: "Stellenbosch" }), NOW);
+
+    expect(candidates.map((c) => c.card.name)).toEqual(["Oak & Vine Manor", "Winelands Family Lodge"]);
+    const winelands = candidates[1];
+    const mvpCard = searchCatalog(db, criteria({ q: "Stellenbosch" }), NOW).cards.find(
+      (card) => card.hotelId === "hotel-010",
+    )!;
+    const { totalRand, nightlyRand, ...unpriced } = mvpCard;
+    expect(totalRand).toBeGreaterThan(0);
+    expect(nightlyRand).toBeGreaterThan(0);
+    expect(winelands.card).toEqual(unpriced);
+    expect(winelands.policies).toEqual({
+      petsAllowed: true,
+      childrenAllowed: true,
+      smokingAllowed: false,
+    });
+    expect(winelands.roomTypes).toEqual([
+      { id: "hotel-010-standard", name: "Standard Double", maxGuests: 2, nightlyRand: 1450 },
+      { id: "hotel-010-family", name: "Family Room", maxGuests: 4, nightlyRand: 2000 },
+    ]);
+    expect(winelands.availability.get("hotel-010-family")).toBe(4);
+  });
+
+  it("counts Booked Rooms through availabilityFor", () => {
+    insertTestBooking(db, {
+      hotelId: "hotel-010",
+      stay: weekend,
+      lines: [{ roomTypeId: "hotel-010-family", quantity: 3 }],
+    });
+    const [, winelands] = smartCandidates(db, criteria({ q: "Stellenbosch" }), NOW);
+    expect(winelands.availability.get("hotel-010-family")).toBe(1);
+  });
+
+  it("is empty with no Stay", () => {
+    expect(smartCandidates(db, criteria({ stay: null }), NOW)).toEqual([]);
   });
 });
