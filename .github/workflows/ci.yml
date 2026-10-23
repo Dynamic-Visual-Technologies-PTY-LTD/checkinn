@@ -23,7 +23,9 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      # better-sqlite3 ships prebuilt binaries, so its node-gyp install
+      # script is not needed (and fails where there is no make).
+      - run: npm ci --ignore-scripts
 
       - name: Lint
         run: npm run lint
@@ -51,7 +53,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      # The image has no make; see the verify job.
+      - run: npm ci --ignore-scripts
 
       - name: Build
         run: npm run build
