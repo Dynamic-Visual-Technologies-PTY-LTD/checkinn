@@ -1,8 +1,8 @@
 # Infrastructure
 
-CheckInn runs as one container on Azure Container Apps in South Africa North. The SQLite database lives on an Azure Files share. A Microsoft Foundry account in Sweden Central hosts a `text-embedding-3-small` deployment for the planned natural-language search. Bicep describes the infrastructure, a PowerShell script provisions it, and a GitHub Actions workflow builds the image and rolls out new revisions. No secret, key or password is stored in the repository or in GitHub.
+CheckInn runs as one container on Azure Container Apps in South Africa North. The SQLite database lives on an Azure Files share. A Microsoft Foundry account in Sweden Central hosts a `text-embedding-3-small` deployment for the planned natural-language search and a `gpt-6-luna` chat deployment. Bicep describes the infrastructure, a PowerShell script provisions it, and a GitHub Actions workflow builds the image and rolls out new revisions. No secret, key or password is stored in the repository or in GitHub.
 
-Cost: see [azure-cost-estimate.md](azure-cost-estimate.md). Foundry embeddings are billed per token only; the app does not call them yet.
+Cost: see [azure-cost-estimate.md](azure-cost-estimate.md). Foundry embeddings and chat are billed per token only; the app does not call them yet.
 
 ## Architecture
 
@@ -21,8 +21,10 @@ flowchart LR
       aif["aif-checkinn-prod-sdc-xxxx<br/>Foundry, key auth off"]
       proj["proj-checkinn-prod-sdc"]
       emb["text-embedding-3-small<br/>GlobalStandard"]
+      chat["gpt-6-luna<br/>GlobalStandard"]
       aif --- proj
       aif --- emb
+      aif --- chat
     end
   end
   ca -- "runs as" --> idapp
@@ -38,8 +40,8 @@ flowchart LR
 - **Persistent database.** `CHECKINN_DB_PATH=/mnt/data/checkinn.db`, on an Azure Files share mounted with `nobrl,uid=1000,gid=1000`, so the `node` user can write it and SQLite's byte-range locks are not sent over SMB. Bookings survive restarts and new revisions. On first start the app creates the database, applies the migrations in `drizzle/` and seeds the catalog from `data/seed/`.
 - **Ingress.** External, HTTPS only (`allowInsecure: false`), target port 3000.
 - **No Log Analytics.** The environment has no logs destination, so there is no logging cost. Use the log stream (below) to look at a running app.
-- **Foundry for search.** An `AIServices` account with project management on and local (key) auth off, one project and one `text-embedding-3-small` deployment (model version 1, GlobalStandard, 10K tokens per minute). It is in Sweden Central because embedding models are not offered in South Africa North.
-- **Environment variables.** `CHECKINN_DB_PATH` is the only one the app reads. `CHECKINN_EMBEDDINGS_ENDPOINT` and `CHECKINN_EMBEDDINGS_DEPLOYMENT` are not secrets; they are set for the search ticket and not read yet.
+- **Foundry for search.** An `AIServices` account with project management on and local (key) auth off, one project, one `text-embedding-3-small` deployment (model version 1, GlobalStandard, 10K tokens per minute) and one `gpt-6-luna` deployment (model version 2026-09-22, GlobalStandard, 10K tokens per minute). It is in Sweden Central because embedding models are not offered in South Africa North.
+- **Environment variables.** `CHECKINN_DB_PATH` is the only one the app reads. `CHECKINN_EMBEDDINGS_ENDPOINT`, `CHECKINN_EMBEDDINGS_DEPLOYMENT` and `CHECKINN_CHAT_DEPLOYMENT` (on the same endpoint) are not secrets; they are set for the search ticket and not read yet.
 
 ## Files
 
@@ -51,7 +53,7 @@ flowchart LR
 | `modules/storage.bicep` | Storage account and file share |
 | `modules/app-identity.bicep` | The app's managed identity and its `AcrPull` role |
 | `modules/container-app.bicep` | Container Apps environment, its Azure Files storage and the container app |
-| `modules/foundry.bicep` | Foundry account, project, embedding deployment and the app's role on the account |
+| `modules/foundry.bicep` | Foundry account, project, embedding and chat deployments and the app's role on the account |
 | `modules/github-identity.bicep` | GitHub's managed identity, federated credential and its two roles |
 | `bicepconfig.json` | Bicep linter rules |
 | `scripts/Deploy-CheckInn.ps1` | Provisions the infrastructure and prints (or sets) the GitHub variables |

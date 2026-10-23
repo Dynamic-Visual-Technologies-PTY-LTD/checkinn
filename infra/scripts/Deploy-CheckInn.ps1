@@ -7,7 +7,8 @@
     account and its file share, the Container Apps environment and app, the app
     identity (AcrPull, Cognitive Services OpenAI User), the GitHub deploy
     identity (federated credential, AcrPush, Container Apps Contributor on the
-    app) and the Foundry account, project and text-embedding-3-small deployment.
+    app) and the Foundry account, project and its text-embedding-3-small and
+    gpt-6-luna deployments.
 
     The deployment is idempotent. Before deploying, the script reads the image
     the container app runs now and passes it back, so a re-run never replaces
@@ -186,7 +187,7 @@ foreach ($name in $variableNames) { $variables[$name] = $outputs.$name.value }
 Write-Host ''
 Write-Host "App:                $($outputs.appUrl.value)"
 Write-Host "Federated subject:  $($outputs.federatedSubject.value)"
-Write-Host "Foundry endpoint:   $($outputs.foundryEndpoint.value) (deployment $($outputs.embeddingDeploymentName.value))"
+Write-Host "Foundry endpoint:   $($outputs.foundryEndpoint.value) (deployments $($outputs.embeddingDeploymentName.value), $($outputs.chatDeploymentName.value))"
 Write-Host ''
 Write-Host "GitHub environment '$GitHubEnvironment' variables:"
 $variables.GetEnumerator() | ForEach-Object { Write-Host ("  {0,-28} {1}" -f $_.Key, $_.Value) }

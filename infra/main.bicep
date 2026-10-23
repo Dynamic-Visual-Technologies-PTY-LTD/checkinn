@@ -1,7 +1,7 @@
 // CheckInn on Azure: one resource group holding a Container Apps environment
 // and app (one replica), its registry, the Azure Files share for the SQLite
-// database, the app and GitHub identities, and Foundry (embeddings) for the
-// planned search. A person deploys this with scripts/Deploy-CheckInn.ps1;
+// database, the app and GitHub identities, and Foundry (embeddings and a
+// gpt-6-luna chat model) for the planned search. A person deploys this with scripts/Deploy-CheckInn.ps1;
 // GitHub Actions never does. See README.md.
 targetScope = 'subscription'
 
@@ -47,6 +47,7 @@ var nameBase = '${workload}-${environment}-${locationAbbreviation}'
 var compactNameBase = '${workload}${environment}${locationAbbreviation}'
 var foundryNameBase = '${workload}-${environment}-${foundryLocationAbbreviation}'
 var embeddingDeploymentName = 'text-embedding-3-small'
+var chatDeploymentName = 'gpt-6-luna'
 var tags = {
   workload: workload
   environment: environment
@@ -104,6 +105,7 @@ module foundry 'modules/foundry.bicep' = {
     accountName: 'aif-${foundryNameBase}-${uniqueSuffix}'
     projectName: 'proj-${foundryNameBase}'
     embeddingDeploymentName: embeddingDeploymentName
+    chatDeploymentName: chatDeploymentName
     appPrincipalId: appIdentity.outputs.principalId
     tags: tags
   }
@@ -125,6 +127,7 @@ module containerApp 'modules/container-app.bicep' = {
     containerImage: containerImage
     embeddingsEndpoint: foundry.outputs.endpoint
     embeddingsDeploymentName: foundry.outputs.embeddingDeploymentName
+    chatDeploymentName: foundry.outputs.chatDeploymentName
     tags: tags
   }
 }
@@ -155,3 +158,4 @@ output appUrl string = 'https://${containerApp.outputs.fqdn}'
 output federatedSubject string = gitHubIdentity.outputs.federatedSubject
 output foundryEndpoint string = foundry.outputs.endpoint
 output embeddingDeploymentName string = foundry.outputs.embeddingDeploymentName
+output chatDeploymentName string = foundry.outputs.chatDeploymentName
