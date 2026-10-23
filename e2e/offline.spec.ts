@@ -29,8 +29,8 @@ test("Home → Cape Town search → Hotel page → photo viewer, all with the ne
   const tiles = page
     .getByRole("region", { name: "Explore a city" })
     .getByRole("link", { name: /^(?!Photo credit: )/ });
-  await expect(tiles).toHaveCount(6);
-  await expectPlaceholders(tiles, 6);
+  await expect(tiles).toHaveCount(20);
+  await expectPlaceholders(tiles, 20);
   for (const city of ["Cape Town", "Johannesburg", "Durban", "Pretoria", "Stellenbosch", "Gqeberha"]) {
     await expect(
       tiles.getByRole("img", { name: `${city} destination photograph`, exact: true }),
@@ -43,10 +43,10 @@ test("Home → Cape Town search → Hotel page → photo viewer, all with the ne
   await bar.getByRole("textbox", { name: "Destination" }).fill("Cape Town");
   await bar.getByRole("button", { name: "Search" }).click();
   await expect(
-    page.getByRole("heading", { level: 1, name: "Cape Town: 2 properties found" }),
+    page.getByRole("heading", { level: 1, name: "Cape Town: 6 properties found" }),
   ).toBeVisible();
   const cards = page.getByRole("main").getByRole("article");
-  await expectPlaceholders(cards, 2);
+  await expectPlaceholders(cards, 6);
   await expect(
     cards.first().getByRole("img", { name: "Resort exterior and swimming pool", exact: true }),
   ).toBeVisible();

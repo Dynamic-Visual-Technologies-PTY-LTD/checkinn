@@ -42,12 +42,12 @@ test.describe("Search results", () => {
     await expect(page).toHaveTitle("Cape Town hotels · CheckInn");
     const heading = page.getByRole("heading", {
       level: 1,
-      name: "Cape Town: 2 properties found",
+      name: "Cape Town: 6 properties found",
     });
     await expect(heading).toBeVisible();
     // A full page load keeps focus at the top; only client navigation moves it.
     await expect(heading).not.toBeFocused();
-    await expect(cards(page)).toHaveCount(2);
+    await expect(cards(page)).toHaveCount(6);
 
     const first = cards(page).first();
     const name = first.getByRole("link", { name: "Harbourlight Retreat" });
@@ -72,9 +72,9 @@ test.describe("Search results", () => {
 
     await expect(page).toHaveTitle("Search results · CheckInn");
     await expect(
-      page.getByRole("heading", { level: 1, name: "6 properties found" }),
+      page.getByRole("heading", { level: 1, name: "60 properties found" }),
     ).toBeVisible();
-    await expect(cards(page)).toHaveCount(6);
+    await expect(cards(page)).toHaveCount(60);
     await expect(
       cards(page).first().getByRole("link", { name: "Oak & Vine Manor" }),
     ).toBeVisible();
@@ -84,9 +84,9 @@ test.describe("Search results", () => {
     await page.goto("/search");
 
     await expect(
-      page.getByRole("heading", { level: 1, name: "All destinations: 12 properties found" }),
+      page.getByRole("heading", { level: 1, name: "All destinations: 120 properties found" }),
     ).toBeVisible();
-    await expect(cards(page)).toHaveCount(12);
+    await expect(cards(page)).toHaveCount(120);
   });
 
   test("a card's free cancellation matches the Hotel page: open, or ended inside 48 hours", async ({
@@ -112,7 +112,7 @@ test.describe("Search results", () => {
   });
 
   test("no match explains itself and offers the City tiles", async ({ page }) => {
-    await page.goto(searchFor("Bloemfontein"));
+    await page.goto(searchFor("Atlantis"));
 
     await expect(
       page.getByRole("heading", { level: 1, name: "Nothing matches that search." }),
@@ -124,8 +124,21 @@ test.describe("Search results", () => {
       page.getByRole("region", { name: "Explore a city" }).getByRole("link", {
         name: /^(?!Photo credit: )/,
       }),
-    ).toHaveCount(6);
+    ).toHaveCount(20);
     await expect(cards(page)).toHaveCount(0);
+  });
+
+  test("a new destination opens its hotel and allows a room selection", async ({ page }) => {
+    await page.goto(searchFor("Hermanus"));
+    await expect(page.getByRole("heading", { level: 1, name: "Hermanus: 6 properties found" })).toBeVisible();
+    await expect(cards(page)).toHaveCount(6);
+    await page.getByRole("link", { name: "Hermanus Saltwind House", exact: true }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Hermanus Saltwind House" })).toBeVisible();
+    const rooms = page.getByRole("combobox", { name: "Rooms of Family Suite" });
+    await expect(rooms).toBeVisible();
+    await rooms.selectOption("1");
+    await expect(rooms).toHaveValue("1");
+    await expect(page.getByRole("button", { name: "Reserve", exact: true })).toBeEnabled();
   });
 
   test("a stale link asks for new dates and runs no search", async ({ page }) => {
@@ -152,7 +165,7 @@ test.describe("Search results", () => {
 
     const heading = page.getByRole("heading", {
       level: 1,
-      name: "Cape Town: 2 properties found",
+      name: "Cape Town: 6 properties found",
     });
     await expect(heading).toBeVisible();
     await expect(heading).toBeFocused();
@@ -164,7 +177,7 @@ test.describe("Search results", () => {
     await bar.getByRole("textbox", { name: "Destination" }).fill("Durban");
     await bar.getByRole("button", { name: "Search" }).click();
     await expect(
-      page.getByRole("heading", { level: 1, name: "Durban: 2 properties found" }),
+      page.getByRole("heading", { level: 1, name: "Durban: 6 properties found" }),
     ).toBeVisible();
 
     await page.goBack();
@@ -179,7 +192,7 @@ test.describe("Search results", () => {
 });
 
 test.describe("Photo credits", () => {
-  test("lists 6 City and 12 Hotel credits, reached from the footer", async ({ page }) => {
+  test("lists 20 City and 120 Hotel credits, reached from the footer", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("contentinfo").getByRole("link", { name: "Photo credits" }).click();
 
@@ -190,17 +203,17 @@ test.describe("Photo credits", () => {
     ).toBeVisible();
 
     const cities = page.getByRole("region", { name: "Cities" });
-    await expect(cities.getByRole("heading", { level: 3 })).toHaveCount(6);
+    await expect(cities.getByRole("heading", { level: 3 })).toHaveCount(20);
     await expect(
       cities.getByRole("link", { name: "Source and licence: Cape Town" }),
     ).toHaveAttribute("href", /^https:\/\/commons\.wikimedia\.org\//);
 
     const hotels = page.getByRole("region", { name: "Hotels" });
-    await expect(hotels.getByRole("heading", { level: 3 })).toHaveCount(12);
+    await expect(hotels.getByRole("heading", { level: 3 })).toHaveCount(120);
     await expect(
       hotels.getByRole("heading", { level: 3, name: "Harbourlight Retreat" }),
     ).toBeVisible();
-    await expect(hotels.getByRole("link", { name: "Unsplash licence" })).toHaveCount(24);
+    await expect(hotels.getByRole("link", { name: "Unsplash licence" })).toHaveCount(240);
     await expect(page.getByRole("main").getByRole("img")).toHaveCount(0);
   });
 });

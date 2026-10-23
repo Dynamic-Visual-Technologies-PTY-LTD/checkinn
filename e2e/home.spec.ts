@@ -56,12 +56,12 @@ test.describe("Home page", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Twelve hotels in six South African cities. Pick your dates and book in a few steps.",
+        "Hotels across South Africa. Pick your dates and book in a few steps.",
       ),
     ).toBeVisible();
   });
 
-  test("shows 6 City tiles that each search for their City", async ({
+  test("shows 20 City tiles that each search for their City", async ({
     page,
   }) => {
     await page.goto("/");
@@ -70,7 +70,7 @@ test.describe("Home page", () => {
       page.getByRole("heading", { level: 2, name: "Explore a city" }),
     ).toBeVisible();
     const tiles = cityTiles(page);
-    await expect(tiles).toHaveCount(6);
+    await expect(tiles).toHaveCount(20);
 
     for (const tile of await tiles.all()) {
       const city = (await tile.getAttribute("aria-label")) ?? "";
@@ -88,13 +88,13 @@ test.describe("Home page", () => {
     await page.goto("/");
 
     const tiles = cityTiles(page);
-    await expect(tiles).toHaveCount(6);
+    await expect(tiles).toHaveCount(20);
     for (const tile of await tiles.all()) {
       await tile.scrollIntoViewIfNeeded();
       const city = (await tile.getAttribute("aria-label")) ?? "";
 
       const placeholder = tile.getByRole("img", {
-        name: `${city} destination photograph`,
+        name: /destination photograph/,
       });
       await expect(placeholder).toBeVisible();
       // Proves the failed <img> is gone; the placeholder also has role img.

@@ -34,7 +34,7 @@ test("UJ-1 and the Booking lookup complete with the network blocked", async ({
   await bar.getByRole("button", { name: "Search" }).click();
 
   await expect(
-    page.getByRole("heading", { level: 1, name: "Cape Town: 2 properties found" }),
+    page.getByRole("heading", { level: 1, name: "Cape Town: 6 properties found" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Harbourlight Retreat" }).click();
 

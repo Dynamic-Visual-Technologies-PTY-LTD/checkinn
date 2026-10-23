@@ -32,7 +32,7 @@ test("UJ-1: a 2-night Cape Town Stay at Harbourlight Retreat, booked from Home",
   await bar.getByRole("button", { name: "Search" }).click();
 
   await expect(
-    page.getByRole("heading", { level: 1, name: "Cape Town: 2 properties found" }),
+    page.getByRole("heading", { level: 1, name: "Cape Town: 6 properties found" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Harbourlight Retreat" }).click();
 

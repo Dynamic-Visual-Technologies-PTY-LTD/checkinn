@@ -48,7 +48,11 @@ Then open http://localhost:3000.
 
 The catalog lives in a SQLite file, `data/checkinn.db`, which is not committed. The app creates it on the first request, applies the migrations in [`drizzle/`](drizzle) and loads the seed. Set `CHECKINN_DB_PATH` to put the file somewhere else. To start again from the seed, run `npm run db:reset`. It empties every table and loads the seed again in one transaction, without deleting the file, so the app can keep running and shows the reset data on its next request.
 
-The seed, [`data/seed/hotel-booking-demo.json`](data/seed/hotel-booking-demo.json), is committed unchanged and its ids are the primary keys. It maps to the tables like this:
+The committed seed, [`data/seed/hotel-booking-demo.json`](data/seed/hotel-booking-demo.json), contains **120 fictional hotels, 348 room types and 20 South African destinations**. Hotels, reviews and prices are fictional demo content. The original 12 hotels and six cities are preserved, with new records appended; ids are the primary keys. To reproduce the appended records, run `node scripts/expand-demo-catalog.mjs`.
+
+Existing databases are never automatically reseeded: reopening the app preserves their catalog and bookings. To load the expanded catalog into an existing installation, back up any bookings you need, then explicitly run `npm run db:reset`. **Reset erases all bookings and booking lines**, as well as replacing the catalog. A fresh installation loads the expanded seed automatically.
+
+Ordinary search matches hotel names, areas, cities, city aliases and provinces. It does not search descriptions semantically; embedding-based relevance remains planned work. It maps to the tables like this:
 
 | Seed | Table | Notes |
 |---|---|---|
@@ -57,7 +61,7 @@ The seed, [`data/seed/hotel-booking-demo.json`](data/seed/hotel-booking-demo.jso
 | `hotels[].images[]` | `hotel_images` | Keyed by `hotel_id` and `position` in the array |
 | `hotels[].roomTypes[]` | `room_types` | `pricePerNight` becomes `price_per_night_rand`; `beds` and `amenities` are JSON text |
 
-`amenityLabels` and `metadata` are not stored. Seed photos load from Wikimedia Commons and Unsplash; when they can't, a placeholder shows instead.
+`amenityLabels` and `metadata` are not stored. Seed photos load from Wikimedia Commons and Unsplash; when they can't, a placeholder shows instead. New properties reuse existing illustrative stock photos with their source and licence credits. New destination cards also use clearly labelled illustrative stock, rather than claiming to show those destinations. Hotel photos do not depict the fictional properties.
 
 ## Scripts
 
