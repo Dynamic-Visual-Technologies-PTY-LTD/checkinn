@@ -3,7 +3,7 @@ title: 'Expand the demo catalog for broader hotel searches'
 type: 'feature'
 ticket: ''
 created: '2026-10-23'
-status: 'in-progress'
+status: 'built'
 baseline_revision: '28cc4235dc3de569088d1eb45c354648aa578558'
 route: 'full'
 route_source: 'auto'
@@ -55,7 +55,7 @@ No dependencies, schema, provider, search algorithm, infrastructure or configura
 - [x] Add `src/db/seed.test.ts` catalog integrity and diversity checks, including capacity versus beds, minimum room price, references, policies and image attribution.
 - [x] Update catalog-backed expectations to exact expanded sets or independently computed expected subsets; never relax assertions merely to pass. Add a browser journey for a new destination and hotel/room selection.
 - [x] Update README data section with counts, fictional content, image reuse, current search limits and reset implications.
-- [ ] Run required verification and repair regressions without weakening tests.
+- [x] Run required verification and repair regressions without weakening tests.
 
 Acceptance: Given a fresh database, when the catalog loads, then guests can search 120 hotels across 20 destinations. Given a newly added destination, when a guest searches and opens a result, then the hotel and its rooms are available. Given a previously seeded database, when it reopens, then it is not reseeded. Given the full JSON, when integrity tests run, then all references, prices and capacities are coherent and original records are preserved.
 
@@ -90,3 +90,5 @@ Patch completed: homepage now says "Hotels across South Africa". Homepage unit t
 All must pass; no paid provider calls. Browser suite uses temporary databases and fake/off providers.
 
 User correction on 2026-10-23: PR must target main. Rebuilt from main with only the catalog commit; omitted five Smart-search-specific test files absent from main and adapted the two shared repository tests to MVP APIs. Lint, typecheck and all 655 tests across 71 files pass. Rebase onto current origin/main before publishing; keep the Smart search feature and Azure-auth work excluded.
+
+Final main-based verification: npm run build passed with local worktree dependencies, lint/typecheck passed, all 655 unit/component tests passed, and CI=1 npm run test:e2e passed all 71 browser tests. PR page capture passed two desktop pages (Home and Hermanus); main's capture script assumes a missing mobile project, so capture was explicitly limited to chromium. PR #30 now targets main with only the data changes. The earlier build/browser blocker is resolved on this main-based checkout.
