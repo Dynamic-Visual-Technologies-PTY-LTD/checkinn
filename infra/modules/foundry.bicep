@@ -1,7 +1,7 @@
 // Microsoft Foundry for the planned RAG search: one AIServices account with
 // project management on, one project, one text-embedding-3-small deployment
-// and one gpt-6-luna chat deployment. Key auth is off; the container app signs
-// in with its managed identity.
+// and one gpt-6-luna chat deployment. Key auth is on, but the container app
+// signs in with its managed identity.
 
 @description('Azure region for Foundry. Embeddings are not offered in South Africa North.')
 param location string
@@ -49,7 +49,7 @@ resource account 'Microsoft.CognitiveServices/accounts@2026-05-01' = {
   properties: {
     customSubDomainName: accountName
     allowProjectManagement: true
-    disableLocalAuth: true
+    disableLocalAuth: false
     publicNetworkAccess: 'Enabled'
   }
 }

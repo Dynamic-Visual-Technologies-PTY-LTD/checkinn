@@ -18,7 +18,7 @@ flowchart LR
     idapp["id-checkinn-prod-san-app"]
     idgh["id-checkinn-prod-san-github"]
     subgraph sdc["Sweden Central"]
-      aif["aif-checkinn-prod-sdc-xxxx<br/>Foundry, key auth off"]
+      aif["aif-checkinn-prod-sdc-xxxx<br/>Foundry, key auth on"]
       proj["proj-checkinn-prod-sdc"]
       emb["text-embedding-3-small<br/>GlobalStandard"]
       chat["gpt-6-luna<br/>GlobalStandard"]
@@ -40,7 +40,7 @@ flowchart LR
 - **Persistent database.** `CHECKINN_DB_PATH=/mnt/data/checkinn.db`, on an Azure Files share mounted with `nobrl,uid=1000,gid=1000`, so the `node` user can write it and SQLite's byte-range locks are not sent over SMB. Bookings survive restarts and new revisions. On first start the app creates the database, applies the migrations in `drizzle/` and seeds the catalog from `data/seed/`.
 - **Ingress.** External, HTTPS only (`allowInsecure: false`), target port 3000.
 - **No Log Analytics.** The environment has no logs destination, so there is no logging cost. Use the log stream (below) to look at a running app.
-- **Foundry for search.** An `AIServices` account with project management on and local (key) auth off, one project, one `text-embedding-3-small` deployment (model version 1, GlobalStandard, 10K tokens per minute) and one `gpt-6-luna` deployment (model version 2026-09-22, GlobalStandard, 10K tokens per minute). It is in Sweden Central because embedding models are not offered in South Africa North.
+- **Foundry for search.** An `AIServices` account with project management on and local (key) auth on, one project, one `text-embedding-3-small` deployment (model version 1, GlobalStandard, 10K tokens per minute) and one `gpt-6-luna` deployment (model version 2026-09-22, GlobalStandard, 10K tokens per minute). It is in Sweden Central because embedding models are not offered in South Africa North.
 - **Environment variables.** `CHECKINN_DB_PATH` is the only one the app reads. `CHECKINN_EMBEDDINGS_ENDPOINT`, `CHECKINN_EMBEDDINGS_DEPLOYMENT` and `CHECKINN_CHAT_DEPLOYMENT` (on the same endpoint) are not secrets; they are set for the search ticket and not read yet.
 
 ## Files
@@ -129,7 +129,7 @@ Pull requests and forks never deploy: the workflow only reacts to CI runs for pu
 - The client, tenant and subscription IDs and the resource names are identifiers, not credentials. They live in GitHub environment variables (`vars.*`); the workflow never uses `secrets.*`.
 - The GitHub identity holds two roles: `AcrPush` on the registry and `Container Apps Contributor` on the container app alone. It cannot change any other resource or assign roles. It never deploys Bicep.
 - The registry's admin user is off. The app pulls with its managed identity (`AcrPull`).
-- Foundry key auth is off. The app will call it with its managed identity (`Cognitive Services OpenAI User`).
+- Foundry key auth is on, so its keys can be read in the portal or with `az cognitiveservices account keys list` by anyone with key-listing rights on the account. Keep them out of the repository and GitHub. The app does not use them; it will call Foundry with its managed identity (`Cognitive Services OpenAI User`).
 - The file share mount needs the storage account key. Bicep reads it with `listKeys()` and passes it only to the environment's storage definition. It is never output, printed or written to a file.
 - Storage: HTTPS only, TLS 1.2, no public blob access.
 
