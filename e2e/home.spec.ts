@@ -151,31 +151,6 @@ test.describe("Home page", () => {
     await expect(page.getByRole("main")).toBeFocused();
   });
 
-  test("shows a 2px Gold focus ring with an offset", async ({ page }) => {
-    await page.goto("/");
-
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
-    const logo = page.getByRole("link", { name: "CheckInn home" });
-    await expect(logo).toBeFocused();
-
-    const ring = await logo.evaluate((el) => {
-      const style = getComputedStyle(el);
-      return {
-        color: style.outlineColor,
-        width: style.outlineWidth,
-        offset: style.outlineOffset,
-        style: style.outlineStyle,
-      };
-    });
-    expect(ring).toEqual({
-      color: "rgb(255, 195, 0)",
-      width: "2px",
-      offset: "2px",
-      style: "solid",
-    });
-  });
-
   test("loads without console errors or failed requests", async ({ page }) => {
     const problems: string[] = [];
     page.on("console", (message) => {
@@ -239,54 +214,6 @@ test.describe("Home page", () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
-  test("reflows at 320px without horizontal scrolling", async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 640 });
-    await page.goto("/");
-
-    const overflow = await page.evaluate(
-      () =>
-        document.documentElement.scrollWidth -
-        document.documentElement.clientWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(0);
-  });
-
-  test("shows the icon instead of the wordmark below 480px", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 479, height: 800 });
-    await page.goto("/");
-
-    const logo = page.getByRole("link", { name: "CheckInn home" });
-    // Both images are decorative (alt=""), so only their source tells them apart.
-    await expect(logo.locator('img[src*="checkinn-icon"]')).toBeVisible();
-    await expect(logo.locator('img[src*="checkinn-logo"]')).toBeHidden();
-    await expect(page.getByRole("banner")).toHaveCSS("height", "64px");
-  });
-
-  test("shows the wordmark from 480px", async ({ page }) => {
-    await page.setViewportSize({ width: 480, height: 800 });
-    await page.goto("/");
-
-    const logo = page.getByRole("link", { name: "CheckInn home" });
-    // Both images are decorative (alt=""), so only their source tells them apart.
-    await expect(logo.locator('img[src*="checkinn-logo"]')).toBeVisible();
-    await expect(logo.locator('img[src*="checkinn-icon"]')).toBeHidden();
-  });
-
-  test("the header is 100px tall from 768px", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/");
-
-    await expect(page.getByRole("banner")).toHaveCSS("height", "100px");
-  });
-
-  test("the header is not sticky on a short viewport", async ({ page }) => {
-    await page.setViewportSize({ width: 800, height: 480 });
-    await page.goto("/");
-
-    await expect(page.getByRole("banner")).toHaveCSS("position", "static");
-  });
   test("shows the search bar with the default Stay and Party", async ({
     page,
   }) => {
@@ -381,24 +308,4 @@ test.describe("Home page", () => {
     );
     await expect(page).toHaveURL("/");
   });
-
-  for (const width of [768, 1024, 1280]) {
-    test(`the Dates popover fits a ${width}px viewport`, async ({
-      page,
-      isMobile,
-    }) => {
-      test.skip(isMobile, "Phones use a full-screen sheet.");
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto("/");
-
-      await searchBar(page).getByRole("button", { name: /^Dates/ }).click();
-      const popover = page.getByRole("dialog", { name: "Dates" });
-      await expect(popover).toBeVisible();
-
-      const box = await popover.boundingBox();
-      if (!box) throw new Error("The Dates popover has no layout box.");
-      expect(box.x).toBeGreaterThanOrEqual(0);
-      expect(box.x + box.width).toBeLessThanOrEqual(width);
-    });
-  }
 });

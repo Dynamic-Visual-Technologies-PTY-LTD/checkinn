@@ -27,6 +27,7 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
   },
+  // Desktop only: phone layouts are covered by component tests.
   projects: [
     // Read-only specs, in parallel.
     {
@@ -34,28 +35,15 @@ export default defineConfig({
       testIgnore: BOOKING_SPECS,
       use: { ...devices["Desktop Chrome"] },
     },
+    // Booking specs: serial, after the read-only project finishes, so they
+    // never race it over Rooms.
     {
-      name: "mobile",
-      testIgnore: BOOKING_SPECS,
-      use: { ...devices["Pixel 7"] },
-    },
-    // Booking specs: serial, after the read-only projects finish, so they
-    // never race them over Rooms; desktop first, then mobile.
-    {
-      name: "booking-desktop",
+      name: "booking",
       testMatch: BOOKING_SPECS,
       fullyParallel: false,
       workers: 1,
-      dependencies: ["chromium", "mobile"],
+      dependencies: ["chromium"],
       use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "booking-mobile",
-      testMatch: BOOKING_SPECS,
-      fullyParallel: false,
-      workers: 1,
-      dependencies: ["booking-desktop"],
-      use: { ...devices["Pixel 7"] },
     },
   ],
   // Always a production server of its own, against a temporary database

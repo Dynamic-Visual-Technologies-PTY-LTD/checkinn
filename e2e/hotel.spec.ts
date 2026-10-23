@@ -21,17 +21,8 @@ function weekendStay() {
 const criteria = () => ({ q: "Cape Town", stay: weekendStay(), party: DEFAULT_PARTY });
 const harbourlightPath = () => hotelHref("hotel-001", criteria());
 
-/**
- * The booking summary a guest can read: the side panel on desktop, the sheet
- * behind the summary bar on a phone.
- */
-async function bookingSummary(page: Page, isMobile: boolean): Promise<Locator> {
-  if (!isMobile) return page.getByRole("complementary", { name: "Booking summary" });
-  await page
-    .getByRole("region", { name: "Booking summary" })
-    .getByRole("button", { name: /Show full summary/ })
-    .click();
-  return page.getByRole("dialog", { name: "Booking summary" });
+function bookingSummary(page: Page): Locator {
+  return page.getByRole("complementary", { name: "Booking summary" });
 }
 
 function heading(page: Page) {
@@ -243,53 +234,6 @@ test.describe("Hotel page", () => {
     await expect(second).toBeFocused();
   });
 
-  test("on a phone the viewer covers the screen and a swipe changes the photo", async ({
-    page,
-    isMobile,
-  }) => {
-    test.skip(!isMobile, "Touch swipe runs in the mobile project.");
-    await page.goto(harbourlightPath());
-    await page
-      .getByRole("list", { name: "Photos" })
-      .getByRole("button", { name: "Resort exterior and swimming pool" })
-      .click();
-
-    const viewer = page.getByRole("dialog", { name: "Harbourlight Retreat photos" });
-    await expect(viewer.getByText("Photo 1 of 2")).toBeAttached();
-    const viewport = page.viewportSize();
-    const box = await viewer.boundingBox();
-    expect(box).toEqual({ x: 0, y: 0, width: viewport?.width, height: viewport?.height });
-
-    // Playwright has no swipe, so the touch points go through the DevTools protocol.
-    const photo = await viewer
-      .getByRole("img", { name: "Resort exterior and swimming pool" })
-      .boundingBox();
-    if (!photo) throw new Error("The photo has no box");
-    const y = photo.y + photo.height / 2;
-    const cdp = await page.context().newCDPSession(page);
-    const drag = async (fromX: number, toX: number) => {
-      await cdp.send("Input.dispatchTouchEvent", {
-        type: "touchStart",
-        touchPoints: [{ x: fromX, y }],
-      });
-      await cdp.send("Input.dispatchTouchEvent", {
-        type: "touchMove",
-        touchPoints: [{ x: toX, y }],
-      });
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    };
-    const centre = photo.x + photo.width / 2;
-
-    await drag(centre + 60, centre - 60);
-    await expect(viewer.getByText("Photo 2 of 2")).toBeAttached();
-
-    await drag(centre - 60, centre + 60);
-    await expect(viewer.getByText("Photo 1 of 2")).toBeAttached();
-
-    await drag(centre + 15, centre - 15);
-    await expect(viewer.getByText("Photo 1 of 2")).toBeAttached();
-  });
-
   test("other Hotels show their own Facilities and rules", async ({ page }) => {
     await page.goto("/hotels/hotel-002");
     await expect(
@@ -343,12 +287,12 @@ test.describe("Hotel page", () => {
     await expect(page.getByRole("group", { name: "Room no longer available" })).toHaveCount(0);
   });
 
-  test("free cancellation shows its deadline while it is open", async ({ page, isMobile }) => {
+  test("free cancellation shows its deadline while it is open", async ({ page }) => {
     const stay = weekendStay();
     await page.goto(hotelHref("hotel-002", { stay, party: DEFAULT_PARTY }));
     await expect(page.getByRole("combobox", { name: "Rooms of Standard Double" })).toBeVisible();
 
-    const summary = await bookingSummary(page, isMobile);
+    const summary = bookingSummary(page);
     await expect(summary.getByText("Free cancellation", { exact: true })).toBeVisible();
     await expect(
       summary.getByText(`until ${deadlineLabel(cancellationDeadline(stay.checkIn, "14:00"))}`),
@@ -357,7 +301,6 @@ test.describe("Hotel page", () => {
 
   test("a passed free-cancellation deadline reads as ended, with no Mint badge", async ({
     page,
-    isMobile,
   }) => {
     // The default search: check-in tomorrow, whose deadline was yesterday.
     const checkIn = addDays(todayIn(), 1);
@@ -369,7 +312,7 @@ test.describe("Hotel page", () => {
     );
     await expect(page.getByRole("combobox", { name: "Rooms of Standard Double" })).toBeVisible();
 
-    const summary = await bookingSummary(page, isMobile);
+    const summary = bookingSummary(page);
     await expect(
       summary.getByText(
         `Free cancellation ended on ${deadlineLabel(cancellationDeadline(checkIn, "14:00"))}.`,

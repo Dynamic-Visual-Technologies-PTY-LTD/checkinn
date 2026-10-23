@@ -26,12 +26,6 @@ function cards(page: Page) {
   return page.getByRole("main").getByRole("article");
 }
 
-/** Phones start with the collapsed summary; tap it to reach the full bar. */
-async function openSearchBar(page: Page, isMobile: boolean) {
-  if (isMobile) await page.getByRole("button", { name: /^Change search/ }).click();
-  return page.getByRole("search", { name: "Search hotels" });
-}
-
 test.describe("Search results", () => {
   test.beforeEach(async ({ page }) => {
     await page.route(
@@ -149,7 +143,7 @@ test.describe("Search results", () => {
     await expect(cards(page)).toHaveCount(0);
   });
 
-  test("Home → Search shows results, and Back returns Home", async ({ page, isMobile }) => {
+  test("Home → Search shows results, and Back returns Home", async ({ page }) => {
     await page.goto("/");
 
     const bar = page.getByRole("search", { name: "Search hotels" });
@@ -167,9 +161,8 @@ test.describe("Search results", () => {
     ).toBeVisible();
 
     // A new search from the results page pushes another URL.
-    const resultsBar = await openSearchBar(page, isMobile);
-    await resultsBar.getByRole("textbox", { name: "Destination" }).fill("Durban");
-    await resultsBar.getByRole("button", { name: "Search" }).click();
+    await bar.getByRole("textbox", { name: "Destination" }).fill("Durban");
+    await bar.getByRole("button", { name: "Search" }).click();
     await expect(
       page.getByRole("heading", { level: 1, name: "Durban: 2 properties found" }),
     ).toBeVisible();
@@ -183,44 +176,6 @@ test.describe("Search results", () => {
     ).toBeVisible();
   });
 
-  test("the search bar starts collapsed on phones and expands on tap", async ({
-    page,
-    isMobile,
-  }) => {
-    await page.goto(searchFor("Cape Town"));
-    const bar = page.getByRole("search", { name: "Search hotels" });
-
-    if (!isMobile) {
-      await expect(bar).toBeVisible();
-      await expect(page.getByRole("button", { name: /^Change search/ })).toBeHidden();
-      return;
-    }
-
-    const stay = weekendStay();
-    const day = (date: string) => Number(date.slice(8));
-    const summary = page.getByRole("button", { name: /^Change search: Cape Town · / });
-    await expect(summary).toBeVisible();
-    await expect(summary).toContainText(String(day(stay.checkIn)));
-    await expect(summary).toContainText("2 adults");
-    await expect(bar).toBeHidden();
-    // The first result is in view without scrolling.
-    await expect(cards(page).first()).toBeInViewport();
-
-    await summary.click();
-    await expect(bar).toBeVisible();
-    await expect(bar.getByRole("textbox", { name: "Destination" })).toBeFocused();
-  });
-
-  test("reflows at 320px without horizontal scrolling", async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 640 });
-    await page.goto(searchFor("Cape Town"));
-    await expect(cards(page)).toHaveCount(2);
-
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(0);
-  });
 });
 
 test.describe("Photo credits", () => {

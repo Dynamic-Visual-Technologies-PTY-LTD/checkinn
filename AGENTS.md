@@ -27,7 +27,7 @@
 | UI | React | 19.3.0 |
 | Styling | Tailwind CSS | 4.3.3 |
 | Unit and component tests | Vitest, Testing Library, jsdom | 5.0.3 / 16.3.3 / 30.1.2 |
-| End-to-end tests | Playwright, Chromium (desktop and mobile viewport) | 1.64.0 |
+| End-to-end tests | Playwright, Chromium (desktop viewport only) | 1.64.0 |
 | Linting | ESLint with `eslint-config-next` | 9.39.5 / 16.4.0 |
 | Package manager | npm | lockfile committed |
 | Design tokens | `@google/design.md` CLI | 0.4.0 |
@@ -112,7 +112,9 @@ import { formatPrice } from "../../../lib/format"; // no
 
 `npm run typecheck` runs `next typegen` first, because Next.js generates the route and layout prop types that `tsc` needs. Plain `tsc --noEmit` fails on a clean checkout.
 
-`npm run test:e2e` never reuses a running server. It runs `npm run build`, then `npm start` on port 3100 against a temporary database in the OS temp folder, and resets that database in global setup, so `data/checkinn.db` and a dev server on port 3000 are left alone. With `CI` set it skips the build, so run `npm run build` first. Specs that create or cancel Bookings go in `e2e/booking/` and run serially in the `booking-desktop` then `booking-mobile` projects, after the read-only `chromium` and `mobile` projects finish; use `uniqueGuestEmail()` from `e2e/support/guest.ts` in them. CI runs the end-to-end tests as a separate `e2e` job.
+`npm run test:e2e` never reuses a running server. It runs `npm run build`, then `npm start` on port 3100 against a temporary database in the OS temp folder, and resets that database in global setup, so `data/checkinn.db` and a dev server on port 3000 are left alone. With `CI` set it skips the build, so run `npm run build` first. Specs that create or cancel Bookings go in `e2e/booking/` and run serially in the `booking` project, after the read-only `chromium` project finishes; use `uniqueGuestEmail()` from `e2e/support/guest.ts` in them. CI runs the end-to-end tests as a separate `e2e` job, inside the Playwright container image, whose tag must match the installed `@playwright/test` version.
+
+The end-to-end suite is desktop only and kept small: guest journeys and flows that need a real browser. Phone layouts, breakpoints and styling details belong in component tests.
 
 There is no formatter configured. ESLint is the only style gate.
 

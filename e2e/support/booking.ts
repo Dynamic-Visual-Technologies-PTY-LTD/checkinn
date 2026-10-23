@@ -12,18 +12,18 @@ import { E2E_DB_PATH } from "./db";
 /**
  * Helpers for the booking specs in `e2e/booking/` (AD-18). They create
  * Bookings, so each test books its own dates: never the read-only specs'
- * days +3 to +5, and never another project's or retry's.
+ * days +3 to +5, and never another retry's.
  */
 
 export { blockSeedPhotos } from "./network";
 
-/** Days in each project and retry's window; 11 slots of 5 days. */
+/** Days in each retry's window; 11 slots of 5 days. */
 const WINDOW_DAYS = 55;
 const SLOT_DAYS = 5;
 /** After the read-only specs' days +1 to +5. */
 const FIRST_DAY = 6;
-/** Two projects, each run at most 3 times (2 retries on CI). */
-const WINDOWS = 6;
+/** Run at most 3 times (2 retries on CI). */
+const WINDOWS = 3;
 /** Slots 11 to 14 live after every calendar window, in windows of their own. */
 const CALENDAR_SLOTS = WINDOW_DAYS / SLOT_DAYS;
 const URL_SLOTS = 4;
@@ -33,8 +33,8 @@ const URL_FIRST_DAY = FIRST_DAY + WINDOWS * WINDOW_DAYS;
 const PHONE_CALENDAR_MONTHS = 12;
 
 /**
- * A Stay from day +6 onwards that no other test, project or retry books:
- * each (project, retry) pair gets a window, and each test a numbered 5-day
+ * A Stay from day +6 onwards that no other test or retry books:
+ * each retry gets a window, and each test a numbered 5-day
  * slot in it. Stays up to 5 nights fit a slot.
  *
  * - Slots 0 to 10 sit in 55-day windows, so a spec can pick them in the range
@@ -45,16 +45,13 @@ const PHONE_CALENDAR_MONTHS = 12;
  *   reach them by URL only (`bookHref`, `hotelHref`, `searchHref`).
  *
  * Taken: 0 UJ-1, 1 UJ-2, 2 to 9 booking details, 10 the blocked-network
- * booking (offline booking on booking-desktop, the phone journey on
- * booking-mobile: each runs in one project only, so they never share a
- * window), 11 and 12 UJ-3, 14 reset. 13 is free.
+ * booking, 11 and 12 UJ-3, 14 reset. 13 is free.
  */
 export function bookingStay(testInfo: TestInfo, slot: number, nights = 2): Stay {
   if (slot < 0 || slot >= CALENDAR_SLOTS + URL_SLOTS || nights > SLOT_DAYS) {
     throw new Error(`No room for slot ${slot} with ${nights} nights`);
   }
-  const project = testInfo.project.name === "booking-mobile" ? 1 : 0;
-  const window = project + 2 * testInfo.retry;
+  const window = testInfo.retry;
   if (window >= WINDOWS) throw new Error(`No window for retry ${testInfo.retry}`);
   const offset =
     slot < CALENDAR_SLOTS

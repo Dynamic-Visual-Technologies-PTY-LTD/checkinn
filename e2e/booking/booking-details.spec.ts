@@ -68,37 +68,6 @@ test.describe("Booking details", () => {
     ).toBeVisible();
   });
 
-  test("on a phone the summary comes first and a fixed bar holds the total and Confirm booking", async ({
-    page,
-    isMobile,
-  }, testInfo) => {
-    test.skip(!isMobile, "Phone layout only");
-    await page.goto(bookHref({ hotel: "hotel-001", stay: bookingStay(testInfo, 2), sel: STANDARD }));
-
-    const summaryBox = await bookingSummary(page).boundingBox();
-    const formBox = await page.getByRole("form", { name: "Your details" }).boundingBox();
-    expect(summaryBox!.y).toBeLessThan(formBox!.y);
-
-    const bar = page.getByRole("region", { name: "Booking summary" });
-    await expect(bar).toBeInViewport();
-    await expect(bar).toContainText(/1 room · R\s4\s900,00/);
-    await expect(bar.getByRole("button", { name: "Confirm booking" })).toBeVisible();
-    await expect(
-      bookingSummary(page).getByRole("button", { name: "Confirm booking" }),
-    ).toBeHidden();
-  });
-
-  test("reflows at 320px without horizontal scrolling", async ({ page }, testInfo) => {
-    await page.setViewportSize({ width: 320, height: 640 });
-    await page.goto(bookHref({ hotel: "hotel-001", stay: bookingStay(testInfo, 2), sel: STANDARD }));
-    await expect(page.getByRole("heading", { level: 1, name: "Your details" })).toBeVisible();
-
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(0);
-  });
-
   test("an empty submit makes no Booking and focuses a summary that links to each field", async ({
     page,
   }, testInfo) => {
