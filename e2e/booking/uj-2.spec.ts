@@ -43,7 +43,7 @@ test("UJ-2: 2 adults, 3 children, 2 rooms for 5 nights at Coral Coast Resort", a
   await bar.getByRole("button", { name: "Search" }).click();
 
   await expect(
-    page.getByRole("heading", { level: 1, name: "Durban: 2 properties found" }),
+    page.getByRole("heading", { level: 1, name: "Durban: 6 properties found" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Coral Coast Resort" }).click();
 

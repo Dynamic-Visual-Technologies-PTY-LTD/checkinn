@@ -56,12 +56,12 @@ test.describe("Home page", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Twelve hotels in six South African cities. Pick your dates and book in a few steps.",
+        "Hotels across South Africa. Pick your dates and book in a few steps.",
       ),
     ).toBeVisible();
   });
 
-  test("shows 6 City tiles that each search for their City", async ({
+  test("shows 20 City tiles that each search for their City", async ({
     page,
   }) => {
     await page.goto("/");
@@ -70,7 +70,7 @@ test.describe("Home page", () => {
       page.getByRole("heading", { level: 2, name: "Explore a city" }),
     ).toBeVisible();
     const tiles = cityTiles(page);
-    await expect(tiles).toHaveCount(6);
+    await expect(tiles).toHaveCount(20);
 
     for (const tile of await tiles.all()) {
       const city = (await tile.getAttribute("aria-label")) ?? "";
@@ -81,28 +81,47 @@ test.describe("Home page", () => {
     }
   });
 
-  test("shows placeholders with the name when photos are blocked", async ({
+  test("loads local destination images while remote photos show placeholders", async ({
     page,
   }) => {
     // Seed photos are aborted in beforeEach.
     await page.goto("/");
 
     const tiles = cityTiles(page);
-    await expect(tiles).toHaveCount(6);
+    await expect(tiles).toHaveCount(20);
     for (const tile of await tiles.all()) {
       await tile.scrollIntoViewIfNeeded();
       const city = (await tile.getAttribute("aria-label")) ?? "";
 
-      const placeholder = tile.getByRole("img", {
-        name: `${city} destination photograph`,
+      const image = tile.getByRole("img", {
+        name: /destination photograph/,
       });
-      await expect(placeholder).toBeVisible();
-      // Proves the failed <img> is gone; the placeholder also has role img.
-      await expect(tile.locator("img")).toHaveCount(0);
+      await expect(image).toBeVisible();
+      if ((await image.getAttribute("aria-label")) === null) {
+        await expect(image).toHaveAttribute("src", /^\/images\/destinations\//);
+        await expect(image).toHaveAttribute("alt", /^AI-generated/);
+        await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+      } else {
+        // A failed remote <img> is replaced by the labelled placeholder.
+        await expect(tile.locator("img")).toHaveCount(0);
+      }
       await expect(tile.getByText(city, { exact: true })).toBeVisible();
       await expect(
         page.getByRole("link", { name: `Photo credit: ${city}` }),
       ).toBeVisible();
+    }
+  });
+
+  test("shows named placeholders if local destination images also fail", async ({ page }) => {
+    await page.route("**/images/destinations/**", (route) => route.abort());
+    await page.goto("/");
+    const tiles = cityTiles(page);
+    await expect(tiles).toHaveCount(20);
+    for (const tile of await tiles.all()) {
+      await tile.scrollIntoViewIfNeeded();
+      await expect(tile.getByRole("img")).toBeVisible();
+      await expect(tile.locator("img")).toHaveCount(0);
+      await expect(tile.getByText((await tile.getAttribute("aria-label")) ?? "", { exact: true })).toBeVisible();
     }
   });
 
