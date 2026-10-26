@@ -47,7 +47,7 @@ test("Home → Cape Town search → Hotel page → photo viewer, all with the ne
   }
   await expectNoHorizontalScroll(page);
 
-  // Search results: each card shows its placeholder with the hotel name.
+  // Search results: stock images fall back, while local room illustrations load.
   const bar = page.getByRole("search", { name: "Search hotels" });
   await bar.getByRole("textbox", { name: "Destination" }).fill("Cape Town");
   await bar.getByRole("button", { name: "Search" }).click();
@@ -55,7 +55,16 @@ test("Home → Cape Town search → Hotel page → photo viewer, all with the ne
     page.getByRole("heading", { level: 1, name: "Cape Town: 6 properties found" }),
   ).toBeVisible();
   const cards = page.getByRole("main").getByRole("article");
-  await expectPlaceholders(cards, 6);
+  const generatedRoomCards = cards.filter({ has: page.getByRole("img", { name: /^AI-generated illustrative/ }) });
+  await expect(generatedRoomCards).toHaveCount(4);
+  await expectPlaceholders(cards.filter({ hasNot: page.getByRole("img", { name: /^AI-generated illustrative/ }) }), 2);
+  for (const card of await generatedRoomCards.all()) {
+    await card.scrollIntoViewIfNeeded();
+    const image = card.getByRole("img", { name: /^AI-generated illustrative/ });
+    await expect(image).toBeVisible();
+    await expect(image).toHaveAttribute("src", /^\/images\/rooms\//);
+    await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  }
   await expect(
     cards.first().getByRole("img", { name: "Resort exterior and swimming pool", exact: true }),
   ).toBeVisible();

@@ -69,18 +69,21 @@ for (const [cityIndex, city] of seed.cities.entries()) {
       starRating: style.category === "luxury" ? 5 : style.category === "budget" ? 2 : 4,
       reviewScore: Number((3.6 + ((cityIndex + variant) % 10) / 10).toFixed(1)), reviewScoreMax: 5, reviewCount: 30 + number * 3,
       currency: "ZAR", priceFromPerNight: base, amenities: style.amenities,
-      images: seed.hotels[(number - 13) % 12].images.map((image, index) => {
-        if (index === 0) return { ...image, alt: `${image.alt} (illustrative stock photo; not this property)` };
+      images: (() => {
+        const [firstStockImage] = seed.hotels[(number - 13) % 12].images;
         const variants = roomImages.categoryVariants[style.category];
         const roomImage = roomImages.images[variants[(number - 13) % variants.length]];
-        return {
-          ...roomImage,
-          provider: "OpenAI ImageGen",
-          isIllustrative: true,
-          sourceUrl: roomImage.url,
-          licenseUrl: "/images/rooms/CREDITS.txt"
-        };
-      }),
+        return [
+          {
+            ...roomImage,
+            provider: "OpenAI ImageGen",
+            isIllustrative: true,
+            sourceUrl: roomImage.url,
+            licenseUrl: "/images/rooms/CREDITS.txt"
+          },
+          { ...firstStockImage, alt: `${firstStockImage.alt} (illustrative stock photo; not this property)` },
+        ];
+      })(),
       checkInTime: variant % 2 === 0 ? "14:00" : "15:00", checkOutTime: "10:00", timeZone: "Africa/Johannesburg",
       policies: { childrenAllowed, petsAllowed: variant % 2 === 0, smokingAllowed: variant === 3,
         cancellation: { type: variant % 3 === 0 ? "non_refundable" : "free_until_48_hours_before_check_in" } },

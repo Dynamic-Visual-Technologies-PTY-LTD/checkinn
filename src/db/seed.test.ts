@@ -98,7 +98,7 @@ describe("demo catalog", () => {
     const assignedRoomUrls = new Set<string>();
     for (const hotel of added) {
       expect(hotel.images).toHaveLength(2);
-      const [stockImage, roomImage] = hotel.images;
+      const [roomImage, stockImage] = hotel.images;
       expect(stockImage.provider).toBe("Unsplash");
       expect(stockImage.sourceUrl).toBe(originals.get(stockImage.url)?.sourceUrl);
       expect(stockImage.licenseUrl).toBe(originals.get(stockImage.url)?.licenseUrl);
