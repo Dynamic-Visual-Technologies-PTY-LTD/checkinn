@@ -69,7 +69,7 @@ describe("searchHotels notices", () => {
         }),
       }),
     );
-    expect(result.heading).toBe("All destinations: 12 properties found");
+    expect(result.heading).toBe("All destinations: 120 properties found");
     expect(result.notices).toEqual([
       { kind: "place", place: "Kruger" },
       { kind: "ignored", text: "for 0", about: "party" },
@@ -119,7 +119,7 @@ describe("searchHotels goes through runSmartSearch (AD-20)", () => {
     mocks.provider = null;
     const result = await searchHotels(uj1());
     expect(result.mode).toBe("mvp");
-    expect(result.cards).toHaveLength(2);
+    expect(result.cards).toHaveLength(6);
     expect(result.criteriaSummary).toBeNull();
   });
 });

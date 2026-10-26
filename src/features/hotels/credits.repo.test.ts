@@ -16,7 +16,7 @@ afterAll(() => {
 });
 
 describe("listPhotoCredits", () => {
-  it("lists the 6 Cities in seed order with their source page and instructions", () => {
+  it("lists the 20 Cities in seed order with their source page and instructions", () => {
     const seed = loadSeed();
     const { cities } = listPhotoCredits(db);
 
@@ -29,11 +29,11 @@ describe("listPhotoCredits", () => {
     });
   });
 
-  it("gives one entry per Hotel, 12 in all, each with both photos", () => {
+  it("gives one entry per Hotel, 120 in all, each with both photos", () => {
     const { hotels } = listPhotoCredits(db);
 
-    expect(hotels).toHaveLength(12);
-    expect(new Set(hotels.map((hotel) => hotel.hotelId)).size).toBe(12);
+    expect(hotels).toHaveLength(120);
+    expect(new Set(hotels.map((hotel) => hotel.hotelId)).size).toBe(120);
     for (const hotel of hotels) expect(hotel.photos).toHaveLength(2);
   });
 

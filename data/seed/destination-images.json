@@ -1,0 +1,100 @@
+{
+  "hermanus": {
+    "url": "/images/destinations/hermanus.webp",
+    "alt": "AI-generated landscape inspired by Hermanus; not a destination photograph",
+    "sourceUrl": "/images/destinations/hermanus.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Hermanus; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "knysna": {
+    "url": "/images/destinations/knysna.webp",
+    "alt": "AI-generated landscape inspired by Knysna; not a destination photograph",
+    "sourceUrl": "/images/destinations/knysna.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Knysna; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "plettenberg-bay": {
+    "url": "/images/destinations/plettenberg-bay.webp",
+    "alt": "AI-generated landscape inspired by Plettenberg Bay; not a destination photograph",
+    "sourceUrl": "/images/destinations/plettenberg-bay.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Plettenberg Bay; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "george": {
+    "url": "/images/destinations/george.webp",
+    "alt": "AI-generated landscape inspired by George; not a destination photograph",
+    "sourceUrl": "/images/destinations/george.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by George; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "oudtshoorn": {
+    "url": "/images/destinations/oudtshoorn.webp",
+    "alt": "AI-generated landscape inspired by Oudtshoorn; not a destination photograph",
+    "sourceUrl": "/images/destinations/oudtshoorn.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Oudtshoorn; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "franschhoek": {
+    "url": "/images/destinations/franschhoek.webp",
+    "alt": "AI-generated landscape inspired by Franschhoek; not a destination photograph",
+    "sourceUrl": "/images/destinations/franschhoek.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Franschhoek; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "ballito": {
+    "url": "/images/destinations/ballito.webp",
+    "alt": "AI-generated landscape inspired by Ballito; not a destination photograph",
+    "sourceUrl": "/images/destinations/ballito.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Ballito; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "pietermaritzburg": {
+    "url": "/images/destinations/pietermaritzburg.webp",
+    "alt": "AI-generated landscape inspired by Pietermaritzburg; not a destination photograph",
+    "sourceUrl": "/images/destinations/pietermaritzburg.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Pietermaritzburg; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "dullstroom": {
+    "url": "/images/destinations/dullstroom.webp",
+    "alt": "AI-generated landscape inspired by Dullstroom; not a destination photograph",
+    "sourceUrl": "/images/destinations/dullstroom.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Dullstroom; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "mbombela": {
+    "url": "/images/destinations/mbombela.webp",
+    "alt": "AI-generated landscape inspired by Mbombela; not a destination photograph",
+    "sourceUrl": "/images/destinations/mbombela.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Mbombela; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "polokwane": {
+    "url": "/images/destinations/polokwane.webp",
+    "alt": "AI-generated landscape inspired by Polokwane; not a destination photograph",
+    "sourceUrl": "/images/destinations/polokwane.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Polokwane; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "bloemfontein": {
+    "url": "/images/destinations/bloemfontein.webp",
+    "alt": "AI-generated landscape inspired by Bloemfontein; not a destination photograph",
+    "sourceUrl": "/images/destinations/bloemfontein.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Bloemfontein; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "kimberley": {
+    "url": "/images/destinations/kimberley.webp",
+    "alt": "AI-generated landscape inspired by Kimberley; not a destination photograph",
+    "sourceUrl": "/images/destinations/kimberley.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Kimberley; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  },
+  "rustenburg": {
+    "url": "/images/destinations/rustenburg.webp",
+    "alt": "AI-generated landscape inspired by Rustenburg; not a destination photograph",
+    "sourceUrl": "/images/destinations/rustenburg.webp",
+    "creditInstructions": "AI-generated with OpenAI ImageGen for CheckInn, 26 October 2026. Illustrative scene inspired by Rustenburg; not a documentary photograph or a verified depiction of a real property.",
+    "isIllustrative": true
+  }
+}

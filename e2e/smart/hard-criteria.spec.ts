@@ -79,25 +79,35 @@ test.describe("Hard criteria, Criteria chips and corrections", () => {
     await expect(page.getByText("Reading your search…")).toHaveCount(0);
     expect(actions).toBe(0);
 
-    // Removing Pets keeps focus in the chip row; Winelands is still alone.
+    // Removing Pets keeps focus in the chip row; Everyday Suites' Family Suite
+    // joins Winelands at R 2 000 or less.
     await chipRow(page).getByRole("button", { name: PETS_CHIP }).click();
     await page.waitForURL((url) => !url.searchParams.has("policy"));
-    await expect(cardNames(page)).toHaveText(["Winelands Family Lodge"]);
+    await expect(cardNames(page)).toHaveText([
+      "Winelands Family Lodge",
+      "Stellenbosch Everyday Suites",
+    ]);
     await expect(chipRow(page).getByRole("button", { name: MAX_CHIP })).toBeFocused();
     await expect(heading(page)).not.toBeFocused();
-    await expect(page.getByRole("status").filter({ hasText: "1 property found" })).toHaveCount(1);
+    await expect(page.getByRole("status").filter({ hasText: "2 properties found" })).toHaveCount(1);
 
     // Removing Max price too widens the results; focus goes to the box.
     await chipRow(page).getByRole("button", { name: MAX_CHIP }).click();
     await page.waitForURL((url) => !url.searchParams.has("maxPrice"));
-    await expect(heading(page)).toHaveText("Stellenbosch: 2 properties found");
+    await expect(heading(page)).toHaveText("Stellenbosch: 5 properties found");
     // The Ranking blend order (Relevance 0 until it exists): Winelands' Family
     // Room at R 2 000 outweighs Oak & Vine's higher Review score at R 2 500.
-    await expect(cardNames(page)).toHaveText(["Winelands Family Lodge", "Oak & Vine Manor"]);
+    await expect(cardNames(page)).toHaveText([
+      "Winelands Family Lodge",
+      "Oak & Vine Manor",
+      "Stellenbosch Everyday Suites",
+      "Stellenbosch Fieldstone Lodge",
+      "Stellenbosch Meadow House",
+    ]);
     await expect(chipRow(page)).toHaveCount(0);
     await expect(smartBox(page)).toBeFocused();
     await expect(
-      page.getByRole("status").filter({ hasText: "Stellenbosch: 2 properties found" }),
+      page.getByRole("status").filter({ hasText: "Stellenbosch: 5 properties found" }),
     ).toHaveCount(1);
     expect(params(page).get("sq")).toBe(UJ1);
 
@@ -109,9 +119,16 @@ test.describe("Hard criteria, Criteria chips and corrections", () => {
     for (const name of ["smart", "prefs", "maxPrice", "policy"]) {
       expect(params(page).has(name)).toBe(false);
     }
-    await expect(heading(page)).toHaveText("Stellenbosch: 2 properties found");
+    await expect(heading(page)).toHaveText("Stellenbosch: 6 properties found");
     // The MVP order: Review score, then Nightly price.
-    await expect(cardNames(page)).toHaveText(["Oak & Vine Manor", "Winelands Family Lodge"]);
+    await expect(cardNames(page)).toHaveText([
+      "Oak & Vine Manor",
+      "Winelands Family Lodge",
+      "Stellenbosch Fieldstone Lodge",
+      "Stellenbosch Meadow House",
+      "Stellenbosch Everyday Suites",
+      "Stellenbosch Stillwater Retreat",
+    ]);
     expect(actions).toBe(0);
   });
 

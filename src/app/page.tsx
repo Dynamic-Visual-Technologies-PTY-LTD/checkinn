@@ -10,7 +10,7 @@ export default function Home() {
         Find your stay.
       </h1>
       <p className="mt-space-lg text-body-lg">
-        Twelve hotels in six South African cities. Pick your dates and book in
+        Hotels across South Africa. Pick your dates and book in
         a few steps.
       </p>
 

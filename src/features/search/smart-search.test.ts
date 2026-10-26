@@ -126,7 +126,7 @@ describe("runSmartSearch in smart mode", () => {
       NOW,
     );
     const winelands = result.cards.find((card) => card.name === "Winelands Family Lodge");
-    expect(result.cards).toHaveLength(2);
+    expect(result.cards).toHaveLength(6);
     // Priced from the Standard Double, the cheapest qualifying Room type.
     expect(winelands).toMatchObject({ nightlyRand: 1450, totalRand: 1450 * 2 * 2 });
     expect(winelands?.bestFit).toMatchObject({
@@ -146,13 +146,19 @@ describe("runSmartSearch in smart mode", () => {
     expect(names(uj1())).toEqual([]);
   });
 
-  it("No pets: Winelands stays alone, as Oak & Vine has nothing at R 2 000 for 4", () => {
-    expect(names(uj1({ policies: [] }))).toEqual(["Winelands Family Lodge"]);
+  it("No pets: Everyday Suites joins Winelands, as Oak & Vine has nothing at R 2 000 for 4", () => {
+    expect(names(uj1({ policies: [] }))).toEqual([
+      "Winelands Family Lodge",
+      "Stellenbosch Everyday Suites",
+    ]);
   });
 
-  it("No filters: Oak & Vine and Winelands", () => {
+  it("No filters: every Stellenbosch Hotel with a Room type for 4", () => {
     expect(names(uj1({ policies: [], maxPriceRand: null })).sort()).toEqual([
       "Oak & Vine Manor",
+      "Stellenbosch Everyday Suites",
+      "Stellenbosch Fieldstone Lodge",
+      "Stellenbosch Meadow House",
       "Winelands Family Lodge",
     ]);
   });
@@ -162,24 +168,30 @@ describe("runSmartSearch in smart mode", () => {
     // Oak & Vine 0.15 × 0.9 + 0.15 × (1 000 / 3 000) = 0.185, though the MVP
     // rank puts Oak & Vine's higher Review score first.
     const criteria = uj1({ policies: [], maxPriceRand: null });
-    expect(names(criteria)).toEqual(["Winelands Family Lodge", "Oak & Vine Manor"]);
-    expect(searchCatalog(db, criteria, NOW).cards.map((card) => card.name)).toEqual([
+    expect(names(criteria)).toEqual([
+      "Winelands Family Lodge",
+      "Oak & Vine Manor",
+      "Stellenbosch Everyday Suites",
+      "Stellenbosch Fieldstone Lodge",
+      "Stellenbosch Meadow House",
+    ]);
+    expect(searchCatalog(db, criteria, NOW).cards.map((card) => card.name).slice(0, 2)).toEqual([
       "Oak & Vine Manor",
       "Winelands Family Lodge",
     ]);
   });
 
-  it("Smoking: no Hotel allows it, and the summary names it", () => {
+  it("Pets and smoking: no Hotel allows both, and the summary names them", () => {
     const result = runSmartSearch(
       db,
       provider,
-      uj1({ policies: ["smoking"], maxPriceRand: null }, { q: "" }),
+      uj1({ policies: ["pets", "smoking"], maxPriceRand: null }, { q: "" }),
       TODAY,
       NOW,
     );
     expect(result.cards).toEqual([]);
     expect(result.criteriaSummary).toBe(
-      "We looked for Smoking allowed. Remove a filter, or try other dates or another city.",
+      "We looked for Pets allowed and Smoking allowed. Remove a filter, or try other dates or another city.",
     );
   });
 
@@ -209,9 +221,13 @@ describe("runSmartSearch in mvp mode", () => {
       mode: "mvp",
       criteriaSummary: null,
     });
-    // The MVP search ignores the Hard criteria.
+    // The MVP search ignores the Hard criteria and the Party.
     expect(result.cards.map((card) => card.name).sort()).toEqual([
       "Oak & Vine Manor",
+      "Stellenbosch Everyday Suites",
+      "Stellenbosch Fieldstone Lodge",
+      "Stellenbosch Meadow House",
+      "Stellenbosch Stillwater Retreat",
       "Winelands Family Lodge",
     ]);
     expect(result.notices).toEqual([]);
@@ -228,7 +244,7 @@ describe("runSmartSearch in fallback mode", () => {
   const unknown = (values: Partial<SmartCriteria> = {}) =>
     smartCriteria("a castle on the moon", false, { fallback: true, ...values });
 
-  it("Unknown Query from Home: all 12 properties in MVP order, as MVP cards, with the notice", () => {
+  it("Unknown Query from Home: all 120 properties, as MVP cards, with the notice", () => {
     const criteria: SearchCriteria = {
       ...defaultCriteria(TODAY),
       stay: weekend,
@@ -238,11 +254,14 @@ describe("runSmartSearch in fallback mode", () => {
     const result = runSmartSearch(db, provider, criteria, TODAY, NOW, { debug: true });
 
     expect(result.mode).toBe("fallback");
-    expect(result.heading).toBe("All destinations: 12 properties found");
+    expect(result.heading).toBe("All destinations: 120 properties found");
     expect(result.notices).toEqual([{ kind: "fallback" }]);
     expect(result.criteriaSummary).toBeNull();
-    // With no Hard criteria but the Party's, the MVP search for 2 adults.
-    expect(result.cards).toEqual(searchCatalog(db, { ...criteria, smart: null }, NOW).cards);
+    // With no Hard criteria but the Party's, the MVP search's Hotels for 2
+    // adults, each priced from a Room type that sleeps 2, not a single Room.
+    const mvp = searchCatalog(db, { ...criteria, smart: null }, NOW).cards;
+    const ids = (cards: { hotelId: string }[]) => cards.map((card) => card.hotelId).sort();
+    expect(ids(result.cards)).toEqual(ids(mvp));
     for (const card of result.cards) {
       expect(card.bestFit).toBeUndefined();
       expect(card.breakdown).toBeUndefined();
@@ -267,6 +286,9 @@ describe("runSmartSearch in fallback mode", () => {
     expect(names(uj1({}, { smart: unknown() }))).toEqual([
       "Oak & Vine Manor",
       "Winelands Family Lodge",
+      "Stellenbosch Fieldstone Lodge",
+      "Stellenbosch Meadow House",
+      "Stellenbosch Everyday Suites",
     ]);
   });
 
@@ -288,14 +310,14 @@ describe("runSmartSearch in fallback mode", () => {
     const result = runSmartSearch(
       db,
       provider,
-      uj1({}, { q: "", smart: unknown({ policies: ["smoking"] }) }),
+      uj1({}, { q: "", smart: unknown({ policies: ["pets", "smoking"] }) }),
       TODAY,
       NOW,
     );
     expect(result.heading).toBeNull();
     expect(result.cards).toEqual([]);
     expect(result.criteriaSummary).toBe(
-      "We looked for Smoking allowed. Remove a filter, or try other dates or another city.",
+      "We looked for Pets allowed and Smoking allowed. Remove a filter, or try other dates or another city.",
     );
   });
 

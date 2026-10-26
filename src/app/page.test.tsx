@@ -33,7 +33,7 @@ describe("Home", () => {
     render(<Home />);
     expect(
       screen.getByText(
-        "Twelve hotels in six South African cities. Pick your dates and book in a few steps.",
+        "Hotels across South Africa. Pick your dates and book in a few steps.",
       ),
     ).toBeInTheDocument();
   });

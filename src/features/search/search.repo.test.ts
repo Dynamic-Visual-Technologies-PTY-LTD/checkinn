@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
+import { loadSeed } from "@/db/seed";
 import { createTestDb, insertTestBooking } from "@/db/test-db";
 import { defaultCriteria } from "@/domain/criteria";
 import type { SearchCriteria } from "@/domain/types";
@@ -21,20 +22,18 @@ const weekend = { checkIn: "2026-11-13", checkOut: "2026-11-15" };
 
 /** Well before the weekend's free-cancellation deadline (2026-11-11T12:00Z). */
 const NOW = "2026-10-13T08:00:00.000Z";
+const capeTownNames = ["Harbourlight Retreat", "Table View City Lodge", "Cape Town Lantern Manor", "Cape Town Gathering Lodge", "Cape Town Workday House", "Cape Town Pocket Lodge"];
 
 function criteria(overrides: Partial<SearchCriteria>): SearchCriteria {
   return { ...defaultCriteria("2026-10-13"), stay: weekend, ...overrides };
 }
 
 describe("searchCatalog", () => {
-  it("finds the 2 Cape Town Hotels, Harbourlight first, priced for the Stay", () => {
+  it("finds the 6 Cape Town Hotels, Harbourlight first, priced for the Stay", () => {
     const result = searchCatalog(db, criteria({ q: "Cape Town" }), NOW);
 
-    expect(result.heading).toBe("Cape Town: 2 properties found");
-    expect(result.cards.map((card) => card.name)).toEqual([
-      "Harbourlight Retreat",
-      "Table View City Lodge",
-    ]);
+    expect(result.heading).toBe("Cape Town: 6 properties found");
+    expect(result.cards.map((card) => card.name)).toEqual(capeTownNames);
     const [first] = result.cards;
     expect(first).toEqual({
       hotelId: "hotel-001",
@@ -63,20 +62,20 @@ describe("searchCatalog", () => {
   it("matches provinces, trims the Destination, and breaks a score tie on price", () => {
     const result = searchCatalog(db, criteria({ q: " cape " }), NOW);
 
-    expect(result.heading).toBe("6 properties found");
-    expect(result.cards).toHaveLength(6);
+    expect(result.heading).toBe("60 properties found");
+    expect(result.cards).toHaveLength(60);
     const names = result.cards.map((card) => card.name);
     expect(names.slice(0, 2)).toEqual(["Oak & Vine Manor", "Harbourlight Retreat"]);
     expect(new Set(result.cards.map((card) => card.cityName))).toEqual(
-      new Set(["Cape Town", "Stellenbosch", "Gqeberha"]),
+      new Set(loadSeed().cities.filter((city) => city.province.includes("Cape")).map((city) => city.name)),
     );
   });
 
-  it("lists all 12 Hotels for an empty Destination, in rank order", () => {
+  it("lists all 120 Hotels for an empty Destination, in rank order", () => {
     const result = searchCatalog(db, criteria({ q: "" }), NOW);
 
-    expect(result.heading).toBe("All destinations: 12 properties found");
-    expect(result.cards).toHaveLength(12);
+    expect(result.heading).toBe("All destinations: 120 properties found");
+    expect(result.cards).toHaveLength(120);
     for (let i = 1; i < result.cards.length; i++) {
       const [a, b] = [result.cards[i - 1], result.cards[i]];
       expect(
@@ -94,7 +93,7 @@ describe("searchCatalog", () => {
   });
 
   it("returns no cards and no heading when nothing matches", () => {
-    expect(searchCatalog(db, criteria({ q: "Bloemfontein" }), NOW)).toEqual({
+    expect(searchCatalog(db, criteria({ q: "Atlantis" }), NOW)).toEqual({
       heading: null,
       cards: [],
       notices: [],
@@ -153,8 +152,8 @@ describe("searchCatalog", () => {
 
     const result = searchCatalog(db, criteria({ q: "Cape Town" }), NOW);
 
-    expect(result.cards.map((card) => card.name)).toEqual(["Table View City Lodge"]);
-    expect(result.heading).toBe("1 property found");
+    expect(result.cards.map((card) => card.name)).toEqual(capeTownNames.filter((name) => name !== "Harbourlight Retreat"));
+    expect(result.heading).toBe("Cape Town: 5 properties found");
   });
 
   it("excludes Table View once its Standard is full, as the empty Family Room never counts", () => {
@@ -166,7 +165,7 @@ describe("searchCatalog", () => {
 
     const names = searchCatalog(db, criteria({ q: "Cape Town" }), NOW).cards.map((card) => card.name);
 
-    expect(names).toEqual(["Harbourlight Retreat"]);
+    expect(names).toEqual(capeTownNames.filter((name) => name !== "Table View City Lodge"));
   });
 
   it("prices from the next Room type when the cheapest is full", () => {
@@ -186,7 +185,14 @@ describe("smartCandidates", () => {
   it("gives each Destination-matching Hotel with its card, policies, Room types and Availability", () => {
     const candidates = smartCandidates(db, criteria({ q: "Stellenbosch" }), NOW);
 
-    expect(candidates.map((c) => c.card.name)).toEqual(["Oak & Vine Manor", "Winelands Family Lodge"]);
+    expect(candidates.map((c) => c.card.name)).toEqual([
+      "Oak & Vine Manor",
+      "Winelands Family Lodge",
+      "Stellenbosch Stillwater Retreat",
+      "Stellenbosch Everyday Suites",
+      "Stellenbosch Meadow House",
+      "Stellenbosch Fieldstone Lodge",
+    ]);
     const winelands = candidates[1];
     const mvpCard = searchCatalog(db, criteria({ q: "Stellenbosch" }), NOW).cards.find(
       (card) => card.hotelId === "hotel-010",

@@ -23,14 +23,23 @@ test("Home → Cape Town search → Hotel page → photo viewer, all with the ne
 }) => {
   const network = await blockNetwork(page, baseURL);
 
-  // Home: City tiles show their placeholders with the City name.
+  // Home: remote photos show placeholders; local AI destination images still load.
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Find your stay." })).toBeVisible();
   const tiles = page
     .getByRole("region", { name: "Explore a city" })
     .getByRole("link", { name: /^(?!Photo credit: )/ });
-  await expect(tiles).toHaveCount(6);
-  await expectPlaceholders(tiles, 6);
+  await expect(tiles).toHaveCount(20);
+  const generatedTiles = tiles.filter({ has: page.getByRole("img", { name: /^AI-generated/ }) });
+  await expect(generatedTiles).toHaveCount(14);
+  await expectPlaceholders(tiles.filter({ hasNot: page.getByRole("img", { name: /^AI-generated/ }) }), 6);
+  for (const tile of await generatedTiles.all()) {
+    await tile.scrollIntoViewIfNeeded();
+    const image = tile.getByRole("img", { name: /^AI-generated/ });
+    await expect(image).toBeVisible();
+    await expect(image).toHaveAttribute("src", /^\/images\/destinations\//);
+    await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  }
   for (const city of ["Cape Town", "Johannesburg", "Durban", "Pretoria", "Stellenbosch", "Gqeberha"]) {
     await expect(
       tiles.getByRole("img", { name: `${city} destination photograph`, exact: true }),
@@ -38,15 +47,24 @@ test("Home → Cape Town search → Hotel page → photo viewer, all with the ne
   }
   await expectNoHorizontalScroll(page);
 
-  // Search results: each card shows its placeholder with the hotel name.
+  // Search results: stock images fall back, while local room illustrations load.
   const bar = page.getByRole("search", { name: "Search hotels" });
   await bar.getByRole("textbox", { name: "Destination" }).fill("Cape Town");
   await bar.getByRole("button", { name: "Search" }).click();
   await expect(
-    page.getByRole("heading", { level: 1, name: "Cape Town: 2 properties found" }),
+    page.getByRole("heading", { level: 1, name: "Cape Town: 6 properties found" }),
   ).toBeVisible();
   const cards = page.getByRole("main").getByRole("article");
-  await expectPlaceholders(cards, 2);
+  const generatedRoomCards = cards.filter({ has: page.getByRole("img", { name: /^AI-generated illustrative/ }) });
+  await expect(generatedRoomCards).toHaveCount(4);
+  await expectPlaceholders(cards.filter({ hasNot: page.getByRole("img", { name: /^AI-generated illustrative/ }) }), 2);
+  for (const card of await generatedRoomCards.all()) {
+    await card.scrollIntoViewIfNeeded();
+    const image = card.getByRole("img", { name: /^AI-generated illustrative/ });
+    await expect(image).toBeVisible();
+    await expect(image).toHaveAttribute("src", /^\/images\/rooms\//);
+    await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  }
   await expect(
     cards.first().getByRole("img", { name: "Resort exterior and swimming pool", exact: true }),
   ).toBeVisible();

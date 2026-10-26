@@ -51,7 +51,7 @@ function countActions(page: Page) {
 }
 
 async function expectFallbackPage(page: Page, query: string) {
-  await expect(heading(page)).toHaveText("All destinations: 12 properties found");
+  await expect(heading(page)).toHaveText("All destinations: 120 properties found");
   await expect(notice(page)).toBeVisible();
   // The notice, Try again included, describes the heading.
   await expect(heading(page)).toHaveAccessibleDescription(`${FALLBACK} Try again`);
@@ -59,7 +59,7 @@ async function expectFallbackPage(page: Page, query: string) {
   await expect(smartBox(page)).toHaveValue(query);
   // MVP cards: no chips, no Best-fit room line, prices "from".
   await expect(page.getByRole("list", { name: "Your filters" })).toHaveCount(0);
-  await expect(page.getByRole("article")).toHaveCount(12);
+  await expect(page.getByRole("article")).toHaveCount(120);
   await expect(page.getByRole("article").getByText(/ · sleeps \d/)).toHaveCount(0);
   await expect(page.getByRole("article").first()).toContainText(": from");
 }
@@ -107,7 +107,7 @@ test.describe("Fallback and Try again", () => {
     // and Try again stay, and Try again keeps focus.
     await expect(listing(page)).toHaveAttribute("aria-busy", "true");
     await expect(page.getByRole("article")).toHaveCount(0);
-    await expect(heading(page)).toHaveText("All destinations: 12 properties found");
+    await expect(heading(page)).toHaveText("All destinations: 120 properties found");
     await expect(notice(page)).toBeVisible();
     await expect(tryAgain(page)).toBeVisible();
     await expect(tryAgain(page)).toHaveAttribute("aria-disabled", "true");
@@ -194,7 +194,7 @@ test.describe("Fallback and Try again", () => {
 
   test("fallback without a Query is ignored", async ({ page }) => {
     await page.goto("/search?fallback=1");
-    await expect(heading(page)).toHaveText("All destinations: 12 properties found");
+    await expect(heading(page)).toHaveText("All destinations: 120 properties found");
     await expect(notice(page)).toHaveCount(0);
     await expect(smartBox(page)).toHaveValue("");
   });

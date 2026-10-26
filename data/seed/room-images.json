@@ -1,0 +1,46 @@
+{
+  "categoryVariants": {
+    "budget": ["budget-single"],
+    "business": ["business-double"],
+    "family": ["family-suite"],
+    "luxury": ["luxury-suite"],
+    "wellness": ["wellness-double", "coastal-twin"],
+    "self-catering": ["self-catering"],
+    "coastal": ["business-double", "wellness-double"],
+    "rural": ["rustic-double"]
+  },
+  "images": {
+    "budget-single": {
+      "url": "/images/rooms/budget-single.webp",
+      "alt": "AI-generated illustrative budget single hotel room; not a property photograph"
+    },
+    "business-double": {
+      "url": "/images/rooms/business-double.webp",
+      "alt": "AI-generated illustrative business double hotel room; not a property photograph"
+    },
+    "coastal-twin": {
+      "url": "/images/rooms/coastal-twin.webp",
+      "alt": "AI-generated illustrative coastal twin hotel room; not a property photograph"
+    },
+    "family-suite": {
+      "url": "/images/rooms/family-suite.webp",
+      "alt": "AI-generated illustrative six-person family suite; not a property photograph"
+    },
+    "self-catering": {
+      "url": "/images/rooms/self-catering.webp",
+      "alt": "AI-generated illustrative self-catering apartment room; not a property photograph"
+    },
+    "luxury-suite": {
+      "url": "/images/rooms/luxury-suite.webp",
+      "alt": "AI-generated illustrative luxury suite; not a property photograph"
+    },
+    "wellness-double": {
+      "url": "/images/rooms/wellness-double.webp",
+      "alt": "AI-generated illustrative wellness double hotel room; not a property photograph"
+    },
+    "rustic-double": {
+      "url": "/images/rooms/rustic-double.webp",
+      "alt": "AI-generated illustrative rustic lodge double room; not a property photograph"
+    }
+  }
+}

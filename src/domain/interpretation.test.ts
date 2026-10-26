@@ -265,12 +265,12 @@ describe("applyInterpretation", () => {
     });
 
     it("raises Rooms to fit a stated Party with the Destination's Room types", () => {
-      expect(apply({ destination: "Durban", adults: 5 }).party).toEqual({
-        adults: 5,
+      expect(apply({ destination: "Durban", adults: 7 }).party).toEqual({
+        adults: 7,
         children: 0,
         rooms: 2,
       });
-      expect(apply({ adults: 2, children: 4 }).party.rooms).toBe(2);
+      expect(apply({ adults: 2, children: 5 }).party.rooms).toBe(2);
     });
 
     it("lowers the current Rooms for a smaller stated Party", () => {
