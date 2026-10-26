@@ -1,5 +1,6 @@
 // npm run search:preflight: check the Azure deployments before going on
-// stage (AD-32). Needs the presenter's key in `.env.local`; never part of
+// stage (AD-32). Needs the presenter's key in `.env.local`, or
+// `AZURE_OPENAI_AUTH=azure-cli` after `az login`; never part of
 // `npm test`, `db:reset` or CI.
 //
 // Calls `interpret` 5 times (p95 within 5 s), `embed` once (1024
@@ -45,7 +46,7 @@ async function main(): Promise<boolean> {
   loadEnv();
   const auth = azureAuthKind();
   if (!auth) {
-    console.error("AZURE_OPENAI_AUTH must be key or managed-identity.");
+    console.error("AZURE_OPENAI_AUTH must be key, managed-identity or azure-cli.");
     return false;
   }
   const config = azureConfig();

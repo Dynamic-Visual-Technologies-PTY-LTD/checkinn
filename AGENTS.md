@@ -34,7 +34,7 @@
 | Database | SQLite, embedded in the app | via `better-sqlite3` 13.0.3 |
 | Data access | Drizzle ORM, with `drizzle-kit` for migrations | 0.45.4 / 0.31.11 |
 | Scripts | `tsx` | 4.23.15 |
-| Smart search Provider | Azure AI Foundry through the `openai` SDK, signed in with a key or `@azure/identity` managed identity; optional, off unless configured | 7.28.0 / 4.14.0 |
+| Smart search Provider | Azure AI Foundry through the `openai` SDK, signed in with a key, or through `@azure/identity` with a managed identity or the Azure CLI; optional, off unless configured | 7.28.0 / 4.14.0 |
 | CI | GitHub Actions | `.github/workflows/ci.yml` |
 
 Agreed but **not installed yet**:
@@ -110,7 +110,7 @@ import { formatPrice } from "../../../lib/format"; // no
 | Serve the production build | `npm start` |
 | Reset the database to the seed (safe while the app runs) | `npm run db:reset` |
 | Generate a migration after a schema change | `npm run db:generate` |
-| Check the Azure Provider deployments (needs a key in `.env.local`) | `npm run search:preflight` |
+| Check the Azure Provider deployments (needs a key in `.env.local`, or `azure-cli` auth after `az login`) | `npm run search:preflight` |
 
 Smart search is configured by environment variables, listed with their meaning in `.env.example`: `CHECKINN_PROVIDER` (`azure`, `fake` or `off`), the `AZURE_OPENAI_*` and `AZURE_CLIENT_ID` settings, and `CHECKINN_SEARCH_DEBUG`. Put real values in `.env.local`, which is never committed. Nothing is required: unset, Smart search is off. `CHECKINN_PROVIDER=fake` answers from `data/eval/fake-provider.json` with no outbound request, for e2e and local demos.
 

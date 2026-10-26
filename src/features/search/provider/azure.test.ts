@@ -133,6 +133,10 @@ describe("azureApiKey", () => {
     expect(azureApiKey({ kind: "managed-identity", clientId: null })).toBeTypeOf("function");
     expect(azureApiKey({ kind: "managed-identity", clientId: "client-id" })).toBeTypeOf("function");
   });
+
+  it("is a token function for the Azure CLI sign-in", () => {
+    expect(azureApiKey({ kind: "azure-cli" })).toBeTypeOf("function");
+  });
 });
 
 describe("interpret", () => {

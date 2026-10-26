@@ -13,6 +13,8 @@
  * - unset or `key`: `AZURE_OPENAI_API_KEY`, for local development.
  * - `managed-identity`: the host's managed identity, for Azure. Set
  *   `AZURE_CLIENT_ID` for a user-assigned identity.
+ * - `azure-cli`: the account signed in with `az login`, for local development
+ *   without a key.
  * - Anything else: no Provider.
  */
 import {
@@ -36,6 +38,7 @@ const SHARED_VARIABLES = [
 export const AZURE_VARIABLES = {
   key: [...SHARED_VARIABLES, "AZURE_OPENAI_API_KEY"],
   "managed-identity": [...SHARED_VARIABLES],
+  "azure-cli": [...SHARED_VARIABLES],
 } as const;
 
 export type AzureAuthKind = keyof typeof AZURE_VARIABLES;
@@ -43,7 +46,7 @@ export type AzureAuthKind = keyof typeof AZURE_VARIABLES;
 /** The chosen auth, or null when `AZURE_OPENAI_AUTH` is not one we know. */
 export function azureAuthKind(env: Env = process.env): AzureAuthKind | null {
   const setting = env.AZURE_OPENAI_AUTH?.trim().toLowerCase() || "key";
-  return setting === "key" || setting === "managed-identity" ? setting : null;
+  return Object.hasOwn(AZURE_VARIABLES, setting) ? (setting as AzureAuthKind) : null;
 }
 
 type ProviderState = {
@@ -79,6 +82,7 @@ export function missingAzureVariables(env: Env = process.env): string[] {
 
 function azureAuth(kind: AzureAuthKind, env: Env): AzureAuth {
   if (kind === "key") return { kind, apiKey: env.AZURE_OPENAI_API_KEY!.trim() };
+  if (kind === "azure-cli") return { kind };
   return { kind, clientId: env.AZURE_CLIENT_ID?.trim() || null };
 }
 
@@ -112,7 +116,7 @@ function sameAuth(a: AzureAuth, b: AzureAuth): boolean {
   if (a.kind === "managed-identity" && b.kind === "managed-identity") {
     return a.clientId === b.clientId;
   }
-  return false;
+  return a.kind === "azure-cli" && b.kind === "azure-cli";
 }
 
 function sameConfig(a: AzureConfig, b: AzureConfig): boolean {

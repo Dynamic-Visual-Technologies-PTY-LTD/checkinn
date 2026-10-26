@@ -88,11 +88,26 @@ describe("getProvider", () => {
     }
   });
 
+  it("uses the Azure CLI sign-in without a key when AZURE_OPENAI_AUTH is azure-cli", () => {
+    const cli = { ...azure, AZURE_OPENAI_API_KEY: undefined, AZURE_OPENAI_AUTH: " Azure-CLI " };
+    expect(azureAuthKind(cli)).toBe("azure-cli");
+    expect(missingAzureVariables(cli)).toEqual([]);
+    expect(azureConfig(cli)?.auth).toEqual({ kind: "azure-cli" });
+    expect(getProvider(cli)).not.toBeNull();
+    expect(getProvider(cli)).toBe(getProvider(cli));
+    for (const name of AZURE_VARIABLES["azure-cli"]) {
+      expect(missingAzureVariables({ ...cli, [name]: undefined })).toEqual([name]);
+    }
+  });
+
   it("gives a new Azure provider when the auth changes", () => {
     const withKey = getProvider(azure);
     const withIdentity = getProvider({ ...azure, AZURE_OPENAI_AUTH: "managed-identity" });
+    const withCli = getProvider({ ...azure, AZURE_OPENAI_AUTH: "azure-cli" });
     expect(withIdentity).not.toBeNull();
     expect(withIdentity).not.toBe(withKey);
+    expect(withCli).not.toBeNull();
+    expect(withCli).not.toBe(withIdentity);
   });
 
   it("reads key auth when AZURE_OPENAI_AUTH is unset, blank or key, and nothing else", () => {
@@ -100,6 +115,7 @@ describe("getProvider", () => {
     expect(azureAuthKind({ AZURE_OPENAI_AUTH: " " })).toBe("key");
     expect(azureAuthKind({ AZURE_OPENAI_AUTH: "KEY" })).toBe("key");
     expect(azureAuthKind({ AZURE_OPENAI_AUTH: "something" })).toBeNull();
+    expect(azureAuthKind({ AZURE_OPENAI_AUTH: "toString" })).toBeNull();
     expect(azureConfig({ ...azure, AZURE_OPENAI_AUTH: "something" })).toBeNull();
     expect(getProvider({ ...azure, AZURE_OPENAI_AUTH: "something" })).toBeNull();
   });
