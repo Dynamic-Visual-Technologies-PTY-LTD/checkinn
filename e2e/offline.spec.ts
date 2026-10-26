@@ -23,14 +23,23 @@ test("Home → Cape Town search → Hotel page → photo viewer, all with the ne
 }) => {
   const network = await blockNetwork(page, baseURL);
 
-  // Home: City tiles show their placeholders with the City name.
+  // Home: remote photos show placeholders; local AI destination images still load.
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Find your stay." })).toBeVisible();
   const tiles = page
     .getByRole("region", { name: "Explore a city" })
     .getByRole("link", { name: /^(?!Photo credit: )/ });
   await expect(tiles).toHaveCount(20);
-  await expectPlaceholders(tiles, 20);
+  const generatedTiles = tiles.filter({ has: page.getByRole("img", { name: /^AI-generated/ }) });
+  await expect(generatedTiles).toHaveCount(14);
+  await expectPlaceholders(tiles.filter({ hasNot: page.getByRole("img", { name: /^AI-generated/ }) }), 6);
+  for (const tile of await generatedTiles.all()) {
+    await tile.scrollIntoViewIfNeeded();
+    const image = tile.getByRole("img", { name: /^AI-generated/ });
+    await expect(image).toBeVisible();
+    await expect(image).toHaveAttribute("src", /^\/images\/destinations\//);
+    await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  }
   for (const city of ["Cape Town", "Johannesburg", "Durban", "Pretoria", "Stellenbosch", "Gqeberha"]) {
     await expect(
       tiles.getByRole("img", { name: `${city} destination photograph`, exact: true }),

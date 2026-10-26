@@ -1,5 +1,7 @@
 // @vitest-environment node
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadSeed } from "@/db/seed";
 
@@ -73,7 +75,7 @@ describe("demo catalog", () => {
     }
   });
 
-  it("reuses illustrative stock with attribution and honest destination labels", () => {
+  it("keeps hotel stock attribution and distinct local AI destination images", () => {
     const originals = new Map(seed.hotels.slice(0, 12).flatMap((hotel) => hotel.images.map((image) => [image.url, image])));
     for (const hotel of seed.hotels) {
       expect(hotel.images).toHaveLength(2);
@@ -85,11 +87,18 @@ describe("demo catalog", () => {
         expect(image.alt.length).toBeGreaterThan(0);
       }
     }
-    for (const city of seed.cities.slice(6)) {
-      expect(originals.has(city.image.url)).toBe(true);
+    const generatedCities = seed.cities.slice(6);
+    expect(new Set(generatedCities.map((city) => city.image.url)).size).toBe(14);
+    for (const city of generatedCities) {
+      expect(city.image.url).toBe(`/images/destinations/${city.id}.webp`);
+      expect(city.image.sourceUrl).toBe(city.image.url);
       expect(city.image.isIllustrative).toBe(true);
+      expect(city.image.alt).toContain(`AI-generated landscape inspired by ${city.name}`);
       expect(city.image.alt).toContain("not a destination photograph");
-      expect(city.image.creditInstructions).toContain("https://unsplash.com/license");
+      expect(city.image.creditInstructions).toContain("AI-generated with OpenAI ImageGen");
+      const asset = readFileSync(path.join(process.cwd(), "public", city.image.url));
+      expect(asset.subarray(0, 4).toString()).toBe("RIFF");
+      expect(asset.subarray(8, 12).toString()).toBe("WEBP");
     }
   });
 });

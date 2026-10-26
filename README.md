@@ -61,7 +61,7 @@ Ordinary search matches hotel names, areas, cities, city aliases and provinces. 
 | `hotels[].images[]` | `hotel_images` | Keyed by `hotel_id` and `position` in the array |
 | `hotels[].roomTypes[]` | `room_types` | `pricePerNight` becomes `price_per_night_rand`; `beds` and `amenities` are JSON text |
 
-`amenityLabels` and `metadata` are not stored. Seed photos load from Wikimedia Commons and Unsplash; when they can't, a placeholder shows instead. New properties reuse existing illustrative stock photos with their source and licence credits. New destination cards also use clearly labelled illustrative stock, rather than claiming to show those destinations. Hotel photos do not depict the fictional properties.
+`amenityLabels` and `metadata` are not stored. Original destination and hotel photos load from Wikimedia Commons and Unsplash; when they can't, a placeholder shows instead. New properties reuse existing illustrative stock photos with their source and licence credits. The 14 added destinations use distinct local AI-generated landscape illustrations under `public/images/destinations/`, so those tiles work without external image requests. Their credits identify them as illustrative generated scenes rather than documentary photographs. The image metadata lives in `data/seed/destination-images.json`, and prompts are recorded in `public/images/destinations/PROMPTS.md`. Hotel photos do not depict the fictional properties.
 
 ## Scripts
 

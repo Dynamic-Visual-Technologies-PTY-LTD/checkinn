@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const file = new URL("../data/seed/hotel-booking-demo.json", import.meta.url);
 const seed = JSON.parse(readFileSync(file, "utf8"));
+const destinationImages = JSON.parse(readFileSync(new URL("../data/seed/destination-images.json", import.meta.url), "utf8"));
 seed.cities = seed.cities.slice(0, 6);
 seed.hotels = seed.hotels.slice(0, 12);
 const destinations = [
@@ -22,12 +23,10 @@ const destinations = [
   ["kimberley", "Kimberley", "Northern Cape", "historic town neighbourhood", []],
   ["rustenburg", "Rustenburg", "North West", "Magaliesberg foothill outskirts", []],
 ];
-const stock = seed.hotels[11].images;
 for (const [id, name, province, setting, aliases] of destinations) {
   seed.cities.push({ id, name, aliases, province, country: "South Africa", countryCode: "ZA",
     description: `Explore stays around the ${setting}.`,
-    image: { url: stock[0].url, alt: "Illustrative guest bedroom; not a destination photograph",
-      sourceUrl: stock[0].sourceUrl, creditInstructions: "Illustrative Unsplash stock photo, reused; not a photograph of this destination. Licence: https://unsplash.com/license", isIllustrative: true } });
+    image: destinationImages[id] });
 }
 const styles = [
   { category: "budget", title: "Pocket Lodge", price: 520, amenities: ["wifi", "parking"], atmosphere: "A practical, quiet base for solo travellers and short stopovers" },
