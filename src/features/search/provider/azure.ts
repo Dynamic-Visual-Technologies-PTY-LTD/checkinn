@@ -113,7 +113,7 @@ const INTERPRETATION_PROPERTIES: Record<keyof Interpretation, JsonSchema> = {
   checkIn: nullable("string", "An absolute check-in date, YYYY-MM-DD."),
   checkOut: nullable("string", "An absolute check-out date, YYYY-MM-DD."),
   stayPhrase: nullable("string", "The Guest's own words for the Stay."),
-  adults: nullable("integer", "Number of adults."),
+  adults: nullable("integer", "Number of adults; a head count with no children named."),
   children: nullable("integer", "Number of children."),
   rooms: nullable("integer", "Number of rooms, only when stated."),
   partyPhrase: nullable("string", "The Guest's own words for the party or rooms."),
@@ -170,11 +170,11 @@ function interpretInstructions(context: InterpretationContext): string {
       "- outOfCatalogPlace: a place the request names that is not a catalog City; destination is then null.",
       '- relativeStay: "this-weekend", "next-weekend" or "tonight" when the request says so; checkIn and checkOut are then null.',
       "- checkIn, checkOut: YYYY-MM-DD, only for dates the request states.",
-      "- adults, children, rooms: whole numbers the request states.",
+      "- adults, children, rooms: whole numbers the request states. A head count that does not say how many are children (\"for 4\", \"a family of 4\", \"two of us\") is that many adults, with children null.",
       "- maxPrice: the highest price per night in whole rand.",
       "- petsAllowed, childrenAllowed, smokingAllowed: true only when the request needs that policy.",
       "- stayPhrase, partyPhrase: the request's own words for the Stay and the party.",
-      "- preferences: what else the guest wants from the hotel, in their words, without the place, dates, party, price or policies.",
+      '- preferences: the kind of hotel, facilities, setting and feel the guest wants, in their words (such as "family place", "beach holiday", "quiet", "gym and meeting rooms"). Leave out only the place name, the dates, the numbers of people, the price and the pet, child or smoking needs. Words like "family" or "kids" that describe the place stay in. Null only when nothing else is left.',
     ].join("\n"),
   ]
     .filter(Boolean)

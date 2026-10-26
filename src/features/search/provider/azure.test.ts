@@ -176,6 +176,11 @@ describe("interpret", () => {
     expect(instructions).toContain("Cape Town");
     expect(instructions).toContain("Kaapstad");
     expect(instructions).toContain("mother city");
+    // A bare head count is adults (the model left "for 4" null), and words
+    // like "family" stay in the Preferences, not the party.
+    expect(instructions).toContain('"for 4"');
+    expect(instructions).toContain("is that many adults");
+    expect(instructions).toContain('Words like "family" or "kids" that describe the place stay in.');
   });
 
   it("lists every Interpretation field, each required and nullable", () => {

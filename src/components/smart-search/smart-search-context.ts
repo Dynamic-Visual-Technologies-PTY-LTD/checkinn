@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { CriterionKey } from "@/domain/hard-criteria";
+import type { ChipKey } from "@/domain/hard-criteria";
 import type { SearchBarCriteria } from "@/domain/interpretation";
 
 /** The Submitting status region's id: the box and the Search bar point at it. */
@@ -14,7 +14,7 @@ export const SMART_INPUT_ID = "ss-input";
  * Where focus goes after a Criteria chip removal (EXPERIENCE.md Criteria
  * chip): the chip with that key, or the Smart search box.
  */
-export type ChipFocusTarget = CriterionKey | "box";
+export type ChipFocusTarget = ChipKey | "box";
 
 /** Smart search UI state, owned by `SmartSearchProvider` (AD-33). */
 export type SmartSearchState = {

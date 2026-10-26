@@ -14,6 +14,7 @@ import {
   reviewLabel,
 } from "@/domain/search";
 import type { HardCriteriaRoomType, HotelPolicies } from "@/domain/hard-criteria";
+import type { KeywordHotel } from "@/domain/keyword-relevance";
 import type {
   CancellationPolicy,
   ListingCard,
@@ -75,6 +76,7 @@ function hotelRoomTypes(db: Db, hotelId: string) {
       name: roomTypes.name,
       maxGuests: roomTypes.maxGuests,
       nightlyRand: roomTypes.pricePerNightRand,
+      amenities: roomTypes.amenities,
     })
     .from(roomTypes)
     .where(eq(roomTypes.hotelId, hotelId))
@@ -155,8 +157,10 @@ export type SmartCandidate = {
   /** Its Listing card fields, built as `searchCatalog` builds them. */
   card: UnpricedCard;
   policies: HotelPolicies;
-  /** Its Room types in seed order. */
-  roomTypes: HardCriteriaRoomType[];
+  /** What keyword Relevance reads: its category, amenities, area, name and description. */
+  keywords: KeywordHotel;
+  /** Its Room types in seed order, with their amenities for keyword Relevance. */
+  roomTypes: (HardCriteriaRoomType & { amenities: string[] })[];
   /** `availabilityFor` counts for the Stay, keyed by Room type id (AD-4). */
   availability: Map<string, number>;
 };
@@ -175,6 +179,13 @@ export function smartCandidates(db: Db, criteria: SearchCriteria, now: string): 
       petsAllowed: row.hotel.policies.petsAllowed,
       childrenAllowed: row.hotel.policies.childrenAllowed,
       smokingAllowed: row.hotel.policies.smokingAllowed,
+    },
+    keywords: {
+      name: row.hotel.name,
+      area: row.hotel.area,
+      category: row.hotel.category,
+      amenities: row.hotel.amenities,
+      description: row.hotel.description,
     },
     roomTypes: hotelRoomTypes(db, row.hotel.id),
     availability: availabilityFor(db, row.hotel.id, stay),

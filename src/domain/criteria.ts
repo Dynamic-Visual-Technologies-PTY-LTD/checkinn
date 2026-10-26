@@ -6,6 +6,7 @@
  * Nothing here reads the clock: callers pass `today` (AD-9).
  */
 import { addDays, MAX_NIGHTS, nightsBetween } from "@/domain/dates";
+import { isPreferenceKey, type PreferenceKey, withoutPreference } from "@/domain/keyword-relevance";
 import {
   POLICY_CRITERIA,
   type CriteriaNotice,
@@ -431,20 +432,22 @@ export function hotelQuery(criteria: Partial<SearchCriteria>): string {
 export type ResultsCriteria = Pick<SearchCriteria, "q" | "stay" | "party" | "smart">;
 
 /**
- * The Search results URL with one Hard criterion removed (AD-21, FR-5): every
- * other Smart search parameter is kept, so the search re-runs with the same
- * Preferences and no new Query interpretation.
+ * The Search results URL with one Criteria chip removed (AD-21, FR-5): a Hard
+ * criterion, or a Preference concept's words. Every other Smart search
+ * parameter is kept, so the search re-runs with no new Query interpretation.
  */
 export function withoutCriterion(
   criteria: ResultsCriteria,
-  key: "maxPrice" | PolicyCriterion,
+  key: "maxPrice" | PolicyCriterion | PreferenceKey,
 ): string {
   const { q, stay, party, smart } = criteria;
   if (!smart) return searchHref({ q, stay, party });
   const next: SmartCriteria =
     key === "maxPrice"
       ? { ...smart, maxPriceRand: null }
-      : { ...smart, policies: smart.policies.filter((policy) => policy !== key) };
+      : isPreferenceKey(key)
+        ? { ...smart, preferences: withoutPreference(smart.preferences, key) }
+        : { ...smart, policies: smart.policies.filter((policy) => policy !== key) };
   return searchHref({ q, stay, party, smart: next });
 }
 

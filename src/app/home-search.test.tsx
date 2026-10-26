@@ -103,7 +103,7 @@ describe("HomeSearch with Smart search", () => {
     const box = screen.getByRole("textbox", { name: "Describe your stay" });
     const examples = screen.getByRole("list", { name: "Try an example" });
     const bar = screen.getByRole("search", { name: "Search hotels" });
-    expect(within(examples).getAllByRole("button")).toHaveLength(3);
+    expect(within(examples).getAllByRole("button")).toHaveLength(4);
     expect(box.compareDocumentPosition(examples) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(examples.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });

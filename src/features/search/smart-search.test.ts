@@ -83,7 +83,7 @@ describe("runSmartSearch in smart mode", () => {
     }
   });
 
-  it("with debug, adds the Score breakdown, with meaning and exact words at 0", () => {
+  it("with debug, adds the Score breakdown, with keyword Relevance as exact words", () => {
     const result = runSmartSearch(
       db,
       provider,
@@ -93,13 +93,14 @@ describe("runSmartSearch in smart mode", () => {
       { debug: true },
     );
     const winelands = result.cards.find((card) => card.name === "Winelands Family Lodge");
-    // Review 4.5 → 0.75; Family Room R 2 000 → 0.5; 0.15 × 0.75 + 0.15 × 0.5.
+    // "family" is its category: Relevance 1. Review 4.5 → 0.75; Family Room
+    // R 2 000 → 0.5; 0.7 × 1 + 0.15 × 0.75 + 0.15 × 0.5.
     expect(winelands?.breakdown).toEqual({
       meaning: 0,
-      exact: 0,
+      exact: 1,
       reviewSignal: 0.75,
       priceSignal: 0.5,
-      score: 0.1875,
+      score: 0.8875,
     });
     for (const card of result.cards) expect(card.breakdown).toBeDefined();
   });
@@ -167,7 +168,7 @@ describe("runSmartSearch in smart mode", () => {
     // With Relevance 0: Winelands 0.15 × 0.75 + 0.15 × 0.5 = 0.1875 beats
     // Oak & Vine 0.15 × 0.9 + 0.15 × (1 000 / 3 000) = 0.185, though the MVP
     // rank puts Oak & Vine's higher Review score first.
-    const criteria = uj1({ policies: [], maxPriceRand: null });
+    const criteria = uj1({ policies: [], maxPriceRand: null, preferences: null });
     expect(names(criteria)).toEqual([
       "Winelands Family Lodge",
       "Oak & Vine Manor",
@@ -179,6 +180,43 @@ describe("runSmartSearch in smart mode", () => {
       "Oak & Vine Manor",
       "Winelands Family Lodge",
     ]);
+  });
+
+  it("puts Hotels that show the Preferences first: family lodges before Oak & Vine", () => {
+    // Winelands is a family Hotel; Fieldstone and Meadow House are lodges
+    // "for families". Oak & Vine and Everyday Suites show no family concept.
+    expect(names(uj1({ policies: [], maxPriceRand: null }))).toEqual([
+      "Winelands Family Lodge",
+      "Stellenbosch Fieldstone Lodge",
+      "Stellenbosch Meadow House",
+      "Oak & Vine Manor",
+      "Stellenbosch Everyday Suites",
+    ]);
+  });
+
+  it("business with a gym and meeting rooms: Johannesburg's business Hotels first", () => {
+    const criteria: SearchCriteria = {
+      ...defaultCriteria(TODAY),
+      q: "Johannesburg",
+      stay: weekend,
+      smart: smartCriteria("business hotel in Johannesburg", true, {
+        preferences: "business hotel with a gym and meeting rooms",
+      }),
+    };
+    expect(names(criteria).slice(0, 2)).toEqual([
+      "Goldleaf Business Hotel",
+      "Johannesburg Workday House",
+    ]);
+  });
+
+  it("picks the Best-fit room the Preferences name, not the cheapest", () => {
+    const criteria = uj1({ policies: [], maxPriceRand: null, preferences: "a twin room" }, {
+      party: { adults: 2, children: 0, rooms: 1 },
+    });
+    const stillwater = runSmartSearch(db, provider, criteria, TODAY, NOW).cards.find(
+      (card) => card.name === "Stellenbosch Stillwater Retreat",
+    );
+    expect(stillwater?.bestFit?.name).toBe("Retreat Twin");
   });
 
   it("Pets and smoking: no Hotel allows both, and the summary names them", () => {

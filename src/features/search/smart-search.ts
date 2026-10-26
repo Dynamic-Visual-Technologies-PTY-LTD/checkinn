@@ -18,6 +18,7 @@ import {
   searchMode,
 } from "@/domain/hard-criteria";
 import { smartNotices } from "@/domain/interpretation";
+import { keywordRelevance, preferenceConcepts, roomMeanings } from "@/domain/keyword-relevance";
 import { CITY_NICKNAMES } from "@/domain/nicknames";
 import { fromPrice } from "@/domain/pricing";
 import { rankByBlend } from "@/domain/ranking";
@@ -195,10 +196,12 @@ export function runSmartSearch(
     };
   }
 
+  // Keyword Relevance stands in for meaning-based Relevance until it exists.
+  const concepts = preferenceConcepts(smart.preferences);
   const priced: { item: ListingCard; relevance: number }[] = [];
   for (const { candidate, qualifying } of found) {
-    // No Room-type meanings until Relevance exists, so the cheapest wins.
-    const room = bestFit(qualifying, new Map(), party.rooms, candidate.card.nights);
+    const meanings = roomMeanings(concepts, qualifying);
+    const room = bestFit(qualifying, meanings, party.rooms, candidate.card.nights);
     if (!room) continue;
     priced.push({
       item: {
@@ -207,13 +210,13 @@ export function runSmartSearch(
         nightlyRand: room.nightlyRand,
         bestFit: room,
       },
-      relevance: 0,
+      relevance: keywordRelevance(concepts, candidate.keywords),
     });
   }
 
-  const ranked = rankByBlend(priced).map(({ item, reviewSignal, priceSignal, score }) =>
+  const ranked = rankByBlend(priced).map(({ item, relevance, reviewSignal, priceSignal, score }) =>
     debug
-      ? { ...item, breakdown: { meaning: 0, exact: 0, reviewSignal, priceSignal, score } }
+      ? { ...item, breakdown: { meaning: 0, exact: relevance, reviewSignal, priceSignal, score } }
       : item,
   );
   return {

@@ -123,6 +123,19 @@ describe("Criteria chip copy", () => {
     expect(criteriaChips(smartCriteria("q", true))).toEqual([]);
     expect(criteriaChips(null)).toEqual([]);
   });
+
+  it("adds one chip per Preference concept after the Hard criteria", () => {
+    const smart = smartCriteria("q", true, {
+      maxPriceRand: 500,
+      preferences: "business hotel with a gym and meeting rooms",
+    });
+    expect(criteriaChips(smart)).toEqual([
+      { key: "maxPrice", label: `Max R${NBSP}500 per night` },
+      { key: "pref-business", label: "Business" },
+      { key: "pref-gym", label: "Gym" },
+      { key: "pref-meetings", label: "Meeting rooms" },
+    ]);
+  });
 });
 
 describe("hardCriteriaSummary", () => {

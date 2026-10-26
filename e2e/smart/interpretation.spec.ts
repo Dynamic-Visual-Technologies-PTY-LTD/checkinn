@@ -25,7 +25,7 @@ test.describe("Query interpretation", () => {
   }) => {
     await page.goto("/");
     const examples = page.getByRole("list", { name: "Try an example" });
-    await expect(examples.getByRole("button")).toHaveCount(3);
+    await expect(examples.getByRole("button")).toHaveCount(4);
 
     // Hold the server action back, so the Submitting state can be seen.
     let release: () => void = () => {};

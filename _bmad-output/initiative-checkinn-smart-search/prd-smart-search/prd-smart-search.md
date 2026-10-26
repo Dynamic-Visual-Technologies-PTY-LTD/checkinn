@@ -113,7 +113,7 @@ A Guest sees the Smart search box above the Search bar on the Home page and the 
 - Pressing Enter or the search button submits the Query.
 - An empty or whitespace-only Query cannot be submitted.
 - Input stops at 300 characters.
-- On the Home page, three example Queries (the exact Queries from UJ-1, UJ-2 and UJ-3) sit under the box. One click fills the box and submits, so the workshop demo needs no typing (user decision).
+- On the Home page, four example Queries sit under the box: the exact UJ-1 Query and three that land well on the catalog (user decision, 2026-10-26, replacing the UJ-1 to UJ-3 set). One click fills the box and submits, so the workshop demo needs no typing (user decision).
 - While Query interpretation runs, the Smart search box and the Search bar are read-only (user decision; see §8).
 - The box works on mobile and desktop viewports and meets WCAG 2.1 AA, as in the MVP.
 

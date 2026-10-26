@@ -8,6 +8,7 @@ import { blockSeedPhotos } from "../support/network";
 const UJ1 = "pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night";
 const MAX_CHIP = `Remove ${criterionLabel("maxPrice", 2000)}`;
 const PETS_CHIP = "Remove Pets allowed";
+const FAMILY_CHIP = "Remove Family";
 
 const smartBox = (page: Page) => page.getByRole("textbox", { name: "Describe your stay" });
 const chipRow = (page: Page) => page.getByRole("list", { name: "Your filters" });
@@ -47,9 +48,10 @@ test.describe("Hard criteria, Criteria chips and corrections", () => {
     await expect(heading(page)).toHaveText("1 property found");
     await expect(cardNames(page)).toHaveText(["Winelands Family Lodge"]);
     const chips = chipRow(page).getByRole("button");
-    await expect(chips).toHaveCount(2);
+    await expect(chips).toHaveCount(3);
     await expect(chips.nth(0)).toHaveAccessibleName(MAX_CHIP);
     await expect(chips.nth(1)).toHaveAccessibleName(PETS_CHIP);
+    await expect(chips.nth(2)).toHaveAccessibleName(FAMILY_CHIP);
 
     // Editing the Party re-runs the search with no new Query interpretation.
     let actions = 0;
@@ -75,28 +77,45 @@ test.describe("Hard criteria, Criteria chips and corrections", () => {
     expect(corrected.get("policy")).toBe("pets");
     await expect(cardNames(page)).toHaveText(["Winelands Family Lodge"]);
     await expect(smartBox(page)).toHaveValue(UJ1);
-    await expect(chipRow(page).getByRole("button")).toHaveCount(2);
+    await expect(chipRow(page).getByRole("button")).toHaveCount(3);
     await expect(page.getByText("Reading your search…")).toHaveCount(0);
     expect(actions).toBe(0);
 
-    // Removing Pets keeps focus in the chip row; Everyday Suites' Family Suite
-    // joins Winelands at R 2 000 or less.
+    // Removing Pets moves focus to the next chip, Family; Everyday Suites'
+    // Family Suite joins Winelands at R 2 000 or less.
     await chipRow(page).getByRole("button", { name: PETS_CHIP }).click();
     await page.waitForURL((url) => !url.searchParams.has("policy"));
     await expect(cardNames(page)).toHaveText([
       "Winelands Family Lodge",
       "Stellenbosch Everyday Suites",
     ]);
-    await expect(chipRow(page).getByRole("button", { name: MAX_CHIP })).toBeFocused();
+    await expect(chipRow(page).getByRole("button", { name: FAMILY_CHIP })).toBeFocused();
     await expect(heading(page)).not.toBeFocused();
     await expect(page.getByRole("status").filter({ hasText: "2 properties found" })).toHaveCount(1);
 
-    // Removing Max price too widens the results; focus goes to the box.
+    // Removing Max price too widens the results.
     await chipRow(page).getByRole("button", { name: MAX_CHIP }).click();
     await page.waitForURL((url) => !url.searchParams.has("maxPrice"));
     await expect(heading(page)).toHaveText("Stellenbosch: 5 properties found");
-    // The Ranking blend order (Relevance 0 until it exists): Winelands' Family
-    // Room at R 2 000 outweighs Oak & Vine's higher Review score at R 2 500.
+    // The Ranking blend order: keyword Relevance puts the Hotels that show
+    // "family" (Winelands, and the lodges "for families") first.
+    await expect(cardNames(page)).toHaveText([
+      "Winelands Family Lodge",
+      "Stellenbosch Fieldstone Lodge",
+      "Stellenbosch Meadow House",
+      "Oak & Vine Manor",
+      "Stellenbosch Everyday Suites",
+    ]);
+    await expect(chipRow(page).getByRole("button", { name: FAMILY_CHIP })).toBeFocused();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Stellenbosch: 5 properties found" }),
+    ).toHaveCount(1);
+
+    // Removing the Family chip drops "family" from the Preferences: with no
+    // Relevance, Winelands' Family Room at R 2 000 outweighs Oak & Vine's
+    // higher Review score at R 2 500. Focus goes to the box.
+    await chipRow(page).getByRole("button", { name: FAMILY_CHIP }).click();
+    await page.waitForURL((url) => url.searchParams.get("prefs") === "pet friendly place");
     await expect(cardNames(page)).toHaveText([
       "Winelands Family Lodge",
       "Oak & Vine Manor",
@@ -106,9 +125,6 @@ test.describe("Hard criteria, Criteria chips and corrections", () => {
     ]);
     await expect(chipRow(page)).toHaveCount(0);
     await expect(smartBox(page)).toBeFocused();
-    await expect(
-      page.getByRole("status").filter({ hasText: "Stellenbosch: 5 properties found" }),
-    ).toHaveCount(1);
     expect(params(page).get("sq")).toBe(UJ1);
 
     // Clearing the box, then a Search bar Search, is the MVP search.
@@ -151,7 +167,7 @@ test.describe("Hard criteria, Criteria chips and corrections", () => {
         `We looked for Pets allowed and ${criterionLabel("maxPrice", 1999)} in Stellenbosch. Remove a filter, or try other dates or another city.`,
       ),
     ).toBeVisible();
-    await expect(chipRow(page).getByRole("button")).toHaveCount(2);
+    await expect(chipRow(page).getByRole("button")).toHaveCount(3);
     await expect(page.getByRole("region", { name: "Explore a city" })).toBeVisible();
   });
 });

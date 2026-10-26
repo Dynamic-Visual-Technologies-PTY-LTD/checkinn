@@ -4,6 +4,7 @@
  * the no-results sentence that names the Hard criteria. Pure: Availability
  * comes from `availabilityFor` (AD-4) through the search repo.
  */
+import { type PreferenceKey, preferenceChips } from "@/domain/keyword-relevance";
 import { formatZar } from "@/lib/format";
 import {
   POLICY_CRITERIA,
@@ -31,6 +32,9 @@ export type HotelPolicies = {
 
 /** A Criteria chip's key (EXPERIENCE.md Criteria chip), in chip order. */
 export type CriterionKey = "maxPrice" | PolicyCriterion;
+
+/** Any Criteria chip's key: a Hard criterion, or a Preference concept. */
+export type ChipKey = CriterionKey | PreferenceKey;
 
 /**
  * The Room types that meet the Hard criteria (AD-23), in the given order. A
@@ -104,19 +108,18 @@ export function criterionLabel(key: CriterionKey, maxPriceRand: number | null = 
 
 /**
  * The Criteria chips for Smart search criteria, in chip order: Max price,
- * then pets, children and smoking.
+ * then pets, children and smoking, then one per Preference concept.
  */
-export function criteriaChips(
-  smart: SmartCriteria | null,
-): { key: CriterionKey; label: string }[] {
+export function criteriaChips(smart: SmartCriteria | null): { key: ChipKey; label: string }[] {
   if (!smart) return [];
-  const chips: { key: CriterionKey; label: string }[] = [];
+  const chips: { key: ChipKey; label: string }[] = [];
   if (smart.maxPriceRand !== null) {
     chips.push({ key: "maxPrice", label: criterionLabel("maxPrice", smart.maxPriceRand) });
   }
   for (const policy of POLICY_CRITERIA) {
     if (smart.policies.includes(policy)) chips.push({ key: policy, label: criterionLabel(policy) });
   }
+  chips.push(...preferenceChips(smart.preferences));
   return chips;
 }
 

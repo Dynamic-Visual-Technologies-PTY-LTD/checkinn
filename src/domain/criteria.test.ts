@@ -654,6 +654,20 @@ describe("Smart search URL changes (AD-21)", () => {
     );
   });
 
+  it("removes a Preference chip's words from prefs, keeping the rest", () => {
+    const business = { ...smart, preferences: "business hotel with a gym and meeting rooms" };
+    const params = (href: string) => new URLSearchParams(href.split("?")[1]);
+    expect(params(withoutCriterion({ ...base, smart: business }, "pref-gym")).get("prefs")).toBe(
+      "business hotel with a and meeting rooms",
+    );
+    const family = withoutCriterion({ ...base, smart }, "pref-family");
+    expect(params(family).get("prefs")).toBe("pet friendly place");
+    const gymOnly = { ...smart, preferences: "a gym" };
+    expect(params(withoutCriterion({ ...base, smart: gymOnly }, "pref-gym")).has("prefs")).toBe(
+      false,
+    );
+  });
+
   it("removes the last Policy criterion, leaving no policy parameter", () => {
     const one = { ...smart, policies: ["smoking" as const], maxPriceRand: null };
     expect(withoutCriterion({ ...base, smart: one }, "smoking")).not.toContain("policy=");

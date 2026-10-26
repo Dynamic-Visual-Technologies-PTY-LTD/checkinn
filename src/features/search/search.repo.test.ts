@@ -206,9 +206,16 @@ describe("smartCandidates", () => {
       childrenAllowed: true,
       smokingAllowed: false,
     });
+    expect(winelands.keywords).toMatchObject({
+      name: "Winelands Family Lodge",
+      area: "Winelands",
+      category: "family",
+      amenities: ["wifi", "pool", "parking", "kitchenette", "play_area"],
+    });
+    const amenities = ["wifi", "private_bathroom"];
     expect(winelands.roomTypes).toEqual([
-      { id: "hotel-010-standard", name: "Standard Double", maxGuests: 2, nightlyRand: 1450 },
-      { id: "hotel-010-family", name: "Family Room", maxGuests: 4, nightlyRand: 2000 },
+      { id: "hotel-010-standard", name: "Standard Double", maxGuests: 2, nightlyRand: 1450, amenities },
+      { id: "hotel-010-family", name: "Family Room", maxGuests: 4, nightlyRand: 2000, amenities },
     ]);
     expect(winelands.availability.get("hotel-010-family")).toBe(4);
   });

@@ -3,11 +3,16 @@
 import { useRequiredSearchState } from "@/components/search-state";
 import { useSmartSearch } from "@/components/smart-search/smart-search-context";
 
-/** The three PRD Queries, UJ-1 to UJ-3, verbatim (EXPERIENCE.md Example queries). */
+/**
+ * The Example queries (EXPERIENCE.md Example queries): the UJ-1 Query
+ * verbatim, then three that the catalog answers well, each showing a different
+ * kind of Preference, and the last a City nickname.
+ */
 export const EXAMPLE_QUERIES = [
   "pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night",
-  "quiet business hotel in Gauteng with a gym and meeting rooms",
-  "ski chalet with a fireplace",
+  "business hotel in Johannesburg with a gym and meeting rooms",
+  "quiet spa retreat for two in Franschhoek this weekend",
+  "family beach holiday in Plett with a pool",
 ] as const;
 
 const LEAD_IN_ID = "ss-examples";

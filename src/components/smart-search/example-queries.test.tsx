@@ -49,17 +49,18 @@ function renderHome() {
 const examples = () => screen.getByRole("list", { name: "Try an example" });
 
 describe("ExampleQueries", () => {
-  it("lists the three PRD Queries as buttons named by their text, labelled Try an example", () => {
+  it("lists the four Example queries as buttons named by their text, labelled Try an example", () => {
     renderHome();
 
     expect(screen.getByText("Try an example")).toBeVisible();
     const buttons = within(examples()).getAllByRole("button");
     expect(buttons.map((button) => button.textContent)).toEqual([
       "pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night",
-      "quiet business hotel in Gauteng with a gym and meeting rooms",
-      "ski chalet with a fireplace",
+      "business hotel in Johannesburg with a gym and meeting rooms",
+      "quiet spa retreat for two in Franschhoek this weekend",
+      "family beach holiday in Plett with a pool",
     ]);
-    expect(EXAMPLE_QUERIES).toHaveLength(3);
+    expect(EXAMPLE_QUERIES).toHaveLength(4);
   });
 
   it("fills the box and submits with the Search bar's Stay and Party, keeping focus", async () => {
