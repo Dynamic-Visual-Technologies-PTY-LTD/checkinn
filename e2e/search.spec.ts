@@ -213,7 +213,8 @@ test.describe("Photo credits", () => {
     await expect(
       hotels.getByRole("heading", { level: 3, name: "Harbourlight Retreat" }),
     ).toBeVisible();
-    await expect(hotels.getByRole("link", { name: "Unsplash licence" })).toHaveCount(240);
+    await expect(hotels.getByRole("link", { name: "Unsplash licence" })).toHaveCount(132);
+    await expect(hotels.getByRole("link", { name: "OpenAI ImageGen licence" })).toHaveCount(108);
     await expect(page.getByRole("main").getByRole("img")).toHaveCount(0);
   });
 });

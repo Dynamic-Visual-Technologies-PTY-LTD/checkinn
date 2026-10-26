@@ -5,7 +5,7 @@
   "currency": "ZAR",
   "metadata": {
     "description": "Real South African destinations with fictional hotels and mock booking data.",
-    "hotelImageNote": "Stock images are illustrative and do not depict these fictional hotels. Some photos are reused.",
+    "hotelImageNote": "Stock photos and AI-generated room illustrations are illustrative and do not depict these fictional hotels. Some stock photos are reused.",
     "priceNote": "Mock prices in ZAR per room per night, inclusive of demo taxes; no extra demo fees.",
     "inventoryNote": "totalRooms is static inventory, not date-specific availability. Subtract overlapping bookings per room type to calculate availability.",
     "ratingsNote": "All hotel stars, scores and review counts are fictional.",
@@ -1467,12 +1467,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -1575,12 +1575,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -1686,12 +1686,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -1798,12 +1798,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -1909,12 +1909,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -2020,12 +2020,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -2132,12 +2132,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -2243,12 +2243,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/coastal-twin.webp",
+          "alt": "AI-generated illustrative coastal twin hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/coastal-twin.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -2347,12 +2347,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -2459,12 +2459,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -2570,12 +2570,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/wellness-double.webp",
+          "alt": "AI-generated illustrative wellness double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/wellness-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -2672,12 +2672,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -2784,12 +2784,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -2895,12 +2895,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/coastal-twin.webp",
+          "alt": "AI-generated illustrative coastal twin hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/coastal-twin.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -2997,12 +2997,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -3107,12 +3107,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -3218,12 +3218,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/wellness-double.webp",
+          "alt": "AI-generated illustrative wellness double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/wellness-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -3320,12 +3320,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -3430,12 +3430,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -3540,12 +3540,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -3649,12 +3649,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -3759,12 +3759,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/wellness-double.webp",
+          "alt": "AI-generated illustrative wellness double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/wellness-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -3866,12 +3866,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -3974,12 +3974,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -4081,12 +4081,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -4188,12 +4188,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -4296,12 +4296,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -4404,12 +4404,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -4515,12 +4515,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -4627,12 +4627,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -4737,12 +4737,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -4845,12 +4845,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -4953,12 +4953,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -5064,12 +5064,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -5176,12 +5176,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -5287,12 +5287,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/coastal-twin.webp",
+          "alt": "AI-generated illustrative coastal twin hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/coastal-twin.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -5388,12 +5388,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -5496,12 +5496,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -5607,12 +5607,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -5719,12 +5719,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -5830,12 +5830,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/wellness-double.webp",
+          "alt": "AI-generated illustrative wellness double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/wellness-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -5932,12 +5932,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -6043,12 +6043,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -6154,12 +6154,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -6266,12 +6266,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -6377,12 +6377,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/coastal-twin.webp",
+          "alt": "AI-generated illustrative coastal twin hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/coastal-twin.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -6479,12 +6479,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -6589,12 +6589,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -6700,12 +6700,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -6812,12 +6812,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -6923,12 +6923,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/wellness-double.webp",
+          "alt": "AI-generated illustrative wellness double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/wellness-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -7025,12 +7025,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -7135,12 +7135,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -7245,12 +7245,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -7357,12 +7357,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -7468,12 +7468,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/coastal-twin.webp",
+          "alt": "AI-generated illustrative coastal twin hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/coastal-twin.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -7570,12 +7570,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -7680,12 +7680,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -7790,12 +7790,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -7898,12 +7898,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -8006,12 +8006,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/wellness-double.webp",
+          "alt": "AI-generated illustrative wellness double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/wellness-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -8108,12 +8108,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -8218,12 +8218,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -8325,12 +8325,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -8433,12 +8433,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -8541,12 +8541,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -8650,12 +8650,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -8760,12 +8760,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -8870,12 +8870,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -8978,12 +8978,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -9086,12 +9086,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -9197,12 +9197,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -9307,12 +9307,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -9417,12 +9417,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -9525,12 +9525,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -9633,12 +9633,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -9744,12 +9744,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -9856,12 +9856,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -9966,12 +9966,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -10074,12 +10074,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -10182,12 +10182,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -10293,12 +10293,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -10405,12 +10405,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -10516,12 +10516,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/coastal-twin.webp",
+          "alt": "AI-generated illustrative coastal twin hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/coastal-twin.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -10617,12 +10617,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -10725,12 +10725,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -10836,12 +10836,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -10948,12 +10948,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -11059,12 +11059,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/wellness-double.webp",
+          "alt": "AI-generated illustrative wellness double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/wellness-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -11161,12 +11161,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -11272,12 +11272,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/business-double.webp",
+          "alt": "AI-generated illustrative business double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/business-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -11383,12 +11383,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -11495,12 +11495,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -11606,12 +11606,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/coastal-twin.webp",
+          "alt": "AI-generated illustrative coastal twin hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/coastal-twin.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -11708,12 +11708,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -11818,12 +11818,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -11929,12 +11929,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/family-suite.webp",
+          "alt": "AI-generated illustrative six-person family suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/family-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -12041,12 +12041,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -12152,12 +12152,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/wellness-double.webp",
+          "alt": "AI-generated illustrative wellness double hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/wellness-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -12254,12 +12254,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -12364,12 +12364,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -12474,12 +12474,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -12586,12 +12586,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/luxury-suite.webp",
+          "alt": "AI-generated illustrative luxury suite; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/luxury-suite.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -12697,12 +12697,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/coastal-twin.webp",
+          "alt": "AI-generated illustrative coastal twin hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/coastal-twin.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -12799,12 +12799,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/self-catering.webp",
+          "alt": "AI-generated illustrative self-catering apartment room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/self-catering.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -12909,12 +12909,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Hotel bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",
@@ -13019,12 +13019,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest bedroom (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/rustic-double.webp",
+          "alt": "AI-generated illustrative rustic lodge double room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/rustic-double.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "14:00",
@@ -13127,12 +13127,12 @@
           "licenseUrl": "https://unsplash.com/license"
         },
         {
-          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-          "alt": "Guest room interior (illustrative stock photo; not this property)",
-          "provider": "Unsplash",
+          "url": "/images/rooms/budget-single.webp",
+          "alt": "AI-generated illustrative budget single hotel room; not a property photograph",
+          "provider": "OpenAI ImageGen",
           "isIllustrative": true,
-          "sourceUrl": "https://images.unsplash.com/photo-1590490360182-c33d57733427",
-          "licenseUrl": "https://unsplash.com/license"
+          "sourceUrl": "/images/rooms/budget-single.webp",
+          "licenseUrl": "/images/rooms/CREDITS.txt"
         }
       ],
       "checkInTime": "15:00",

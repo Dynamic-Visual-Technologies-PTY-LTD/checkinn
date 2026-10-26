@@ -8,6 +8,13 @@ import { loadSeed } from "@/db/seed";
 const seed = loadSeed();
 const added = seed.hotels.slice(12);
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+type RoomImageManifest = {
+  categoryVariants: Record<string, string[]>;
+  images: Record<string, { url: string; alt: string }>;
+};
+const roomImages = JSON.parse(
+  readFileSync(path.join(process.cwd(), "data", "seed", "room-images.json"), "utf8"),
+) as RoomImageManifest;
 
 describe("demo catalog", () => {
   it("has 120 unique hotels, 20 destinations and 348 unique room types", () => {
@@ -75,9 +82,9 @@ describe("demo catalog", () => {
     }
   });
 
-  it("keeps hotel stock attribution and distinct local AI destination images", () => {
+  it("keeps stock attribution and assigns matching local AI room illustrations", () => {
     const originals = new Map(seed.hotels.slice(0, 12).flatMap((hotel) => hotel.images.map((image) => [image.url, image])));
-    for (const hotel of seed.hotels) {
+    for (const hotel of seed.hotels.slice(0, 12)) {
       expect(hotel.images).toHaveLength(2);
       for (const image of hotel.images) {
         expect(image.isIllustrative).toBe(true);
@@ -87,6 +94,33 @@ describe("demo catalog", () => {
         expect(image.alt.length).toBeGreaterThan(0);
       }
     }
+    const generatedRoomUrls = new Set(Object.values(roomImages.images).map((image) => image.url));
+    const assignedRoomUrls = new Set<string>();
+    for (const hotel of added) {
+      expect(hotel.images).toHaveLength(2);
+      const [stockImage, roomImage] = hotel.images;
+      expect(stockImage.provider).toBe("Unsplash");
+      expect(stockImage.sourceUrl).toBe(originals.get(stockImage.url)?.sourceUrl);
+      expect(stockImage.licenseUrl).toBe(originals.get(stockImage.url)?.licenseUrl);
+      expect(roomImage.provider).toBe("OpenAI ImageGen");
+      expect(roomImage.isIllustrative).toBe(true);
+      expect(roomImage.sourceUrl).toBe(roomImage.url);
+      expect(roomImage.licenseUrl).toBe("/images/rooms/CREDITS.txt");
+      expect(generatedRoomUrls.has(roomImage.url)).toBe(true);
+      expect(roomImage.alt).toContain("AI-generated illustrative");
+      assignedRoomUrls.add(roomImage.url);
+      const matchingVariant = Object.entries(roomImages.images).find(([, image]) => image.url === roomImage.url)?.[0];
+      expect(matchingVariant).toBeDefined();
+      expect(roomImages.categoryVariants[hotel.category]).toContain(matchingVariant);
+      if (matchingVariant === "coastal-twin") {
+        expect(hotel.category).toBe("wellness");
+        expect(hotel.roomTypes.some((room) => room.beds.length === 1 && room.beds[0].type === "single" && room.beds[0].count === 2)).toBe(true);
+      }
+      const asset = readFileSync(path.join(process.cwd(), "public", roomImage.url));
+      expect(asset.subarray(0, 4).toString()).toBe("RIFF");
+      expect(asset.subarray(8, 12).toString()).toBe("WEBP");
+    }
+    expect(assignedRoomUrls).toEqual(generatedRoomUrls);
     const generatedCities = seed.cities.slice(6);
     expect(new Set(generatedCities.map((city) => city.image.url)).size).toBe(14);
     for (const city of generatedCities) {
