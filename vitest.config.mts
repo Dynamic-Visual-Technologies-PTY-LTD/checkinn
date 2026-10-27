@@ -11,7 +11,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", ".claude/hooks/**/*.test.mjs"],
     setupFiles: ["./src/test/setup.ts"],
     // The calendar and search bar tests drive many userEvent clicks in jsdom;
     // the slowest takes ~2.5 s alone, so the 5 s default fails under load.

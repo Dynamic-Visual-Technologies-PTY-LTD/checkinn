@@ -1,0 +1,24 @@
+{
+  "extraKnownMarketplaces": {
+    "thedotmack": {
+      "source": { "source": "github", "repo": "thedotmack/claude-mem" }
+    }
+  },
+  "enabledPlugins": {
+    "claude-mem@thedotmack": true
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify.mjs\"",
+            "timeout": 900,
+            "statusMessage": "Verifying: lint, types and tests"
+          }
+        ]
+      }
+    ]
+  }
+}

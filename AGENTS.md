@@ -118,6 +118,10 @@ The end-to-end suite is desktop only and kept small: guest journeys and flows th
 
 There is no formatter configured. ESLint is the only style gate.
 
+A Claude Code Stop hook (`.claude/hooks/verify.mjs`, wired in `.claude/settings.json`) runs lint, typecheck and tests before an agent can finish, and blocks the stop until they pass. It does not run the build or the end-to-end tests; those stay with the agent and CI. It skips when no code changed since main or since its last passing run; Markdown, `docs/` and `_bmad-output/` edits never trigger it. It lets the agent stop after three failed attempts in a row, so a failure the agent can't fix, such as a flaky test, costs up to three full check runs before it gives up. Its decisions are in `.claude/hooks/verify-rules.mjs`, tested by `npm test`.
+
+The same settings offer the claude-mem plugin (`claude-mem@thedotmack`, from the `thedotmack/claude-mem` GitHub marketplace) so decisions and lessons carry across Claude Code sessions. It stores its memory on each contributor's machine; decline it when Claude Code offers it if you'd rather not.
+
 The same commands are available as VS Code tasks in `.vscode/tasks.json`. The `verify` task runs lint, typecheck, test and build in sequence.
 
 ## Boundaries
