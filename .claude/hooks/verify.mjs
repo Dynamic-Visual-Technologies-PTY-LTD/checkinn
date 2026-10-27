@@ -64,9 +64,14 @@ function git(args) {
   return run.status === 0 ? run.stdout : "";
 }
 
-/** Files changed on this branch, committed or not: against the merge base with main, plus untracked. */
+/**
+ * Files changed on this branch, committed or not: against the merge base with main, plus untracked.
+ * Without origin/main (no remote, or a shallow clone) it uses local main; with neither, it only
+ * sees uncommitted changes.
+ */
 function changedFiles() {
-  const base = git(["merge-base", "HEAD", "origin/main"]).trim() || "HEAD";
+  const base =
+    git(["merge-base", "HEAD", "origin/main"]).trim() || git(["merge-base", "HEAD", "main"]).trim() || "HEAD";
   const tracked = git(["diff", "--name-only", base]).split("\n");
   const untracked = git(["ls-files", "--others", "--exclude-standard"]).split("\n");
   return [...new Set([...tracked, ...untracked].map((file) => file.trim()).filter(Boolean))];
