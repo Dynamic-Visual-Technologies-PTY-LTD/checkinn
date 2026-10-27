@@ -9,8 +9,8 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterFailure, afterPass, codeFiles, MAX_BLOCKS } from "./verify-rules.mjs";
 
-const MAX_BLOCKS = 3;
 const OUTPUT_LINES = 60;
 const CHECKS = [
   // .pr-description/ is gitignored scratch from the pr-description skill; CI never sees it.
@@ -18,8 +18,6 @@ const CHECKS = [
   ["typecheck", ["run", "typecheck"]],
   ["tests", ["test"]],
 ];
-// Paths whose changes can't break lint, types or tests.
-const IGNORED = [/^_bmad-output\//, /^docs\//, /\.md$/i, /^\.claude\/(?!hooks\/|settings\.json$)/];
 
 const input = readInput();
 const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -27,7 +25,7 @@ const stateDir = join(tmpdir(), "checkinn-verify-hook");
 const stateFile = join(stateDir, `${createHash("sha1").update(root).digest("hex").slice(0, 12)}.json`);
 const state = readState();
 
-const changed = changedFiles().filter((file) => !IGNORED.some((pattern) => pattern.test(file)));
+const changed = codeFiles(changedFiles());
 if (changed.length === 0) process.exit(0);
 
 const fingerprint = codeFingerprint(changed);
@@ -37,19 +35,20 @@ for (const [name, args] of CHECKS) {
   const run = spawnSync("npm", args, { cwd: root, encoding: "utf8", shell: true, env: { ...process.env, CI: "1" } });
   if (run.status === 0) continue;
 
-  const blocks = state.session === input.session_id ? (state.blocks ?? 0) + 1 : 1;
-  if (blocks > MAX_BLOCKS) {
-    saveState({ session: input.session_id, blocks: 0 });
+  // stop_hook_active is deliberately not checked: the agent stays blocked while a check
+  // fails, and afterFailure's MAX_BLOCKS cap is what keeps that from looping forever.
+  const failure = afterFailure(state, input.session_id);
+  saveState(failure.state);
+  if (!failure.block) {
     console.log(JSON.stringify({ systemMessage: `Verification hook: ${name} still fails after ${MAX_BLOCKS} attempts; letting the agent stop. Fix it before committing.` }));
     process.exit(0);
   }
-  saveState({ session: input.session_id, blocks });
   const output = `${run.stdout ?? ""}${run.stderr ?? ""}`.trim().split(/\r?\n/).slice(-OUTPUT_LINES).join("\n");
-  console.error(`Verification hook: \`npm ${args.join(" ")}\` failed (attempt ${blocks} of ${MAX_BLOCKS}). Fix it before finishing.\n\n${output}`);
+  console.error(`Verification hook: \`npm ${args.join(" ")}\` failed (attempt ${failure.attempt} of ${MAX_BLOCKS}). Fix it before finishing.\n\n${output}`);
   process.exit(2);
 }
 
-saveState({ passed: fingerprint });
+saveState(afterPass(fingerprint));
 process.exit(0);
 
 function readInput() {
