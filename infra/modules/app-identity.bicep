@@ -39,4 +39,6 @@ resource acrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 
 output identityId string = identity.id
 output principalId string = identity.properties.principalId
+// The app passes it as AZURE_CLIENT_ID to pick this identity when it signs in.
+output clientId string = identity.properties.clientId
 output acrPullAssignmentId string = acrPull.id
