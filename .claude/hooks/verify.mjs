@@ -30,7 +30,7 @@ const state = readState();
 const changed = changedFiles().filter((file) => !IGNORED.some((pattern) => pattern.test(file)));
 if (changed.length === 0) process.exit(0);
 
-const fingerprint = codeFingerprint();
+const fingerprint = codeFingerprint(changed);
 if (state.passed === fingerprint) process.exit(0);
 
 for (const [name, args] of CHECKS) {
@@ -73,14 +73,12 @@ function changedFiles() {
   return [...new Set([...tracked, ...untracked].map((file) => file.trim()).filter(Boolean))];
 }
 
-/** Changes whenever HEAD, the working tree or the untracked files change. */
-function codeFingerprint() {
+/** The content of the changed code files, so editing docs alone never re-runs the checks. */
+function codeFingerprint(files) {
   const hash = createHash("sha1");
-  hash.update(git(["rev-parse", "HEAD"]));
-  hash.update(git(["diff", "HEAD"]));
-  for (const file of git(["ls-files", "--others", "--exclude-standard"]).split("\n").filter(Boolean)) {
-    hash.update(file);
-    if (existsSync(join(root, file))) hash.update(readFileSync(join(root, file)));
+  for (const file of [...files].sort()) {
+    hash.update(`${file}\0`);
+    hash.update(existsSync(join(root, file)) ? readFileSync(join(root, file)) : "deleted");
   }
   return hash.digest("hex");
 }
