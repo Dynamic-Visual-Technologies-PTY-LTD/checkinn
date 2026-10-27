@@ -13,7 +13,8 @@ import { join } from "node:path";
 const MAX_BLOCKS = 3;
 const OUTPUT_LINES = 60;
 const CHECKS = [
-  ["lint", ["run", "lint"]],
+  // .pr-description/ is gitignored scratch from the pr-description skill; CI never sees it.
+  ["lint", ["run", "lint", "--", "--ignore-pattern", "\".pr-description/**\""]],
   ["typecheck", ["run", "typecheck"]],
   ["tests", ["test"]],
 ];
