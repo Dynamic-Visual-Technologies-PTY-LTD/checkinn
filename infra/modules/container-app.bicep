@@ -19,19 +19,22 @@ param shareName string
 @description('Resource ID of the user-assigned identity the app runs as.')
 param appIdentityId string
 
+@description('Client ID of that identity. Smart search signs in to Foundry with it.')
+param appIdentityClientId string
+
 @description('Registry login server, for example crcheckinnprodsanxxxx.azurecr.io.')
 param registryLoginServer string
 
 @description('Image to run. Deploy-CheckInn.ps1 passes the image that is running now, so a re-run keeps it.')
 param containerImage string = 'mcr.microsoft.com/dotnet/samples:aspnetapp'
 
-@description('Foundry OpenAI endpoint. Not a secret; the app does not read it yet.')
+@description('Foundry OpenAI endpoint, for example https://<account>.openai.azure.com/. Not a secret.')
 param embeddingsEndpoint string
 
-@description('Foundry embedding deployment name. The app does not read it yet.')
+@description('Foundry embedding deployment name.')
 param embeddingsDeploymentName string
 
-@description('Foundry chat deployment name, on the same endpoint as the embeddings. The app does not read it yet.')
+@description('Foundry chat deployment name, on the same endpoint as the embeddings.')
 param chatDeploymentName string
 
 @description('Tags applied to every resource.')
@@ -132,17 +135,27 @@ resource containerApp 'Microsoft.App/containerApps@2026-01-01' = {
                 name: 'CHECKINN_DB_PATH'
                 value: '${mountPath}/checkinn.db'
               }
+              // Smart search turns on when all of these are set: the Azure
+              // Provider signs in to Foundry as the app identity, with no key.
               {
-                name: 'CHECKINN_EMBEDDINGS_ENDPOINT'
+                name: 'AZURE_OPENAI_ENDPOINT'
                 value: embeddingsEndpoint
               }
               {
-                name: 'CHECKINN_EMBEDDINGS_DEPLOYMENT'
+                name: 'AZURE_OPENAI_CHAT_DEPLOYMENT'
+                value: chatDeploymentName
+              }
+              {
+                name: 'AZURE_OPENAI_EMBEDDING_DEPLOYMENT'
                 value: embeddingsDeploymentName
               }
               {
-                name: 'CHECKINN_CHAT_DEPLOYMENT'
-                value: chatDeploymentName
+                name: 'AZURE_OPENAI_AUTH'
+                value: 'managed-identity'
+              }
+              {
+                name: 'AZURE_CLIENT_ID'
+                value: appIdentityClientId
               }
             ],
             placeholderEnv

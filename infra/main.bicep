@@ -106,6 +106,9 @@ module foundry 'modules/foundry.bicep' = {
     projectName: 'proj-${foundryNameBase}'
     embeddingDeploymentName: embeddingDeploymentName
     chatDeploymentName: chatDeploymentName
+    // 125K tokens per minute, as the live deployment runs, so Smart search
+    // is not rate-limited when several guests search at once.
+    chatCapacity: 125
     appPrincipalId: appIdentity.outputs.principalId
     tags: tags
   }
@@ -123,6 +126,7 @@ module containerApp 'modules/container-app.bicep' = {
     // Using this output also waits for the whole module, so AcrPull exists
     // before the app pulls with the identity.
     appIdentityId: appIdentity.outputs.identityId
+    appIdentityClientId: appIdentity.outputs.clientId
     registryLoginServer: registry.outputs.loginServer
     containerImage: containerImage
     embeddingsEndpoint: foundry.outputs.endpoint
