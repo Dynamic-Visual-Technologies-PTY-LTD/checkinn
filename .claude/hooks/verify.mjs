@@ -12,12 +12,15 @@ import { join } from "node:path";
 import { afterFailure, afterPass, changedFiles, codeFiles, fingerprint, MAX_BLOCKS } from "./verify-rules.mjs";
 
 const OUTPUT_LINES = 60;
+// Each check is one command line, run through the shell: on Windows npm is npm.cmd, which
+// Node won't spawn without one, and passing an argument list with `shell: true` is
+// deprecated (DEP0190) because the arguments are joined unescaped.
 const CHECKS = [
   // .pr-description/ is gitignored scratch from the pr-description skill. CI never has it, so
   // this local-only ignore keeps the hook in line with CI's `npm run lint` on tracked files.
-  ["lint", ["run", "lint", "--", "--ignore-pattern", "\".pr-description/**\""]],
-  ["typecheck", ["run", "typecheck"]],
-  ["tests", ["test"]],
+  ["lint", 'npm run lint -- --ignore-pattern ".pr-description/**"'],
+  ["typecheck", "npm run typecheck"],
+  ["tests", "npm test"],
 ];
 
 const input = readInput();
@@ -32,8 +35,8 @@ if (changed.length === 0) process.exit(0);
 const current = fingerprint(changed, readCodeFile);
 if (state.passed === current) process.exit(0);
 
-for (const [name, args] of CHECKS) {
-  const run = spawnSync("npm", args, { cwd: root, encoding: "utf8", shell: true, env: { ...process.env, CI: "1" } });
+for (const [name, command] of CHECKS) {
+  const run = spawnSync(command, { cwd: root, encoding: "utf8", shell: true, env: { ...process.env, CI: "1" } });
   if (run.status === 0) continue;
 
   // stop_hook_active is deliberately not checked: the agent stays blocked while a check
@@ -45,7 +48,7 @@ for (const [name, args] of CHECKS) {
     process.exit(0);
   }
   const output = `${run.stdout ?? ""}${run.stderr ?? ""}`.trim().split(/\r?\n/).slice(-OUTPUT_LINES).join("\n");
-  console.error(`Verification hook: \`npm ${args.join(" ")}\` failed (attempt ${failure.attempt} of ${MAX_BLOCKS}). Fix it before finishing.\n\n${output}`);
+  console.error(`Verification hook: \`${command}\` failed (attempt ${failure.attempt} of ${MAX_BLOCKS}). Fix it before finishing.\n\n${output}`);
   process.exit(2);
 }
 
