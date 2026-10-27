@@ -9,11 +9,12 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterFailure, afterPass, codeFiles, MAX_BLOCKS } from "./verify-rules.mjs";
+import { afterFailure, afterPass, changedFiles, codeFiles, fingerprint, MAX_BLOCKS } from "./verify-rules.mjs";
 
 const OUTPUT_LINES = 60;
 const CHECKS = [
-  // .pr-description/ is gitignored scratch from the pr-description skill; CI never sees it.
+  // .pr-description/ is gitignored scratch from the pr-description skill. CI never has it, so
+  // this local-only ignore keeps the hook in line with CI's `npm run lint` on tracked files.
   ["lint", ["run", "lint", "--", "--ignore-pattern", "\".pr-description/**\""]],
   ["typecheck", ["run", "typecheck"]],
   ["tests", ["test"]],
@@ -25,11 +26,11 @@ const stateDir = join(tmpdir(), "checkinn-verify-hook");
 const stateFile = join(stateDir, `${createHash("sha1").update(root).digest("hex").slice(0, 12)}.json`);
 const state = readState();
 
-const changed = codeFiles(changedFiles());
+const changed = codeFiles(changedFiles(git));
 if (changed.length === 0) process.exit(0);
 
-const fingerprint = codeFingerprint(changed);
-if (state.passed === fingerprint) process.exit(0);
+const current = fingerprint(changed, readCodeFile);
+if (state.passed === current) process.exit(0);
 
 for (const [name, args] of CHECKS) {
   const run = spawnSync("npm", args, { cwd: root, encoding: "utf8", shell: true, env: { ...process.env, CI: "1" } });
@@ -48,7 +49,7 @@ for (const [name, args] of CHECKS) {
   process.exit(2);
 }
 
-saveState(afterPass(fingerprint));
+saveState(afterPass(current));
 process.exit(0);
 
 function readInput() {
@@ -64,27 +65,9 @@ function git(args) {
   return run.status === 0 ? run.stdout : "";
 }
 
-/**
- * Files changed on this branch, committed or not: against the merge base with main, plus untracked.
- * Without origin/main (no remote, or a shallow clone) it uses local main; with neither, it only
- * sees uncommitted changes.
- */
-function changedFiles() {
-  const base =
-    git(["merge-base", "HEAD", "origin/main"]).trim() || git(["merge-base", "HEAD", "main"]).trim() || "HEAD";
-  const tracked = git(["diff", "--name-only", base]).split("\n");
-  const untracked = git(["ls-files", "--others", "--exclude-standard"]).split("\n");
-  return [...new Set([...tracked, ...untracked].map((file) => file.trim()).filter(Boolean))];
-}
-
-/** The content of the changed code files, so editing docs alone never re-runs the checks. */
-function codeFingerprint(files) {
-  const hash = createHash("sha1");
-  for (const file of [...files].sort()) {
-    hash.update(`${file}\0`);
-    hash.update(existsSync(join(root, file)) ? readFileSync(join(root, file)) : "deleted");
-  }
-  return hash.digest("hex");
+function readCodeFile(file) {
+  const path = join(root, file);
+  return existsSync(path) ? readFileSync(path) : null;
 }
 
 function readState() {

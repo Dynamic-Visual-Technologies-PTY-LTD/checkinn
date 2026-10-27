@@ -1,5 +1,6 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { afterFailure, afterPass, codeFiles, MAX_BLOCKS } from "./verify-rules.mjs";
+import { afterFailure, afterPass, changedFiles, codeFiles, fingerprint, MAX_BLOCKS } from "./verify-rules.mjs";
 
 describe("codeFiles", () => {
   it("drops docs, BMAD output and Claude config other than the hook", () => {
@@ -25,6 +26,62 @@ describe("codeFiles", () => {
       ".claude/settings.json",
     ];
     expect(codeFiles(files)).toEqual(files);
+  });
+
+  it("keeps Markdown under the folders code and tests read from", () => {
+    const files = ["src/content/terms.md", "e2e/fixtures/notes.md", "data/seed/README.md"];
+    expect(codeFiles(files)).toEqual(files);
+  });
+});
+
+/** A fake `git` that answers from a map of argument strings to stdout ("" when unknown). */
+function fakeGit(answers) {
+  const calls = [];
+  const git = (args) => {
+    calls.push(args.join(" "));
+    return answers[args.join(" ")] ?? "";
+  };
+  return { git, calls };
+}
+
+describe("changedFiles", () => {
+  it("diffs against the merge base with origin/main and adds untracked files", () => {
+    const { git, calls } = fakeGit({
+      "merge-base HEAD origin/main": "abc123\n",
+      "diff --name-only abc123": "src/a.ts\nREADME.md\n",
+      "ls-files --others --exclude-standard": "src/new.ts\nsrc/a.ts\n",
+    });
+    expect(changedFiles(git)).toEqual(["src/a.ts", "README.md", "src/new.ts"]);
+    expect(calls).not.toContain("merge-base HEAD main");
+  });
+
+  it("falls back to local main when origin/main is missing", () => {
+    const { git } = fakeGit({
+      "merge-base HEAD main": "def456\n",
+      "diff --name-only def456": "src/committed.ts\n",
+    });
+    expect(changedFiles(git)).toEqual(["src/committed.ts"]);
+  });
+
+  it("falls back to HEAD, uncommitted changes only, with neither", () => {
+    const { git, calls } = fakeGit({ "diff --name-only HEAD": "src/dirty.ts\n" });
+    expect(changedFiles(git)).toEqual(["src/dirty.ts"]);
+    expect(calls).toContain("diff --name-only HEAD");
+  });
+});
+
+describe("fingerprint", () => {
+  const read = (contents) => (file) => contents[file] ?? null;
+
+  it("is the same for the same files in any order", () => {
+    const files = { "src/a.ts": "a", "src/b.ts": "b" };
+    expect(fingerprint(["src/a.ts", "src/b.ts"], read(files))).toBe(fingerprint(["src/b.ts", "src/a.ts"], read(files)));
+  });
+
+  it("changes when a file's content changes or the file is deleted", () => {
+    const before = fingerprint(["src/a.ts"], read({ "src/a.ts": "a" }));
+    expect(fingerprint(["src/a.ts"], read({ "src/a.ts": "a2" }))).not.toBe(before);
+    expect(fingerprint(["src/a.ts"], read({}))).not.toBe(before);
   });
 });
 
