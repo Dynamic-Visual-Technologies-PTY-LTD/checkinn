@@ -118,6 +118,8 @@ The end-to-end suite is desktop only and kept small: guest journeys and flows th
 
 There is no formatter configured. ESLint is the only style gate.
 
+A Claude Code Stop hook (`.claude/hooks/verify.mjs`, wired in `.claude/settings.json`) runs lint, typecheck and tests before an agent can finish, and blocks the stop until they pass. It skips when no code changed since main or since its last passing run, and lets the agent stop after three failed attempts in a row.
+
 The same commands are available as VS Code tasks in `.vscode/tasks.json`. The `verify` task runs lint, typecheck, test and build in sequence.
 
 ## Boundaries
