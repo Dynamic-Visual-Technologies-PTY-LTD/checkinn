@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { afterFailure, afterPass, changedFiles, codeFiles, fingerprint, MAX_BLOCKS } from "./verify-rules.mjs";
+import { afterFailure, afterPass, changedFiles, codeFiles, fingerprint, MAX_BLOCKS, projectRoot } from "./verify-rules.mjs";
 
 describe("codeFiles", () => {
   it("drops docs, BMAD output and Claude config other than the hook", () => {
@@ -111,5 +111,16 @@ describe("afterPass", () => {
     const passed = afterPass("abc");
     expect(passed).toEqual({ passed: "abc" });
     expect(afterFailure(passed, "s1")).toMatchObject({ block: true, attempt: 1 });
+  });
+});
+
+describe("projectRoot", () => {
+  it("upper-cases a lower-case Windows drive letter", () => {
+    expect(projectRoot("c:\\Users\\me\\checkinn")).toBe("C:\\Users\\me\\checkinn");
+  });
+
+  it("leaves upper-case drives and POSIX paths alone", () => {
+    expect(projectRoot("C:\\Users\\me\\checkinn")).toBe("C:\\Users\\me\\checkinn");
+    expect(projectRoot("/home/me/checkinn")).toBe("/home/me/checkinn");
   });
 });

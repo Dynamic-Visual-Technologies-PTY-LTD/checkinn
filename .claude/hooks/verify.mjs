@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterFailure, afterPass, changedFiles, codeFiles, fingerprint, MAX_BLOCKS } from "./verify-rules.mjs";
+import { afterFailure, afterPass, changedFiles, codeFiles, fingerprint, MAX_BLOCKS, projectRoot } from "./verify-rules.mjs";
 
 const OUTPUT_LINES = 60;
 // Each check is one command line, run through the shell: on Windows npm is npm.cmd, which
@@ -24,7 +24,7 @@ const CHECKS = [
 ];
 
 const input = readInput();
-const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+const root = projectRoot(process.env.CLAUDE_PROJECT_DIR || process.cwd());
 const stateDir = join(tmpdir(), "checkinn-verify-hook");
 const stateFile = join(stateDir, `${createHash("sha1").update(root).digest("hex").slice(0, 12)}.json`);
 const state = readState();

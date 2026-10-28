@@ -15,6 +15,14 @@ export const IGNORED = [
   /^\.claude\/(?!hooks\/|settings\.json$)/,
 ];
 
+/**
+ * The project folder with an upper-case Windows drive letter. VS Code passes `c:\...`, and
+ * Vitest run from that path loads `vitest` twice, so every suite fails in its setup file.
+ */
+export function projectRoot(path) {
+  return path.replace(/^([a-z]):/, (_, drive) => `${drive.toUpperCase()}:`);
+}
+
 /** The changed files that can affect lint, types or tests. */
 export function codeFiles(files) {
   return files.filter((file) => !IGNORED.some((pattern) => pattern.test(file)));
