@@ -5,6 +5,7 @@ import { RoomTable, RoomTableSkeleton } from "@/app/hotels/[hotelId]/room-table"
 import { DatesFieldProvider, StayPartyPicker } from "@/app/hotels/[hotelId]/stay-party-picker";
 import { BookingSteps } from "@/components/booking-steps";
 import { Icon } from "@/components/icons/icons";
+import { hotelBestFit } from "@/domain/best-fit";
 import { STALE_LINK_MESSAGE } from "@/domain/criteria";
 import { availabilityHeadingId, availabilitySectionId } from "@/domain/hotel";
 import {
@@ -24,6 +25,13 @@ export type AvailabilityContext = {
   criteria: SearchCriteria;
   /** The URL's dates or Party were rejected: show the stale-link message. */
   stale: boolean;
+  /** A Provider is configured, so the URL's `bestFit` counts (AD-26). */
+  smartSearch: boolean;
+  /**
+   * The URL had a `sel` the codec rejected. It counts as present, so the
+   * Best-fit room is not pre-selected (AD-26).
+   */
+  selInvalid: boolean;
 };
 
 /**
@@ -35,7 +43,7 @@ export type AvailabilityContext = {
  */
 export function AvailabilitySection({
   hotel,
-  context: { today, now, criteria, stale },
+  context: { today, now, criteria, stale, smartSearch, selInvalid },
 }: {
   hotel: HotelPage;
   context: AvailabilityContext;
@@ -80,6 +88,8 @@ export function AvailabilitySection({
             today={today}
             now={now}
             criteria={criteria}
+            smartSearch={smartSearch}
+            selInvalid={selInvalid}
           />
         </Suspense>
       ) : (
@@ -133,22 +143,42 @@ export async function RoomRanOutAlert({
   return <AvailabilityAlert message={roomRanOutMessage(lines)} today={today} />;
 }
 
-/** Reads Availability at request time (AD-2, AD-4) and hands the room table its data. */
+/**
+ * Reads Availability at request time (AD-2, AD-4) and hands the room table its
+ * data. The URL's `bestFit` is checked here, on the server (AD-26): when it
+ * still qualifies its row gets the Best-fit chip, and with no `sel` in the URL
+ * at all (not even an invalid one) the selection starts from it.
+ */
 export async function AvailabilityResults({
   hotel,
   stay,
   today,
   now,
   criteria,
+  smartSearch = false,
+  selInvalid = false,
 }: {
   hotel: HotelPage;
   stay: Stay;
   today: IsoDate;
   now: string;
   criteria: SearchCriteria;
+  smartSearch?: boolean;
+  selInvalid?: boolean;
 }) {
   const availability = await getAvailability(hotel.hotelId, stay);
-  const { selection, lowered } = clampSelection(criteria.sel, hotel.rooms, availability);
+  const best = hotelBestFit(
+    criteria.bestFit,
+    hotel.rooms,
+    availability,
+    criteria.party,
+    criteria.sel !== null || selInvalid,
+    smartSearch,
+  );
+  const clamped = clampSelection(criteria.sel, hotel.rooms, availability);
+  const { selection, lowered } = best.preselect
+    ? { selection: best.preselect, lowered: [] }
+    : clamped;
   // The room-ran-out alert already names its Room types; the live region
   // announces only the other lowered lines.
   const named = new Set(ranOutFor(hotel, criteria, availability).map((line) => line.roomTypeId));
@@ -169,6 +199,8 @@ export async function AvailabilityResults({
       initialSelection={selection}
       loweredNotice={loweredMessage(unnamed)}
       selectionLowered={lowered.length > 0}
+      bestFitRoomTypeId={best.chipRoomTypeId}
+      preselected={best.preselect !== null}
     />
   );
 }

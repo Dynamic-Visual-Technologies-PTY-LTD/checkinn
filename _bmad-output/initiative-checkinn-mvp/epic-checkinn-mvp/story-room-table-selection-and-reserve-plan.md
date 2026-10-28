@@ -3,7 +3,7 @@ title: 'Room table, selection and Reserve'
 type: 'feature'
 ticket: '10'
 created: '2026-10-13'
-status: 'built'
+status: done
 baseline_revision: '5b2f2d99c17ef94f33a31fb4573365b431b946ef'
 route: 'full'
 route_source: 'auto'

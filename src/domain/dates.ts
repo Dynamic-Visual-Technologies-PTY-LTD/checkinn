@@ -215,3 +215,33 @@ export function isUnavailable(date: IsoDate, today: IsoDate, range: DateRange): 
   }
   return false;
 }
+
+/** The relative Stays Query interpretation may name (FR-4, AD-22). */
+export const RELATIVE_STAYS = ["this-weekend", "next-weekend", "tonight"] as const;
+export type RelativeStay = (typeof RELATIVE_STAYS)[number];
+
+/** The Friday that starts this weekend: the coming one, or the one just gone on a weekend. */
+function weekendFriday(today: IsoDate): IsoDate {
+  const weekday = weekdayIndex(today);
+  // Monday is 0 and Friday 4; Saturday and Sunday look back to their Friday.
+  return addDays(today, 4 - weekday);
+}
+
+/**
+ * A relative Stay resolved against `today` (FR-4):
+ * - "tonight" is today to tomorrow.
+ * - "this weekend" is the coming Friday to Sunday. On a Friday it is today to
+ *   Sunday, on a Saturday Saturday to Sunday, and on a Sunday Sunday to
+ *   Monday, 1 night (user decision).
+ * - "next weekend" is the Friday to Sunday a week after this weekend's Friday.
+ */
+export function relativeStay(kind: RelativeStay, today: IsoDate): Stay {
+  if (kind === "tonight") return { checkIn: today, checkOut: addDays(today, 1) };
+  const friday = weekendFriday(today);
+  if (kind === "next-weekend") {
+    return { checkIn: addDays(friday, 7), checkOut: addDays(friday, 9) };
+  }
+  if (weekdayIndex(today) === 6) return { checkIn: today, checkOut: addDays(today, 1) };
+  const checkIn = isBefore(friday, today) ? today : friday;
+  return { checkIn, checkOut: addDays(friday, 2) };
+}

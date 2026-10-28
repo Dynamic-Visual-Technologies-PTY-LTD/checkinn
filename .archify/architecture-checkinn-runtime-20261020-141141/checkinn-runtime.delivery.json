@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "327a2861-2577-43fc-ac2d-59f686d02f1d",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\Basso\\source\\repos\\DVT\\checkinn\\.archify\\architecture-checkinn-runtime-20261020-141141\\candidate.json",
+  "output": "C:\\Users\\Basso\\source\\repos\\DVT\\checkinn\\.archify\\architecture-checkinn-runtime-20261020-141141\\checkinn-runtime.html",
+  "specification": {
+    "sha256": "e13acab759406f138725e1b11b68125d8431399587d927f7801aaca9db50fcad",
+    "bytes": 7516
+  },
+  "artifact": {
+    "sha256": "d604cf7e3072a225b28516b67ca2a2191ee0a73f2134b1eb1eed31a11c2e6c22",
+    "bytes": 837788
+  }
+}
