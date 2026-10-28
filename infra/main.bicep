@@ -165,7 +165,7 @@ module gitHubIdentity 'modules/github-identity.bicep' = {
 // Canary only: the workflow deploys this template itself, at subscription
 // scope, and the template assigns roles. Accepted risk: these rights reach
 // production too. Production's identity never gets them.
-var contributorRoleId = 'b24988ac-6181-4c26-be6f-5ad7c3c0f6aa'
+var contributorRoleId = 'b24988ac-6180-42a0-ab88-20f7382dd24c'
 var userAccessAdministratorRoleId = '18d7d88d-d35e-4fb5-a5c3-7773c20a72d9'
 var gitHubIdentityId = resourceId(
   subscription().subscriptionId,
