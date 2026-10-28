@@ -7,8 +7,9 @@
     account and its file share, the Container Apps environment and app, the app
     identity (AcrPull, Cognitive Services OpenAI User), the GitHub deploy
     identity (federated credential, AcrPush, Container Apps Contributor on the
-    app) and the Foundry account, project and its text-embedding-3-small and
-    gpt-6-luna deployments.
+    app; for canary also Contributor and User Access Administrator on the
+    subscription, through gitHubCanDeployInfrastructure) and the Foundry
+    account, project and its text-embedding-3-small and gpt-6-luna deployments.
 
     The deployment is idempotent. Before deploying, the script reads the image
     the container app runs now and passes it back, so a re-run never replaces
@@ -21,11 +22,18 @@
     With -WhatIf it runs 'az deployment sub what-if' and changes nothing.
 
     Afterwards it prints the GitHub environment variables the deploy workflow
-    needs. With -ConfigureGitHub it also creates the 'production' environment
-    and sets those variables through the GitHub CLI.
+    needs. With -ConfigureGitHub it also creates the GitHub environment
+    (production, or the parameter file's gitHubEnvironment) with custom
+    deployment branch policies, adds its deployment branch (main for
+    production, otherwise the branch named after the environment, such as
+    canary) if missing, and sets those variables through the GitHub CLI. It
+    never removes branch policies already on the environment.
 
     Run it as a person with Owner (or Contributor plus User Access
-    Administrator) on the subscription. GitHub Actions never runs it.
+    Administrator) on the subscription. GitHub Actions never runs it for
+    production. The canary workflow (.github/workflows/deploy-canary.yml) runs
+    it non-interactively with -ParameterFile infra/main.canary.bicepparam,
+    signed in as the canary GitHub identity.
 
 .PARAMETER SubscriptionId
     The Azure subscription to deploy into. Defaults to the Azure CLI's current
@@ -38,12 +46,15 @@
     Region that stores the deployment metadata. Defaults to southafricanorth.
 
 .PARAMETER ConfigureGitHub
-    Also set the GitHub environment variables with 'gh variable set --env'.
-    Requires the GitHub CLI, signed in with admin rights on the repository.
+    Also create the GitHub environment with custom branch policies, add its
+    deployment branch (main for production, otherwise the environment's name;
+    existing policies are kept) and set its variables
+    with 'gh variable set --env'. Safe to re-run. Requires the GitHub CLI, signed in with admin rights on the repository.
 
 .PARAMETER GitHubEnvironment
-    The GitHub environment to configure. Defaults to production. It must match
-    the federated credential in modules/github-identity.bicep.
+    The GitHub environment to configure. Defaults to the parameter file's
+    gitHubEnvironment value, or production when it has none. It must match the
+    federated credential in modules/github-identity.bicep.
 
 .EXAMPLE
     ./infra/scripts/Deploy-CheckInn.ps1 -WhatIf
@@ -58,8 +69,15 @@
 .EXAMPLE
     ./infra/scripts/Deploy-CheckInn.ps1 -ConfigureGitHub
 
-    Deploys, then creates the 'production' GitHub environment and sets its
-    AZURE_* variables.
+    Deploys, then creates the 'production' GitHub environment, allows only the
+    main branch to deploy to it and sets its AZURE_* variables.
+
+.EXAMPLE
+    ./infra/scripts/Deploy-CheckInn.ps1 -ParameterFile infra/main.canary.bicepparam -ConfigureGitHub
+
+    One-time canary bootstrap: deploys rg-checkinn-canary-san, then creates the
+    'canary' GitHub environment, allows only the canary branch to deploy to it
+    and sets its AZURE_* variables.
 
 .NOTES
     No secret, key or password is printed or written anywhere. The storage key
@@ -80,7 +98,8 @@ param(
 
     [switch] $ConfigureGitHub,
 
-    [string] $GitHubEnvironment = 'production'
+    # Empty means: read gitHubEnvironment from the parameter file.
+    [string] $GitHubEnvironment
 )
 
 Set-StrictMode -Version Latest
@@ -129,6 +148,11 @@ function Get-BicepParamValue {
     if ($Default) { return $Default }
     throw "Could not read $Name from $ParameterFile."
 }
+
+if (-not $GitHubEnvironment) {
+    $GitHubEnvironment = Get-BicepParamValue 'gitHubEnvironment' 'production'
+}
+Write-Host "GitHub env:   $GitHubEnvironment"
 
 # Names follow main.bicep: <type>-<workload>-<env>-<region>.
 $nameBase = '{0}-{1}-{2}' -f (Get-BicepParamValue 'workload' 'checkinn'), (Get-BicepParamValue 'environment'), (Get-BicepParamValue 'locationAbbreviation')
@@ -194,7 +218,7 @@ $variables.GetEnumerator() | ForEach-Object { Write-Host ("  {0,-28} {1}" -f $_.
 
 if (-not $ConfigureGitHub) {
     Write-Host ''
-    Write-Host 'Set these in GitHub (Settings > Environments > production > Variables),'
+    Write-Host "Set these in GitHub (Settings > Environments > $GitHubEnvironment > Variables),"
     Write-Host 'or re-run this script with -ConfigureGitHub.'
     return
 }
@@ -204,9 +228,28 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 }
 $repo = Get-BicepParamValue 'gitHubRepo'
 
-if ($PSCmdlet.ShouldProcess("$repo environment '$GitHubEnvironment'", 'Create the environment and set its variables')) {
-    $null = & gh api --method PUT "repos/$repo/environments/$GitHubEnvironment"
+# The only branch allowed to deploy to the environment: main for production,
+# otherwise the branch named after the environment (canary).
+$allowedBranch = if ($GitHubEnvironment -eq 'production') { 'main' } else { $GitHubEnvironment }
+
+if ($PSCmdlet.ShouldProcess("$repo environment '$GitHubEnvironment'", "Create the environment, allow only the '$allowedBranch' branch and set its variables")) {
+    # Custom branch policies, so once this runs only listed branches can use
+    # the environment and the identity Azure trusts for it. Policies already
+    # on the environment are kept.
+    $environmentBody = @{
+        deployment_branch_policy = @{ protected_branches = $false; custom_branch_policies = $true }
+    } | ConvertTo-Json -Compress
+    $null = $environmentBody | & gh api --method PUT "repos/$repo/environments/$GitHubEnvironment" --input -
     if ($LASTEXITCODE -ne 0) { throw "Could not create or update the '$GitHubEnvironment' environment on $repo." }
+
+    $policies = & gh api "repos/$repo/environments/$GitHubEnvironment/deployment-branch-policies" --jq '.branch_policies[] | select(.type != "tag") | .name'
+    if ($LASTEXITCODE -ne 0) { throw "Could not read the deployment branch policies of '$GitHubEnvironment' on $repo." }
+    if (@($policies) -notcontains $allowedBranch) {
+        $null = & gh api --method POST "repos/$repo/environments/$GitHubEnvironment/deployment-branch-policies" -f "name=$allowedBranch" -f 'type=branch'
+        if ($LASTEXITCODE -ne 0) { throw "Could not allow the '$allowedBranch' branch on the '$GitHubEnvironment' environment of $repo." }
+    }
+    Write-Host "GitHub environment '$GitHubEnvironment' allows deployments from '$allowedBranch'."
+
     foreach ($entry in $variables.GetEnumerator()) {
         & gh variable set $entry.Key --env $GitHubEnvironment --repo $repo --body $entry.Value
         if ($LASTEXITCODE -ne 0) { throw "Could not set $($entry.Key) on $repo." }

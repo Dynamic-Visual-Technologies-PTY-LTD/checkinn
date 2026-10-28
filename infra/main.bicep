@@ -1,8 +1,9 @@
 // CheckInn on Azure: one resource group holding a Container Apps environment
 // and app (one replica), its registry, the Azure Files share for the SQLite
 // database, the app and GitHub identities, and Foundry (embeddings and a
-// gpt-6-luna chat model) for the planned search. A person deploys this with scripts/Deploy-CheckInn.ps1;
-// GitHub Actions never does. See README.md.
+// gpt-6-luna chat model) for the planned search. A person deploys production
+// with scripts/Deploy-CheckInn.ps1; GitHub Actions never does. The canary
+// workflow runs the same script against main.canary.bicepparam. See README.md.
 targetScope = 'subscription'
 
 @description('Workload name used in every resource name.')
@@ -14,6 +15,7 @@ param workload string = 'checkinn'
 @allowed([
   'dev'
   'test'
+  'canary'
   'prod'
 ])
 param environment string
@@ -39,6 +41,16 @@ param foundryLocation string
 @minLength(2)
 @maxLength(5)
 param foundryLocationAbbreviation string
+
+@description('Chat deployment capacity in thousands of tokens per minute. The gpt-6-luna quota is per subscription and region, so canary takes little.')
+@minValue(1)
+param chatCapacity int = 125
+
+@description('GitHub environment that the GitHub identity federated credential trusts.')
+param gitHubEnvironment string = 'production'
+
+@description('Give the GitHub identity Contributor and User Access Administrator on the subscription, so its workflow can deploy this template. Keep false for production.')
+param gitHubCanDeployInfrastructure bool = false
 
 @description('Image the container app runs. Leave empty for the placeholder; Deploy-CheckInn.ps1 passes the image running now.')
 param containerImage string?
@@ -106,9 +118,9 @@ module foundry 'modules/foundry.bicep' = {
     projectName: 'proj-${foundryNameBase}'
     embeddingDeploymentName: embeddingDeploymentName
     chatDeploymentName: chatDeploymentName
-    // 125K tokens per minute, as the live deployment runs, so Smart search
-    // is not rate-limited when several guests search at once.
-    chatCapacity: 125
+    // Production: 125K tokens per minute, as the live deployment runs, so
+    // Smart search is not rate-limited when several guests search at once.
+    chatCapacity: chatCapacity
     appPrincipalId: appIdentity.outputs.principalId
     tags: tags
   }
@@ -145,7 +157,38 @@ module gitHubIdentity 'modules/github-identity.bicep' = {
     registryName: registry.outputs.registryName
     containerAppName: containerApp.outputs.containerAppName
     gitHubSubjectRepo: gitHubSubjectRepo
+    gitHubEnvironment: gitHubEnvironment
     tags: tags
+  }
+}
+
+// Canary only: the workflow deploys this template itself, at subscription
+// scope, and the template assigns roles. Accepted risk: these rights reach
+// production too. Production's identity never gets them.
+var contributorRoleId = 'b24988ac-6181-4c26-be6f-5ad7c3c0f6aa'
+var userAccessAdministratorRoleId = '18d7d88d-d35e-4fb5-a5c3-7773c20a72d9'
+var gitHubIdentityId = resourceId(
+  subscription().subscriptionId,
+  rg.name,
+  'Microsoft.ManagedIdentity/userAssignedIdentities',
+  'id-${nameBase}-github'
+)
+
+resource gitHubContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (gitHubCanDeployInfrastructure) {
+  name: guid(subscription().id, gitHubIdentityId, contributorRoleId)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', contributorRoleId)
+    principalId: gitHubIdentity.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource gitHubUserAccessAdministrator 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (gitHubCanDeployInfrastructure) {
+  name: guid(subscription().id, gitHubIdentityId, userAccessAdministratorRoleId)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', userAccessAdministratorRoleId)
+    principalId: gitHubIdentity.outputs.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 

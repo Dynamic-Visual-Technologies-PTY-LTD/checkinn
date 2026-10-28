@@ -1,0 +1,130 @@
+name: Deploy canary
+
+# Deploys the Bicep infrastructure and then the CheckInn image to the canary
+# environment (rg-checkinn-canary-san) for every push to the canary branch,
+# after CI passes. Signs in through OIDC federation: no secret is stored.
+# Production is deployed by deploy.yml, never by this workflow.
+
+on:
+  push:
+    branches: [canary]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    # Only the canary branch of this repository. Pull requests and forks never
+    # get here: there is no pull_request trigger, and forks fail the repository
+    # check.
+    if: >-
+      github.repository == 'Dynamic-Visual-Technologies-PTY-LTD/checkinn' &&
+      github.ref == 'refs/heads/canary'
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  deploy:
+    # Runs only when every CI job passed.
+    needs: ci
+    if: >-
+      github.repository == 'Dynamic-Visual-Technologies-PTY-LTD/checkinn' &&
+      github.ref == 'refs/heads/canary'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    concurrency:
+      group: deploy-canary
+      cancel-in-progress: false
+    environment:
+      name: canary
+      url: ${{ steps.rollout.outputs.url }}
+    env:
+      COMMIT_SHA: ${{ github.sha }}
+      REGISTRY: ${{ vars.AZURE_REGISTRY_LOGIN_SERVER }}
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      CONTAINER_APP: ${{ vars.AZURE_CONTAINERAPP_NAME }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.COMMIT_SHA }}
+
+      - name: Sign in to Azure (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy the infrastructure
+        # Same script a person runs. It reads the image the app runs now and
+        # passes it back, so the app keeps serving it until the rollout below.
+        # A failed lookup or deployment stops the job before the image is built.
+        shell: pwsh
+        env:
+          SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: >-
+          ./infra/scripts/Deploy-CheckInn.ps1
+          -SubscriptionId $env:SUBSCRIPTION_ID
+          -ParameterFile infra/main.canary.bicepparam
+
+      - name: Sign in to the registry
+        # Exchanges the OIDC session's Entra token for a short-lived registry
+        # token. Needs only AcrPush; nothing is stored.
+        env:
+          TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        run: |
+          aad_token=$(az account get-access-token --query accessToken --output tsv)
+          echo "::add-mask::$aad_token"
+          acr_token=$(curl --fail --silent --show-error \
+            --data-urlencode "grant_type=access_token" \
+            --data-urlencode "service=$REGISTRY" \
+            --data-urlencode "tenant=$TENANT_ID" \
+            --data-urlencode "access_token=$aad_token" \
+            "https://$REGISTRY/oauth2/exchange" | jq -r .refresh_token)
+          echo "::add-mask::$acr_token"
+          echo "$acr_token" | docker login "$REGISTRY" \
+            --username 00000000-0000-0000-0000-000000000000 --password-stdin
+
+      - name: Build and push the image
+        # better-sqlite3 is installed inside the Linux image (see Dockerfile).
+        run: |
+          docker build --pull --tag "$REGISTRY/checkinn:$COMMIT_SHA" .
+          docker push "$REGISTRY/checkinn:$COMMIT_SHA"
+
+      - name: Roll out a new revision
+        id: rollout
+        run: |
+          az config set extension.use_dynamic_install=yes_without_prompt --only-show-errors
+          # The placeholder image needed ASPNETCORE_HTTP_PORTS; drop it with the
+          # first real image, in the same revision.
+          remove_env=()
+          if az containerapp show --resource-group "$RESOURCE_GROUP" --name "$CONTAINER_APP" \
+              --query "properties.template.containers[0].env[].name" --output tsv \
+              | grep -qx ASPNETCORE_HTTP_PORTS; then
+            remove_env=(--remove-env-vars ASPNETCORE_HTTP_PORTS)
+          fi
+          az containerapp update --resource-group "$RESOURCE_GROUP" --name "$CONTAINER_APP" \
+            --image "$REGISTRY/checkinn:$COMMIT_SHA" "${remove_env[@]}" --only-show-errors --output none
+          # A failed revision leaves the old one serving, so wait until the new
+          # revision is the ready one rather than trusting the smoke check alone.
+          for attempt in $(seq 1 30); do
+            read -r latest ready < <(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$CONTAINER_APP" \
+              --query "[properties.latestRevisionName, properties.latestReadyRevisionName]" --output tsv | paste -sd' ')
+            [ -n "$latest" ] && [ "$latest" = "$ready" ] && break
+            if [ "$attempt" -eq 30 ]; then echo "Revision $latest did not become ready." >&2; exit 1; fi
+            sleep 10
+          done
+          echo "Revision $latest is ready."
+          fqdn=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$CONTAINER_APP" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          echo "url=https://$fqdn" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke check
+        run: >-
+          curl --fail --silent --show-error --location --output /dev/null
+          --retry 12 --retry-delay 10 --retry-all-errors --max-time 60
+          --write-out 'HTTP %{http_code}\n'
+          "${{ steps.rollout.outputs.url }}/"

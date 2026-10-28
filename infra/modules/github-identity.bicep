@@ -1,6 +1,7 @@
 // The identity GitHub Actions signs in as, through OIDC federation. No secret.
 // Least privilege: push images to the one registry and update the one
-// container app, nothing else.
+// container app, nothing else. main.bicep adds subscription rights for canary
+// only, through principalId.
 
 @description('Azure region for the identity.')
 param location string
@@ -75,6 +76,7 @@ resource containerAppDeploy 'Microsoft.Authorization/roleAssignments@2022-04-01'
 }
 
 output clientId string = identity.properties.clientId
+output principalId string = identity.properties.principalId
 output federatedSubject string = federatedCredential.properties.subject
 output acrPushAssignmentId string = acrPush.id
 output containerAppDeployAssignmentId string = containerAppDeploy.id

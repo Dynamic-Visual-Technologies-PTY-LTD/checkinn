@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Lets deploy-canary.yml require CI before it deploys.
+  workflow_call:
 
 concurrency:
   group: ci-${{ github.ref }}
