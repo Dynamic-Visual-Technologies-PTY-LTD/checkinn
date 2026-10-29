@@ -198,8 +198,22 @@ if (-not $PSCmdlet.ShouldProcess("subscription $($account.id)", 'Deploy CheckInn
 }
 
 Write-Host "Deploying '$deploymentName'..."
-$outputsJson = Invoke-Az -Arguments (@('deployment', 'sub', 'create') + $deployArgs + @('--query', 'properties.outputs', '--output', 'json')) `
-    -FailureMessage 'The deployment failed. See the error above, or the Deployments blade of the subscription in the Azure portal.'
+# Azure sometimes rejects the unchanged federated credential with
+# ConcurrentFederatedIdentityCredentialsWrites when nothing else is writing to
+# it. A second attempt clears it; any other failure stops at once.
+for ($attempt = 1; ; $attempt++) {
+    $errorFile = New-TemporaryFile
+    $outputsJson = & az deployment sub create @deployArgs --query 'properties.outputs' --output json 2> $errorFile
+    $failed = $LASTEXITCODE -ne 0
+    $errorText = Get-Content -LiteralPath $errorFile -Raw
+    Remove-Item -LiteralPath $errorFile
+    if ($errorText) { Write-Host $errorText }
+    if (-not $failed) { break }
+    if ($attempt -ge 2 -or $errorText -notmatch 'ConcurrentFederatedIdentityCredentialsWrites') {
+        throw 'The deployment failed. See the error above, or the Deployments blade of the subscription in the Azure portal.'
+    }
+    Write-Host 'Azure reported a concurrent federated credential write. Deploying again...'
+}
 $outputs = $outputsJson | ConvertFrom-Json
 
 # 5. GitHub environment variables (identifiers only, never secrets).
