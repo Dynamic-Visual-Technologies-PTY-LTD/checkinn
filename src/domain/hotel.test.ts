@@ -72,4 +72,14 @@ describe("roomTableHref", () => {
       "/hotels/hotel-001?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=0&rooms=1&sel=hotel-001-standard%3A1#availability-hotel-001",
     );
   });
+
+  it("carries no bestFit when the criteria have none, as /book passes them (AD-21)", () => {
+    const href = roomTableHref("hotel-010", {
+      stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+      party: { adults: 4, children: 0, rooms: 1 },
+      sel: [{ roomTypeId: "hotel-010-family", quantity: 1 }],
+    });
+    expect(href).not.toContain("bestFit");
+    expect(roomTableHref("hotel-010", { bestFit: null })).not.toContain("bestFit");
+  });
 });

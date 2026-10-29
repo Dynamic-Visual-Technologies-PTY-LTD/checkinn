@@ -36,3 +36,36 @@ it("takes another type style", () => {
     "text-headline-display-responsive",
   );
 });
+
+it("takes focus again when its refocus key changes, not on its first render", () => {
+  const { rerender } = render(
+    <>
+      <PageHeading focusOnArrival={false} refocusKey={0}>
+        Cape Town: 2 properties found
+      </PageHeading>
+      <button type="button">Try again</button>
+    </>,
+  );
+  const button = screen.getByRole("button", { name: "Try again" });
+  button.focus();
+
+  rerender(
+    <>
+      <PageHeading focusOnArrival={false} refocusKey={0}>
+        Cape Town: 2 properties found
+      </PageHeading>
+      <button type="button">Try again</button>
+    </>,
+  );
+  expect(button).toHaveFocus();
+
+  rerender(
+    <>
+      <PageHeading focusOnArrival={false} refocusKey={1}>
+        Cape Town: 2 properties found
+      </PageHeading>
+      <button type="button">Try again</button>
+    </>,
+  );
+  expect(screen.getByRole("heading")).toHaveFocus();
+});

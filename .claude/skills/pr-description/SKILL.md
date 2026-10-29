@@ -52,7 +52,7 @@ Pick pages from the routes the diff touches, and specs from `e2e/` that drive th
 MSYS_NO_PATHCONV=1 node .claude/skills/pr-description/scripts/capture-e2e.mjs --out .pr-description/e2e --page / --page "search?destination=Durban" e2e/manage.spec.ts
 ```
 
-`MSYS_NO_PATHCONV=1` stops Git Bash rewriting `/` into a Windows path (not needed in PowerShell). Once a build of the current code exists, prefix `CI=1` to skip rebuilding on reruns. The script picks the projects itself (desktop and phone for pages and read-only specs, the booking projects for `e2e/booking/` specs) and skips their dependencies, so only the files you name run. Override with `--project`, and pass Playwright args after `--` (for example `-- --grep "photo viewer"`).
+`MSYS_NO_PATHCONV=1` stops Git Bash rewriting `/` into a Windows path (not needed in PowerShell). Once a build of the current code exists, prefix `CI=1` to skip rebuilding on reruns. The script picks the projects itself (desktop and a capture-only phone project for pages, `chromium` for read-only specs, `smart` for `e2e/smart/` specs and `booking` for `e2e/booking/` specs; the e2e suite itself is desktop only) and skips their dependencies, so only the files you name run. Override with `--project`, and pass Playwright args after `--` (for example `-- --grep "photo viewer"`).
 
 It prints the pass/fail counts and failing tests, and writes `screens/*.png` (named `<project>--<spec or page>.png`) plus a `manifest.json`. The printed summary is usually enough; the manifest lists every test and is large, and a pass there is `"expected"`.
 

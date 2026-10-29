@@ -3,7 +3,7 @@ title: 'Reset and e2e isolation'
 type: 'feature'
 ticket: '3'
 created: '2026-10-13'
-status: 'built'
+status: done
 baseline_revision: '179bf40ffe14966a72f1423de9ee6f14ee782c71'
 route: 'full'
 route_source: 'auto'
