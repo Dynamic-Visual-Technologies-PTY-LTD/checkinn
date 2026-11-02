@@ -41,6 +41,56 @@ export type CriteriaNotice =
   | { type: "room-unavailable"; roomTypeIds: string[] }
   | { type: "cancelled" };
 
+/** The Policy criteria a Query can set (FR-4), in Criteria chip order. */
+export const POLICY_CRITERIA = ["pets", "children", "smoking"] as const;
+export type PolicyCriterion = (typeof POLICY_CRITERIA)[number];
+
+/**
+ * What an ignored value was (user decision, 2026-10-20): an unusable Stay
+ * ("check your dates") or an unusable Party ("check who's staying").
+ */
+export const IGNORED_KINDS = ["dates", "party"] as const;
+export type IgnoredKind = (typeof IGNORED_KINDS)[number];
+
+/**
+ * Smart search state in the URL (AD-21). `query` is the submitted Query, used
+ * to refill the Smart search box; `interpreted` is true only after a
+ * successful Query interpretation (`smart=1`). Empty values are `null` (or
+ * `[]` for Policy criteria).
+ */
+export type SmartCriteria = {
+  query: string;
+  interpreted: boolean;
+  /** The Preferences text (`prefs`), at most 300 characters. */
+  preferences: string | null;
+  /** Max price (`maxPrice`), positive whole rand. */
+  maxPriceRand: number | null;
+  /** Policy criteria (`policy`), in `POLICY_CRITERIA` order, each once. */
+  policies: PolicyCriterion[];
+  /**
+   * The fallback page (`fallback=1`, AD-21): Query interpretation failed, so
+   * the search runs in MVP order with the fallback notice.
+   */
+  fallback: boolean;
+  /** The out-of-catalog place (`place`) for its notice. */
+  place: string | null;
+  /** One phrase from the Query that could not be used (`ignored`), for its notice. */
+  ignored: string | null;
+  /** What `ignored` was (`ignoredKind`); `dates` when absent or invalid. */
+  ignoredKind: IgnoredKind;
+};
+
+/**
+ * A Smart search notice on Search results (AD-20), shown after the result
+ * heading. `fallback` says Smart search is not available right now; `place`
+ * names the out-of-catalog place; `ignored` names the Guest's phrase and what
+ * it was about.
+ */
+export type SmartNotice =
+  | { kind: "fallback" }
+  | { kind: "place"; place: string }
+  | { kind: "ignored"; text: string; about: IgnoredKind };
+
 /**
  * Everything the URL holds about a search, a Hotel or a Booking in progress
  * (AD-8). Parse and serialize it only with `src/domain/criteria.ts`.
@@ -56,6 +106,14 @@ export type SearchCriteria = {
   /** The idempotency key minted by `startBooking` (AD-10). */
   k: string | null;
   notice: CriteriaNotice | null;
+  /** Smart search state; non-null exactly when the URL holds a valid `sq` (AD-21). */
+  smart: SmartCriteria | null;
+  /**
+   * The Best-fit Room type id (`bestFit`), for the Hotel page only (AD-21).
+   * Only `hotelQuery` writes it (through `hotelHref` and the Hotel page's own
+   * URL rewrites); checking it against the Hotel is the Hotel page's job.
+   */
+  bestFit: string | null;
 };
 
 /** Why parsing rejected part of the criteria. */
@@ -130,6 +188,38 @@ export type ListingCard = {
   totalRand: number;
   /** The lowest Nightly price among the available Room types. */
   nightlyRand: number;
+  /**
+   * The Best-fit room (FR-14, AD-26), set on every `smart` card: its
+   * `nightlyRand` and `totalRand` are the card's.
+   */
+  bestFit?: BestFitRoom;
+  /** The Score breakdown (FR-20), present only under the debug flag (AD-29). */
+  breakdown?: ScoreBreakdown;
+};
+
+/**
+ * The Room type that best fits a Smart search (FR-14, AD-26): one Room type ×
+ * the Party's Rooms, never split. `sleeps` is `maxGuests × rooms`.
+ */
+export type BestFitRoom = {
+  roomTypeId: string;
+  name: string;
+  rooms: number;
+  sleeps: number;
+  nightlyRand: number;
+  totalRand: number;
+};
+
+/**
+ * Why a Hotel ranks where it does (FR-20): each Relevance part, each signal
+ * and the Ranking blend score, all in 0–1.
+ */
+export type ScoreBreakdown = {
+  meaning: number;
+  exact: number;
+  reviewSignal: number;
+  priceSignal: number;
+  score: number;
 };
 
 /**
@@ -141,7 +231,23 @@ export type ListingCard = {
 export type SearchResult = {
   heading: string | null;
   cards: ListingCard[];
+  /** Smart search notices, in priority order, at most 2; `[]` for an MVP search. */
+  notices: SmartNotice[];
+  /** How the search ran (AD-20); `mvp` is the MVP search, unchanged. */
+  mode: SearchMode;
+  /**
+   * The no-results sentence naming the Hard criteria (FR-10), from
+   * `hardCriteriaSummary`. Null when something was found or nothing is named.
+   */
+  criteriaSummary: string | null;
 };
+
+/**
+ * How `searchHotels` ran a search (AD-20): `mvp`, the MVP search unchanged;
+ * `smart`, filtered by the Hard criteria (AD-23) in Ranking blend order; or
+ * `fallback`, filtered by the Hard criteria the URL holds, in MVP order.
+ */
+export type SearchMode = "mvp" | "smart" | "fallback";
 
 /** A City photo's credit on `/credits`: the source page holds the credit. */
 export type CityPhotoCredit = {

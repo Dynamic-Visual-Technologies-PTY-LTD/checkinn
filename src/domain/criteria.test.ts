@@ -3,15 +3,20 @@ import { describe, expect, it } from "vitest";
 import type { SearchCriteria } from "@/domain/types";
 import {
   defaultCriteria,
+  fallbackHref,
   hotelHref,
+  hotelQuery,
   parseCriteria,
   parseNotice,
   parseSelection,
   problemMessage,
+  searchBarSearch,
   searchHref,
   serializeCriteria,
   serializeNotice,
+  smartCriteria,
   validateStay,
+  withoutCriterion,
 } from "./criteria";
 
 const today = "2026-11-10";
@@ -31,6 +36,8 @@ describe("parseCriteria defaults", () => {
         sel: null,
         k: null,
         notice: null,
+        smart: null,
+        bestFit: null,
       },
       problems: [],
     });
@@ -209,6 +216,8 @@ describe("serializeCriteria", () => {
     ],
     k: "0b6f0c8e-6f43-4b5f-9a59-6b1f1e3b1b9a",
     notice: { type: "room-unavailable", roomTypeIds: ["hotel-001-family"] },
+    smart: null,
+    bestFit: null,
   };
 
   it("writes parameters in a fixed order", () => {
@@ -290,6 +299,316 @@ describe("hotelHref", () => {
       "/hotels/hotel-001?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=0&rooms=1",
     );
   });
+
+  it("appends bestFit last when it is set", () => {
+    expect(
+      hotelHref("hotel-010", {
+        q: "Stellenbosch",
+        party: { adults: 4, children: 0, rooms: 1 },
+        bestFit: "hotel-010-family",
+      }),
+    ).toBe("/hotels/hotel-010?q=Stellenbosch&adults=4&children=0&rooms=1&bestFit=hotel-010-family");
+    expect(hotelHref("hotel-010", { q: "Stellenbosch", bestFit: null })).not.toContain("bestFit");
+  });
+});
+
+describe("hotelQuery (AD-21)", () => {
+  it("is the Hotel page query: the MVP criteria with sel, then bestFit last", () => {
+    expect(
+      hotelQuery({
+        stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+        party: { adults: 4, children: 0, rooms: 1 },
+        sel: [{ roomTypeId: "hotel-010-family", quantity: 1 }],
+        bestFit: "hotel-010-family",
+      }),
+    ).toBe(
+      "checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1&sel=hotel-010-family%3A1&bestFit=hotel-010-family",
+    );
+  });
+
+  it("drops every Smart parameter and leaves out an empty bestFit", () => {
+    const query = hotelQuery({
+      q: "Stellenbosch",
+      smart: smartCriteria("pet friendly place", true, {
+        preferences: "pet friendly",
+        maxPriceRand: 2000,
+        policies: ["pets"],
+      }),
+      bestFit: "  ",
+    });
+    expect(query).toBe("q=Stellenbosch&adults=2&children=0&rooms=1");
+  });
+
+  it("is what hotelHref puts after the path", () => {
+    const criteria = { q: "Stellenbosch", bestFit: "hotel-010-family" };
+    expect(hotelHref("hotel-010", criteria)).toBe(`/hotels/hotel-010?${hotelQuery(criteria)}`);
+  });
+});
+
+describe("bestFit (AD-21)", () => {
+  it("parses as trimmed non-empty text, or null", () => {
+    expect(parse({ bestFit: " hotel-010-family " }).criteria.bestFit).toBe("hotel-010-family");
+    expect(parse({ bestFit: "   " }).criteria.bestFit).toBeNull();
+    expect(parse({}).criteria.bestFit).toBeNull();
+  });
+
+  it("is never written by serializeCriteria or searchHref", () => {
+    const criteria = {
+      q: "Stellenbosch",
+      bestFit: "hotel-010-family",
+      smart: smartCriteria("pet friendly place", true),
+    };
+    expect(serializeCriteria(criteria)).not.toContain("bestFit");
+    expect(searchHref(criteria)).not.toContain("bestFit");
+  });
+});
+
+describe("Smart search parameters", () => {
+  const smartParams = { q: "Stellenbosch", adults: "4", children: "0", rooms: "1" };
+
+  it("parses sq, trimmed, with smart=1 as interpreted", () => {
+    expect(parse({ ...smartParams, sq: "  pet friendly place ", smart: "1" }).criteria.smart).toEqual(
+      smartCriteria("pet friendly place", true),
+    );
+  });
+
+  it("is not interpreted without smart=1, and ignores any other smart value", () => {
+    expect(parse({ sq: "quiet hotel" }).criteria.smart).toEqual(smartCriteria("quiet hotel", false));
+    for (const smart of ["true", "0", "yes", "11"]) {
+      expect(parse({ sq: "quiet hotel", smart }).criteria.smart).toEqual(
+        smartCriteria("quiet hotel", false),
+      );
+    }
+  });
+
+  it("is null without sq, with an empty sq, or with an sq over 300 characters", () => {
+    expect(parse({ smart: "1" }).criteria.smart).toBeNull();
+    expect(parse({ sq: "   ", smart: "1" }).criteria.smart).toBeNull();
+    expect(parse({ sq: "a".repeat(301), smart: "1" }).criteria.smart).toBeNull();
+    expect(parse({ sq: "a".repeat(300) }).criteria.smart?.query).toHaveLength(300);
+  });
+
+  it("ignores every other Smart parameter without sq", () => {
+    expect(
+      parse({ prefs: "quiet", maxPrice: "2000", policy: "pets", place: "Kruger" }).criteria.smart,
+    ).toBeNull();
+  });
+
+  it("parses prefs, maxPrice, policy, place, ignored and ignoredKind", () => {
+    expect(
+      parse({
+        sq: "pet friendly place",
+        smart: "1",
+        prefs: " pet friendly family place ",
+        maxPrice: "2000",
+        policy: "smoking,pets",
+        place: "Kruger",
+        ignored: "for 0",
+        ignoredKind: "party",
+      }).criteria.smart,
+    ).toEqual(
+      smartCriteria("pet friendly place", true, {
+        preferences: "pet friendly family place",
+        maxPriceRand: 2000,
+        policies: ["pets", "smoking"],
+        place: "Kruger",
+        ignored: "for 0",
+        ignoredKind: "party",
+      }),
+    );
+  });
+
+  it("drops a maxPrice that is not a positive whole number", () => {
+    for (const maxPrice of ["abc", "0", "-5", "1.5", "2 000", "R2000", "99999999999999999999"]) {
+      expect(parse({ sq: "quiet", maxPrice }).criteria.smart?.maxPriceRand).toBeNull();
+    }
+  });
+
+  it("drops unknown policy entries and repeats", () => {
+    expect(parse({ sq: "quiet", policy: "pets,wifi" }).criteria.smart?.policies).toEqual(["pets"]);
+    expect(parse({ sq: "quiet", policy: " children , pets,pets" }).criteria.smart?.policies).toEqual(
+      ["pets", "children"],
+    );
+    expect(parse({ sq: "quiet", policy: "wifi" }).criteria.smart?.policies).toEqual([]);
+  });
+
+  it("drops prefs over 300 characters", () => {
+    expect(parse({ sq: "quiet", prefs: "a".repeat(301) }).criteria.smart?.preferences).toBeNull();
+    expect(parse({ sq: "quiet", prefs: "a".repeat(300) }).criteria.smart?.preferences).toHaveLength(
+      300,
+    );
+  });
+
+  it("drops a place or ignored over 60 characters or with other characters", () => {
+    for (const value of ["a".repeat(61), "<b>Kruger</b>", "Kruger!", "Kruger\nPark", 'say "hi"']) {
+      const smart = parse({ sq: "quiet", place: value, ignored: value }).criteria.smart;
+      expect(smart?.place).toBeNull();
+      expect(smart?.ignored).toBeNull();
+    }
+    const smart = parse({ sq: "quiet", place: "Hluhluwe-iMfolozi", ignored: "Sat, 3 o'clock." })
+      .criteria.smart;
+    expect(smart?.place).toBe("Hluhluwe-iMfolozi");
+    expect(smart?.ignored).toBe("Sat, 3 o'clock.");
+    expect(parse({ sq: "quiet", place: "a".repeat(60) }).criteria.smart?.place).toHaveLength(60);
+  });
+
+  it("reads ignoredKind as dates unless it is party", () => {
+    for (const ignoredKind of [undefined, "dates", "Party", "people"]) {
+      const params: Record<string, string> = { sq: "quiet", ignored: "last Tuesday" };
+      if (ignoredKind) params.ignoredKind = ignoredKind;
+      expect(parse(params).criteria.smart?.ignoredKind).toBe("dates");
+    }
+    expect(
+      parse({ sq: "quiet", ignored: "for 0", ignoredKind: "party" }).criteria.smart?.ignoredKind,
+    ).toBe("party");
+  });
+
+  it("keeps the Query and the valid values of a stale link", () => {
+    expect(
+      parse({
+        sq: "pet friendly place",
+        smart: "1",
+        maxPrice: "abc",
+        policy: "pets,wifi",
+        place: "a".repeat(61),
+        prefs: "a".repeat(301),
+      }).criteria.smart,
+    ).toEqual(smartCriteria("pet friendly place", true, { policies: ["pets"] }));
+  });
+
+  it("writes sq and smart after the MVP parameters", () => {
+    expect(
+      searchHref({
+        q: "Stellenbosch",
+        stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+        party: { adults: 4, children: 0, rooms: 1 },
+        smart: smartCriteria("pet friendly place for 4", true),
+      }),
+    ).toBe(
+      "/search?q=Stellenbosch&checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1" +
+        "&sq=pet+friendly+place+for+4&smart=1",
+    );
+  });
+
+  it("writes every Smart parameter in AD-21 order", () => {
+    expect(
+      searchHref({
+        smart: smartCriteria("quiet place", true, {
+          preferences: "quiet place Kruger",
+          maxPriceRand: 2000,
+          policies: ["smoking", "pets"],
+          fallback: true,
+          place: "Kruger",
+          ignored: "for 0",
+          ignoredKind: "party",
+        }),
+      }),
+    ).toBe(
+      "/search?adults=2&children=0&rooms=1&sq=quiet+place&smart=1&prefs=quiet+place+Kruger" +
+        "&maxPrice=2000&policy=pets%2Csmoking&fallback=1&place=Kruger&ignored=for+0" +
+        "&ignoredKind=party",
+    );
+  });
+
+  it("parses fallback=1, and ignores any other fallback value", () => {
+    expect(parse({ sq: "quiet hotel", fallback: "1" }).criteria.smart).toEqual(
+      smartCriteria("quiet hotel", false, { fallback: true }),
+    );
+    for (const fallback of ["true", "0", "yes", "11"]) {
+      expect(parse({ sq: "quiet hotel", fallback }).criteria.smart?.fallback).toBe(false);
+    }
+  });
+
+  it("ignores fallback without sq", () => {
+    expect(parse({ fallback: "1" }).criteria.smart).toBeNull();
+    expect(parse({ sq: "   ", fallback: "1" }).criteria.smart).toBeNull();
+  });
+
+  it("leaves ignoredKind out for dates, the default", () => {
+    expect(
+      serializeCriteria({ smart: smartCriteria("quiet", true, { ignored: "last Tuesday" }) }),
+    ).toBe("adults=2&children=0&rooms=1&sq=quiet&smart=1&ignored=last+Tuesday");
+    expect(serializeCriteria({ smart: smartCriteria("quiet", true, { ignoredKind: "party" }) })).toBe(
+      "adults=2&children=0&rooms=1&sq=quiet&smart=1",
+    );
+  });
+
+  it("writes no value that parsing would drop", () => {
+    expect(
+      serializeCriteria({
+        smart: smartCriteria("quiet", true, {
+          preferences: "a".repeat(301),
+          maxPriceRand: 1.5,
+          place: "<Kruger>",
+          ignored: "a".repeat(61),
+        }),
+      }),
+    ).toBe("adults=2&children=0&rooms=1&sq=quiet&smart=1");
+  });
+
+  it("writes sq without smart when the Query was not interpreted", () => {
+    expect(searchHref({ smart: smartCriteria("quiet hotel", false) })).toBe(
+      "/search?adults=2&children=0&rooms=1&sq=quiet+hotel",
+    );
+  });
+
+  it("writes nothing for an empty or over-long Query", () => {
+    expect(
+      serializeCriteria({ smart: smartCriteria("  ", true, { preferences: "quiet" }) }),
+    ).toBe("adults=2&children=0&rooms=1");
+    expect(serializeCriteria({ smart: smartCriteria("a".repeat(301), true) })).toBe(
+      "adults=2&children=0&rooms=1",
+    );
+  });
+
+  it("round-trips through parseCriteria", () => {
+    const smart = smartCriteria("pet friendly place", true, {
+      preferences: "pet friendly family place",
+      maxPriceRand: 2000,
+      policies: ["pets"],
+      fallback: true,
+      place: "Kruger",
+      ignored: "for 0",
+      ignoredKind: "party",
+    });
+    const href = searchHref({ q: "Stellenbosch", smart });
+    const params = new URLSearchParams(href.split("?")[1]);
+    expect(parseCriteria(params, today).criteria.smart).toEqual(smart);
+  });
+
+  it("never puts a Smart parameter on a Hotel page URL, but keeps bestFit", () => {
+    const href = hotelHref("hotel-001", {
+      q: "Stellenbosch",
+      bestFit: "hotel-001-family",
+      smart: smartCriteria("pet friendly place", true, {
+        preferences: "pet friendly",
+        maxPriceRand: 2000,
+        policies: ["pets"],
+        fallback: true,
+        place: "Kruger",
+        ignored: "for 0",
+        ignoredKind: "party",
+      }),
+    });
+    const params = new URLSearchParams(href.split("?")[1]);
+    for (const key of [
+      "sq",
+      "smart",
+      "prefs",
+      "maxPrice",
+      "policy",
+      "fallback",
+      "place",
+      "ignored",
+      "ignoredKind",
+    ]) {
+      expect(params.has(key)).toBe(false);
+    }
+    expect(params.get("bestFit")).toBe("hotel-001-family");
+    expect(href).toBe(
+      "/hotels/hotel-001?q=Stellenbosch&adults=2&children=0&rooms=1&bestFit=hotel-001-family",
+    );
+  });
 });
 
 describe("serializeNotice", () => {
@@ -305,5 +624,115 @@ describe("serializeNotice", () => {
       type: "cancelled",
     });
     expect(parseNotice({ notice: "unknown" })).toBeNull();
+  });
+});
+
+describe("Smart search URL changes (AD-21)", () => {
+  const base = {
+    q: "Stellenbosch",
+    stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+    party: { adults: 4, children: 0, rooms: 1 },
+  };
+  const smart = smartCriteria("pet friendly place for 4", true, {
+    preferences: "pet friendly place",
+    maxPriceRand: 2000,
+    policies: ["pets", "children"],
+    place: "Kruger",
+    ignored: "for 0",
+    ignoredKind: "party",
+  });
+  const mvp =
+    "/search?q=Stellenbosch&checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1";
+  const smartPart = "sq=pet+friendly+place+for+4&smart=1&prefs=pet+friendly+place";
+
+  it("removes one chip's criterion and keeps every other Smart parameter", () => {
+    expect(withoutCriterion({ ...base, smart }, "maxPrice")).toBe(
+      `${mvp}&${smartPart}&policy=pets%2Cchildren&place=Kruger&ignored=for+0&ignoredKind=party`,
+    );
+    expect(withoutCriterion({ ...base, smart }, "pets")).toBe(
+      `${mvp}&${smartPart}&maxPrice=2000&policy=children&place=Kruger&ignored=for+0&ignoredKind=party`,
+    );
+  });
+
+  it("removes a Preference chip's words from prefs, keeping the rest", () => {
+    const business = { ...smart, preferences: "business hotel with a gym and meeting rooms" };
+    const params = (href: string) => new URLSearchParams(href.split("?")[1]);
+    expect(params(withoutCriterion({ ...base, smart: business }, "pref-gym")).get("prefs")).toBe(
+      "business hotel with a and meeting rooms",
+    );
+    const family = withoutCriterion({ ...base, smart }, "pref-family");
+    expect(params(family).get("prefs")).toBe("pet friendly place");
+    const gymOnly = { ...smart, preferences: "a gym" };
+    expect(params(withoutCriterion({ ...base, smart: gymOnly }, "pref-gym")).has("prefs")).toBe(
+      false,
+    );
+  });
+
+  it("removes the last Policy criterion, leaving no policy parameter", () => {
+    const one = { ...smart, policies: ["smoking" as const], maxPriceRand: null };
+    expect(withoutCriterion({ ...base, smart: one }, "smoking")).not.toContain("policy=");
+  });
+
+  it("round-trips a chip removal through the codec", () => {
+    const href = withoutCriterion({ ...base, smart }, "children");
+    const parsed = parseCriteria(new URLSearchParams(href.split("?")[1]), today).criteria;
+    expect(parsed.smart).toEqual({ ...smart, policies: ["pets"] });
+  });
+
+  it("keeps sq, smart, prefs, maxPrice and policy on a Search bar Search", () => {
+    expect(searchBarSearch({ ...base, smart }, { boxIsEmpty: false })).toBe(
+      `${mvp}&${smartPart}&maxPrice=2000&policy=pets%2Cchildren`,
+    );
+  });
+
+  it("keeps fallback on a chip removal", () => {
+    const fallback = { ...smart, interpreted: false, fallback: true };
+    const href = withoutCriterion({ ...base, smart: fallback }, "maxPrice");
+    expect(new URLSearchParams(href.split("?")[1]).get("fallback")).toBe("1");
+  });
+
+  it("drops fallback, keeping sq, on a Search bar Search", () => {
+    const fallback = smartCriteria("a castle on the moon", false, { fallback: true });
+    expect(searchBarSearch({ ...base, smart: fallback }, { boxIsEmpty: false })).toBe(
+      `${mvp}&sq=a+castle+on+the+moon`,
+    );
+  });
+
+  it("drops every Smart parameter when the box is empty at Search time", () => {
+    expect(searchBarSearch({ ...base, smart }, { boxIsEmpty: true })).toBe(mvp);
+  });
+
+  it("is the MVP URL without a Query", () => {
+    expect(searchBarSearch({ ...base, smart: null }, { boxIsEmpty: false })).toBe(mvp);
+    expect(searchBarSearch({ ...base, smart: null }, { boxIsEmpty: false })).toBe(
+      searchHref(base),
+    );
+  });
+});
+
+describe("fallbackHref (AD-22)", () => {
+  const current = {
+    q: "Stellenbosch",
+    stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
+    party: { adults: 4, children: 0, rooms: 1 },
+  };
+
+  it("is the Search bar values, sq and fallback=1, through searchHref", () => {
+    expect(fallbackHref(current, "a castle on the moon")).toBe(
+      "/search?q=Stellenbosch&checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1" +
+        "&sq=a+castle+on+the+moon&fallback=1",
+    );
+    expect(fallbackHref(current, "a castle on the moon")).toBe(
+      searchHref({
+        ...current,
+        smart: smartCriteria("a castle on the moon", false, { fallback: true }),
+      }),
+    );
+  });
+
+  it("parses back to a fallback with no Hard criteria, Preferences or notices", () => {
+    const href = fallbackHref({ ...current, q: "" }, "quiet");
+    const parsed = parseCriteria(new URLSearchParams(href.split("?")[1]), today).criteria;
+    expect(parsed.smart).toEqual(smartCriteria("quiet", false, { fallback: true }));
   });
 });

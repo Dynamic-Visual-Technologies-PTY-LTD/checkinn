@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { Icon, iconNames } from "./icons";
 
 describe("Icon", () => {
-  it("covers the 27 DESIGN.md icons plus info", () => {
-    expect(iconNames).toHaveLength(28);
+  it("covers the 27 DESIGN.md icons plus info and the Smart search spinner", () => {
+    expect(iconNames).toHaveLength(29);
   });
 
   it("is decorative when it has no title", () => {

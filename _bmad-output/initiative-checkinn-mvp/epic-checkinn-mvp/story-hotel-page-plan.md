@@ -3,7 +3,7 @@ title: 'Hotel page'
 type: 'feature'
 ticket: '8'
 created: '2026-10-13'
-status: 'built'
+status: done
 baseline_revision: 'e3756b65dfcbd907923373aa1fb740a8690d716d'
 route: 'full'
 route_source: 'auto'

@@ -1,0 +1,88 @@
+next_id = 18   # ids 8 to 17 moved to epic-smart-search-quality on 2026-10-19 and are not reused here
+
+# epic-smart-search — planned entries in build order. Table order is the build order; ids are never reused.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Tracer: Smart search box to an interpreted Search bar"
+description = "Adds the Provider port with ProviderError and all four methods plus the full AD-22 output schema and an interpretation context with today, City aliases and a nickname-map field, getProvider for off and fake (AD-29), the fake adapter on data/eval/fake-provider.json, normaliseText in src/domain/text.ts for every Provider input and fixture key (AD-28), the no-outbound-request test (AD-31), and CHECKINN_PROVIDER=off in Vitest. Adds the codec sq and smart parameters, interpretQuery and submitQuery with applyInterpretation for Destination, absolute Stay and Party, the VALIDATION outcome for an empty or over-300-character Query, and the Smart search box with SmartSearchProvider and its Submitting state (readonly, aria-disabled, status text, skeletons) on Home and /search, rendered only when a Provider is configured. Adds the second Playwright server on port 3101 with the fake and its own database, and the smart-desktop and smart-mobile projects (AD-30)."
+verify = "An e2e spec on 3101 submits a fixture Query on Home and lands on /search with sq and smart=1, the Search bar showing the interpreted Destination and Party; the MVP specs on 3100 see no box; unit tests prove no fetch happens with the Provider off."
+covers = ["FR-1", "FR-2", "FR-3", "FR-4"]
+after = []
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-19, AD-21, AD-22, AD-29, AD-30, AD-31, AD-33", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-home-smart.html"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Azure Provider adapter and pre-flight"
+description = "Installs openai 7.28.0 pinned exactly (approved) and adds provider/azure.ts implementing interpret, and the embed, reasons and judge methods that epic-smart-search-quality uses, against the Foundry v1 endpoint per AD-19: Responses API with strict json_schema, store false, maxRetries 0, reasoning effort none, max_output_tokens, final-message parsing, error and timeout mapping. Adds the azure branch of getProvider, the provider import guard scanning src/ for provider/ and openai imports, toUnitVector with a check against the configured 1024 dimensions (2.3 adds the check against the index's model), .env.example with names only, script .env loading, and npm run search:preflight (AD-32). The presenter puts the key in .env.local and runs the pre-flight."
+verify = "Unit tests with a stubbed client cover error-code mapping, final-message parsing and the dimension check; npm run search:preflight with the presenter's key prints both deployment names and OK, with interpretation p95 under 5 s."
+covers = ["FR-2", "FR-4"]
+after = [1]
+hitl = true
+risk = "high"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-19, AD-25, AD-29, AD-32", "_bmad-output/initiative-checkinn-smart-search/prd-smart-search/addendum.md, Provider decision and Embedding model choice"]
+
+[[entry]]
+id = 3
+type = "story"
+title = "Query interpretation: every Hard criterion, notices and Example queries"
+description = "Completes applyInterpretation (AD-22): relative dates against clock.ts with \"this weekend\" on a Sunday as Sunday to Monday, the nickname table, out-of-catalog place with its words appended to Preferences, invalid values turned into the ignored phrase, Party replace and keep rules, and Rooms auto-raise with fewestRooms (AD-26). Adds the codec prefs, maxPrice, policy, place and ignored parameters, the place and ignored notices, the Example queries on Home, and the box's counter and clear (EXPERIENCE Component Patterns). Fills the nickname-map field of entry 1's interpretation context from the domain table without changing the port, and handles stale or invalid Smart search URLs as EXPERIENCE says. The fixture Preferences strings it adds become the expected Preferences of the matching Golden queries in 2.1 (AD-30)."
+verify = "Unit tests resolve the UJ-1 Query with today Thu 15 Oct 2026 to Stellenbosch, Fri 23 to Sun 25 Oct, 4 adults, 1 Room, Max price 2000 and pets; 'Joburg' becomes Johannesburg; 'Kruger' gives the place notice; 'last Tuesday' gives the ignored notice. An e2e spec clicks the UJ-1 Example query and sees the filled Search bar."
+covers = ["FR-1", "FR-3", "FR-4"]
+after = [1]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-21, AD-22, AD-26 Rooms auto-raise", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-home-smart.html", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-weak.html"]
+notes = ["Interpretation latency (user, 2026-10-19): start at reasoning effort none with a 2.5 s timeout. If the evals show misreads, move to effort low with a 4 s timeout (results target about 4.5 s). A tuning step, not a blocker."]
+
+[[entry]]
+id = 4
+type = "story"
+title = "Hard-criteria filter, Criteria chips and corrections"
+description = "Adds qualifyingRoomTypes, hotelQualifies and hardCriteriaSummary in src/domain/hard-criteria.ts (AD-23) and applies them in runSmartSearch's smart mode, so Party capacity, Rooms, Max price and Policy criteria filter Hotels. Renders the Criteria chips with removal, focus kept in the chip row and the count announced once, the Search bar re-run that keeps the Query's Preferences, the empty-box Search that returns the MVP search, and the no-results state naming the Hard criteria (FR-5, FR-6, FR-10). Smart mode has no embed stage until 2.5, so Relevance is 0 here."
+verify = "Unit tests: no Hotel shown lacks one Room type meeting availability, capacity and Max price at once. The UJ-1 e2e shows only Winelands Family Lodge with chips 'Max R 2 000 per night' and 'Pets allowed'; changing the Party to 2 adults and 2 children updates results with no new interpretation; removing 'Pets allowed' keeps focus in the chip row and shows more Hotels; clearing the box and searching gives the MVP order."
+covers = ["FR-5", "FR-6", "FR-10"]
+after = [3]
+hitl = false
+risk = "high"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 Mode, AD-21 URL changes, AD-23, AD-33", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-thandi.html"]
+
+[[entry]]
+id = 5
+type = "story"
+title = "Best-fit room on cards, Ranking blend and Score breakdown"
+description = "Adds bestFit() in src/domain/best-fit.ts taking qualifying Room types and a per-Room-type meaning input, empty until 2.5 supplies it (AD-26), the Best-fit room line and its price on smart-mode cards, and the codec's bestFit parameter written into the card's hotelHref for entry 6, with a codec test that hotelHref never carries a Smart parameter (AD-21). Adds RANKING_BLEND in src/domain/ranking.ts at the spine's starting value, provisional until the workshop decision in 2.8, with fixed scales, 4-decimal rounding and the tie-breaks (FR-13). Adds the Score breakdown table behind CHECKINN_SEARCH_DEBUG (FR-20)."
+verify = "Unit tests cover the scales, rounding, tie-breaks by Review score, price and name, and Best-fit ties to the lower Nightly price. The UJ-1 card shows 'Family Room · 1 room · sleeps 4' at R 2 000 a night; the breakdown shows only with the debug flag and never from a URL."
+covers = ["FR-11", "FR-12", "FR-13", "FR-14", "FR-20"]
+after = [4]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 Types, AD-26 Ranking and Best-fit, AD-29"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Best-fit pre-selection on the Hotel page"
+description = "Reads entry 5's bestFit parameter on the Hotel page and pre-selects that Room type at the URL's Rooms when sel is absent, a Provider is configured and the Room type still qualifies (AD-26 Hotel page). Shows the Best-fit chip and the booking-summary line, lets sel win once the Guest changes the selection, keeps every Smart parameter off the Hotel page and /book URLs (AD-21), does not enforce Max price, re-checks bestFit when Stay or Party change, and pre-selects nothing when the Room type no longer qualifies."
+verify = "The UJ-1 e2e opens Winelands Family Lodge from its card with the Family Room selected, the chip shown and Reserve enabled; changing the quantity removes the summary line and keeps the chip; the Reserve URL to /book carries no Smart parameter or bestFit."
+covers = ["FR-14"]
+after = [5]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-hotel-bestfit.html"]
+
+[[entry]]
+id = 7
+type = "story"
+title = "Fallback, Try again and the interpretation cache"
+description = "Adds the codec fallback parameter and turns every ProviderError and the interpretation timeout (5 s since 2026-10-21, first 2.5 s) into the fallback URL (AD-22 Outcomes) and adds runSmartSearch's fallback mode: Hard criteria from the URL, MVP order, MVP cards priced from the cheapest qualifying Room type (AD-20). Shows the fallback notice with Try again, which resubmits the Query (FR-2). Adds src/features/search/cache.ts with the bounded interpretation map and in-flight sharing (AD-28) that 2.5 and 2.6 extend."
+verify = "An e2e spec submits a Query the fake does not know and sees the fallback notice, the usual order and the Query in the box; Try again resubmits it. Unit tests: a timed-out interpret falls back; two concurrent identical submits make one Provider call; a rejected call is not cached."
+covers = ["FR-2", "FR-3", "FR-6", "FR-13"]
+after = [6]
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-checkinn-smart-search/architecture-smart-search/architecture-smart-search.md, AD-20 Mode, AD-22 Timeouts and Outcomes, AD-28", "_bmad-output/initiative-checkinn-smart-search/ux-smart-search/mockups/key-results-thandi.html"]

@@ -1,0 +1,1365 @@
+diff --git a/e2e/smart/best-fit-hotel.spec.ts b/e2e/smart/best-fit-hotel.spec.ts
+new file mode 100644
+index 0000000..aa06344
+--- /dev/null
++++ b/e2e/smart/best-fit-hotel.spec.ts
+@@ -0,0 +1,178 @@
++import { expect, type Locator, type Page, test } from "@playwright/test";
++import { blockSeedPhotos } from "../support/network";
++
++// Runs on the Smart server (port 3101), whose Provider is the fake. The UJ-1
++// Query is a fixture in data/eval/fake-provider.json. Read-only: Reserve only
++// starts a Booking, and the spec stops at the /book URL.
++const UJ1 = "pet friendly family place in Stellenbosch for 4 next weekend, up to R2000 a night";
++const SMART_PARAMS = ["sq", "smart", "prefs", "maxPrice", "policy", "fallback", "place", "ignored"];
++const CHIP = "Best fit for your search";
++const PICKED = "Family Room picked for your search. Change it in the table.";
++
++async function runUj1(page: Page) {
++  await page.goto("/");
++  await page
++    .getByRole("list", { name: "Try an example" })
++    .getByRole("button", { name: UJ1 })
++    .click();
++  await page.waitForURL(/\/search\?/);
++  // Interpreted, so not the fallback page.
++  const params = new URL(page.url()).searchParams;
++  expect(params.get("smart")).toBe("1");
++  expect(params.has("fallback")).toBe(false);
++}
++
++/** UJ-1, then the Winelands Family Lodge card: the Hotel page with bestFit. */
++async function openWinelands(page: Page) {
++  await runUj1(page);
++  await page
++    .getByRole("article")
++    .filter({ hasText: "Winelands Family Lodge" })
++    .getByRole("link")
++    .click();
++  await page.waitForURL(/\/hotels\/hotel-010\?/);
++  expect(new URL(page.url()).searchParams.get("bestFit")).toBe("hotel-010-family");
++}
++
++function section(page: Page) {
++  return page.getByRole("region", { name: "Availability" });
++}
++
++function familySelect(page: Page) {
++  return section(page).getByRole("combobox", { name: "Rooms of Family Room" });
++}
++
++/** Where Reserve sits at this width: the side panel from 768px, else the bar. */
++function reserveArea(page: Page, isMobile: boolean) {
++  return isMobile
++    ? page.getByRole("region", { name: "Booking summary" })
++    : page.getByRole("complementary", { name: "Booking summary" });
++}
++
++/**
++ * The booking summary a guest can read: the side panel on desktop, the sheet
++ * behind the summary bar on a phone (opened here).
++ */
++async function fullSummary(page: Page, isMobile: boolean): Promise<Locator> {
++  if (!isMobile) return page.getByRole("complementary", { name: "Booking summary" });
++  await page
++    .getByRole("region", { name: "Booking summary" })
++    .getByRole("button", { name: /Show full summary/ })
++    .click();
++  return page.getByRole("dialog", { name: "Booking summary" });
++}
++
++async function closeSummary(page: Page, isMobile: boolean) {
++  if (isMobile) await page.keyboard.press("Escape");
++}
++
++test.describe("Best-fit pre-selection on the Hotel page", () => {
++  test.beforeEach(async ({ page }) => {
++    await blockSeedPhotos(page);
++  });
++
++  test("UJ-1: the Family Room arrives selected, marked, explained and ready to Reserve", async ({
++    page,
++    isMobile,
++  }) => {
++    await openWinelands(page);
++
++    await expect(familySelect(page)).toHaveValue("1");
++    await expect(familySelect(page)).toHaveAccessibleDescription(CHIP);
++    await expect(
++      section(page).getByRole("rowheader").filter({ hasText: "Family Room" }).getByText(CHIP),
++    ).toBeVisible();
++    await expect(reserveArea(page, isMobile).getByRole("button", { name: "Reserve" })).not.toHaveAttribute(
++      "aria-disabled",
++    );
++    const summary = await fullSummary(page, isMobile);
++    await expect(summary.getByText(PICKED)).toBeVisible();
++    await closeSummary(page, isMobile);
++    // Not written to the URL until the Guest changes a quantity.
++    expect(new URL(page.url()).searchParams.has("sel")).toBe(false);
++  });
++
++  test("a quantity change drops the line, keeps the chip, and a reload keeps both", async ({
++    page,
++    isMobile,
++  }) => {
++    await openWinelands(page);
++    await expect(familySelect(page)).toHaveValue("1");
++
++    await familySelect(page).selectOption("2");
++
++    await expect(familySelect(page)).toHaveAccessibleDescription(CHIP);
++    await expect(page.getByText(PICKED)).toHaveCount(0);
++    await expect
++      .poll(() => new URL(page.url()).searchParams.get("sel"))
++      .toBe("hotel-010-family:2");
++    expect(new URL(page.url()).searchParams.get("bestFit")).toBe("hotel-010-family");
++
++    await page.reload();
++
++    await expect(familySelect(page)).toHaveValue("2");
++    await expect(familySelect(page)).toHaveAccessibleDescription(CHIP);
++    const summary = await fullSummary(page, isMobile);
++    await expect(summary.getByText("2 × Family Room")).toBeVisible();
++    await expect(page.getByText(PICKED)).toHaveCount(0);
++  });
++
++  test("setting the Family Room to 0 survives a reload: nothing selected, chip still on Family", async ({
++    page,
++  }) => {
++    await openWinelands(page);
++    await expect(familySelect(page)).toHaveValue("1");
++
++    await familySelect(page).selectOption("0");
++
++    await expect(page.getByText(PICKED)).toHaveCount(0);
++    await expect
++      .poll(() => new URL(page.url()).searchParams.get("sel"))
++      .toBe("hotel-010-family:0");
++    expect(new URL(page.url()).searchParams.get("bestFit")).toBe("hotel-010-family");
++
++    await page.reload();
++
++    await expect(familySelect(page)).toHaveValue("0");
++    await expect(
++      section(page).getByRole("combobox", { name: "Rooms of Standard Double" }),
++    ).toHaveValue("0");
++    await expect(familySelect(page)).toHaveAccessibleDescription(CHIP);
++    await expect(
++      section(page).getByRole("rowheader").filter({ hasText: "Family Room" }).getByText(CHIP),
++    ).toBeVisible();
++    await expect(page.getByText(PICKED)).toHaveCount(0);
++  });
++
++  test("Reserve leads to /book with no bestFit and no Smart parameter, nor in its back link", async ({
++    page,
++    isMobile,
++  }) => {
++    await openWinelands(page);
++    await expect(familySelect(page)).toHaveValue("1");
++
++    await reserveArea(page, isMobile).getByRole("button", { name: "Reserve" }).click();
++    await page.waitForURL(/\/book\?/);
++
++    const params = new URL(page.url()).searchParams;
++    expect(params.get("sel")).toBe("hotel-010-family:1");
++    for (const name of ["bestFit", ...SMART_PARAMS]) expect(params.has(name)).toBe(false);
++
++    const back = await page.getByRole("link", { name: "Back to rooms" }).getAttribute("href");
++    const backUrl = new URL(back!, page.url());
++    expect(backUrl.pathname).toBe("/hotels/hotel-010");
++    for (const name of ["bestFit", ...SMART_PARAMS]) expect(backUrl.searchParams.has(name)).toBe(false);
++  });
++
++  test("an unknown bestFit selects nothing and shows no chip", async ({ page }) => {
++    await openWinelands(page);
++    const url = new URL(page.url());
++    url.searchParams.set("bestFit", "nope");
++
++    await page.goto(url.toString());
++
++    await expect(familySelect(page)).toHaveValue("0");
++    await expect(section(page).getByText(CHIP)).toHaveCount(0);
++    await expect(page.getByText(/picked for your search/)).toHaveCount(0);
++  });
++});
+diff --git a/src/app/book/page.test.tsx b/src/app/book/page.test.tsx
+index 9d69c48..b64e1a9 100644
+--- a/src/app/book/page.test.tsx
++++ b/src/app/book/page.test.tsx
+@@ -198,12 +198,21 @@ describe("loadBookPage", () => {
+   it("drops a malformed selection on the way back", async () => {
+     mocks.getBookingQuote.mockResolvedValue({ kind: "invalid" });
+ 
+-    expect(await redirectHref(query({ sel: "hotel-001-standard:0" }))).toBe(
++    expect(await redirectHref(query({ sel: "hotel-001-standard:-1" }))).toBe(
+       `/hotels/hotel-001?${KEPT}#availability-hotel-001`,
+     );
+     expect(mocks.getBookingQuote).toHaveBeenCalledWith(expect.objectContaining({ sel: null }));
+   });
+ 
++  it("treats an explicit empty selection as no selection on the way back", async () => {
++    mocks.getBookingQuote.mockResolvedValue({ kind: "invalid" });
++
++    expect(await redirectHref(query({ sel: "hotel-001-standard:0" }))).toBe(
++      `/hotels/hotel-001?${KEPT}#availability-hotel-001`,
++    );
++    expect(mocks.getBookingQuote).toHaveBeenCalledWith(expect.objectContaining({ sel: [] }));
++  });
++
+   it("sends past dates back to the Hotel page without them", async () => {
+     mocks.getBookingQuote.mockResolvedValue({ kind: "invalid" });
+ 
+diff --git a/src/app/hotels/[hotelId]/availability-alert.test.tsx b/src/app/hotels/[hotelId]/availability-alert.test.tsx
+index ec30625..7d7781f 100644
+--- a/src/app/hotels/[hotelId]/availability-alert.test.tsx
++++ b/src/app/hotels/[hotelId]/availability-alert.test.tsx
+@@ -78,3 +78,14 @@ it("hides itself when restored from history after the notice was cleared", () =>
+ 
+   expect(screen.queryByRole("group", { name: "Room no longer available" })).toBeNull();
+ });
++
++it("keeps bestFit when it clears the notice (AD-21)", () => {
++  window.history.replaceState(null, "", `${NOTICE_URL}&bestFit=hotel-001-family`);
++
++  render(<AvailabilityAlert message={MESSAGE} today="2026-11-10" />);
++
++  const params = new URLSearchParams(window.location.search);
++  expect(params.has("notice")).toBe(false);
++  expect(params.has("rt")).toBe(false);
++  expect(params.get("bestFit")).toBe("hotel-001-family");
++});
+diff --git a/src/app/hotels/[hotelId]/availability-alert.tsx b/src/app/hotels/[hotelId]/availability-alert.tsx
+index baa6fea..9d315fa 100644
+--- a/src/app/hotels/[hotelId]/availability-alert.tsx
++++ b/src/app/hotels/[hotelId]/availability-alert.tsx
+@@ -2,7 +2,7 @@
+ 
+ import { useEffect, useRef, useState } from "react";
+ import { Icon } from "@/components/icons/icons";
+-import { parseCriteria, serializeCriteria } from "@/domain/criteria";
++import { hotelQuery, parseCriteria } from "@/domain/criteria";
+ import type { IsoDate } from "@/domain/types";
+ 
+ /** True while the address bar still carries a notice. Read only after commit. */
+@@ -13,14 +13,14 @@ function noticeInUrl(): boolean {
+ /**
+  * Removes `notice` and `rt` from the address bar, replacing the history entry
+  * rather than pushing one, so a reload or Back does not show the alert again.
+- * Smart search parameters are dropped too: the Hotel page never carries them
+- * (AD-21).
++ * Smart search parameters are dropped too: the Hotel page never carries them.
++ * `bestFit` is kept (AD-21).
+  */
+ function clearNoticeFromUrl(today: IsoDate) {
+   const { criteria } = parseCriteria(new URLSearchParams(window.location.search), today, {
+     defaultStay: false,
+   });
+-  const query = serializeCriteria({ ...criteria, notice: null, smart: null });
++  const query = hotelQuery({ ...criteria, notice: null });
+   window.history.replaceState(null, "", `${window.location.pathname}?${query}`);
+ }
+ 
+diff --git a/src/app/hotels/[hotelId]/availability-section.test.tsx b/src/app/hotels/[hotelId]/availability-section.test.tsx
+index 6a8675a..3ab05c9 100644
+--- a/src/app/hotels/[hotelId]/availability-section.test.tsx
++++ b/src/app/hotels/[hotelId]/availability-section.test.tsx
+@@ -85,10 +85,13 @@ const context = (c: SearchCriteria, stale = false): AvailabilityContext => ({
+   now: NOW,
+   criteria: c,
+   stale,
++  smartSearch: false,
+ });
+ 
+-async function renderResults(c: SearchCriteria, now = NOW) {
+-  render(await AvailabilityResults({ hotel, stay, today: "2026-11-10", now, criteria: c }));
++async function renderResults(c: SearchCriteria, now = NOW, smartSearch = false) {
++  render(
++    await AvailabilityResults({ hotel, stay, today: "2026-11-10", now, criteria: c, smartSearch }),
++  );
+ }
+ 
+ beforeEach(() => {
+@@ -383,3 +386,115 @@ describe("AvailabilityResults and the selection", () => {
+     expect(bar).toHaveTextContent(`0 rooms · ${sp(formatZar(0, { cents: true }))}`);
+   });
+ });
++
++describe("AvailabilityResults and the Best-fit room (AD-26)", () => {
++  const PICKED = "Family Room picked for your search. Change it in the table.";
++  const CHIP = "Best fit for your search";
++  const fourAdults = { adults: 4, children: 0, rooms: 1 };
++  const withBestFit = (overrides: Partial<SearchCriteria> = {}) =>
++    criteria({ party: fourAdults, bestFit: "hotel-005-family", ...overrides });
++
++  beforeEach(() => {
++    window.history.replaceState(
++      null,
++      "",
++      "/hotels/hotel-005?checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1" +
++        "&bestFit=hotel-005-family",
++    );
++  });
++
++  it("pre-selects the Best-fit room with the chip, the summary line and Reserve enabled", async () => {
++    await renderResults(withBestFit(), NOW, true);
++
++    const select = screen.getByRole("combobox", { name: "Rooms of Family Room" });
++    expect(select).toHaveValue("1");
++    expect(select).toHaveAccessibleDescription(CHIP);
++    expect(screen.getByText(CHIP)).toHaveAttribute("id", "best-fit-chip-hotel-005-family");
++    const aside = screen.getByRole("complementary", { name: "Booking summary" });
++    expect(within(aside).getByText(PICKED)).toBeInTheDocument();
++    expect(within(aside).getByRole("button", { name: "Reserve" })).not.toHaveAttribute(
++      "aria-disabled",
++    );
++    // Not written to the URL until the Guest changes a quantity.
++    expect(new URLSearchParams(window.location.search).has("sel")).toBe(false);
++  });
++
++  it("pre-selects at the URL's Rooms", async () => {
++    await renderResults(
++      criteria({
++        party: { adults: 4, children: 0, rooms: 2 },
++        bestFit: "hotel-005-standard",
++      }),
++      NOW,
++      true,
++    );
++
++    const select = screen.getByRole("combobox", { name: "Rooms of Standard Double" });
++    expect(select).toHaveValue("2");
++    expect(select).toHaveAccessibleDescription(CHIP);
++    expect(
++      screen.getByText("Standard Double picked for your search. Change it in the table."),
++    ).toBeInTheDocument();
++  });
++
++  it("drops the summary line on a quantity change, keeping the chip and bestFit in the URL", async () => {
++    await renderResults(withBestFit(), NOW, true);
++
++    fireEvent.change(screen.getByRole("combobox", { name: "Rooms of Family Room" }), {
++      target: { value: "2" },
++    });
++
++    expect(screen.queryByText(PICKED)).toBeNull();
++    expect(
++      screen.getByRole("combobox", { name: "Rooms of Family Room" }),
++    ).toHaveAccessibleDescription(CHIP);
++    const params = new URLSearchParams(window.location.search);
++    expect(params.get("sel")).toBe("hotel-005-family:2");
++    expect(params.get("bestFit")).toBe("hotel-005-family");
++  });
++
++  it("with sel in the URL, keeps it and only places the chip", async () => {
++    await renderResults(
++      withBestFit({ sel: [{ roomTypeId: "hotel-005-standard", quantity: 2 }] }),
++      NOW,
++      true,
++    );
++
++    expect(screen.getByRole("combobox", { name: "Rooms of Standard Double" })).toHaveValue("2");
++    const family = screen.getByRole("combobox", { name: "Rooms of Family Room" });
++    expect(family).toHaveValue("0");
++    expect(family).toHaveAccessibleDescription(CHIP);
++    expect(screen.queryByText(PICKED)).toBeNull();
++  });
++
++  it("with an explicit empty sel, selects nothing and keeps the chip", async () => {
++    await renderResults(withBestFit({ sel: [] }), NOW, true);
++
++    const family = screen.getByRole("combobox", { name: "Rooms of Family Room" });
++    expect(family).toHaveValue("0");
++    expect(family).toHaveAccessibleDescription(CHIP);
++    expect(screen.queryByText(PICKED)).toBeNull();
++  });
++
++  it("does nothing without a Provider", async () => {
++    await renderResults(withBestFit(), NOW, false);
++
++    expect(screen.getByRole("combobox", { name: "Rooms of Family Room" })).toHaveValue("0");
++    expect(screen.queryByText(CHIP)).toBeNull();
++    expect(screen.queryByText(PICKED)).toBeNull();
++  });
++
++  it("does nothing for an unknown id", async () => {
++    await renderResults(withBestFit({ bestFit: "nope" }), NOW, true);
++    expect(screen.queryByText(CHIP)).toBeNull();
++    expect(screen.getByRole("combobox", { name: "Rooms of Family Room" })).toHaveValue("0");
++  });
++
++  it("does nothing when the Best-fit room is too small for the Party", async () => {
++    // 3 adults and 2 children: the Family Room sleeps 4.
++    await renderResults(withBestFit({ party: { adults: 3, children: 2, rooms: 1 } }), NOW, true);
++
++    expect(screen.getByRole("combobox", { name: "Rooms of Family Room" })).toHaveValue("0");
++    expect(screen.queryByText(CHIP)).toBeNull();
++  });
++});
+diff --git a/src/app/hotels/[hotelId]/availability-section.tsx b/src/app/hotels/[hotelId]/availability-section.tsx
+index 2191d34..c589e36 100644
+--- a/src/app/hotels/[hotelId]/availability-section.tsx
++++ b/src/app/hotels/[hotelId]/availability-section.tsx
+@@ -5,6 +5,7 @@ import { RoomTable, RoomTableSkeleton } from "@/app/hotels/[hotelId]/room-table"
+ import { DatesFieldProvider, StayPartyPicker } from "@/app/hotels/[hotelId]/stay-party-picker";
+ import { BookingSteps } from "@/components/booking-steps";
+ import { Icon } from "@/components/icons/icons";
++import { hotelBestFit } from "@/domain/best-fit";
+ import { STALE_LINK_MESSAGE } from "@/domain/criteria";
+ import { availabilityHeadingId, availabilitySectionId } from "@/domain/hotel";
+ import {
+@@ -24,6 +25,8 @@ export type AvailabilityContext = {
+   criteria: SearchCriteria;
+   /** The URL's dates or Party were rejected: show the stale-link message. */
+   stale: boolean;
++  /** A Provider is configured, so the URL's `bestFit` counts (AD-26). */
++  smartSearch: boolean;
+ };
+ 
+ /**
+@@ -35,7 +38,7 @@ export type AvailabilityContext = {
+  */
+ export function AvailabilitySection({
+   hotel,
+-  context: { today, now, criteria, stale },
++  context: { today, now, criteria, stale, smartSearch },
+ }: {
+   hotel: HotelPage;
+   context: AvailabilityContext;
+@@ -80,6 +83,7 @@ export function AvailabilitySection({
+             today={today}
+             now={now}
+             criteria={criteria}
++            smartSearch={smartSearch}
+           />
+         </Suspense>
+       ) : (
+@@ -133,22 +137,40 @@ export async function RoomRanOutAlert({
+   return <AvailabilityAlert message={roomRanOutMessage(lines)} today={today} />;
+ }
+ 
+-/** Reads Availability at request time (AD-2, AD-4) and hands the room table its data. */
++/**
++ * Reads Availability at request time (AD-2, AD-4) and hands the room table its
++ * data. The URL's `bestFit` is checked here, on the server (AD-26): when it
++ * still qualifies its row gets the Best-fit chip, and with no `sel` in the URL
++ * the selection starts from it.
++ */
+ export async function AvailabilityResults({
+   hotel,
+   stay,
+   today,
+   now,
+   criteria,
++  smartSearch = false,
+ }: {
+   hotel: HotelPage;
+   stay: Stay;
+   today: IsoDate;
+   now: string;
+   criteria: SearchCriteria;
++  smartSearch?: boolean;
+ }) {
+   const availability = await getAvailability(hotel.hotelId, stay);
+-  const { selection, lowered } = clampSelection(criteria.sel, hotel.rooms, availability);
++  const best = hotelBestFit(
++    criteria.bestFit,
++    hotel.rooms,
++    availability,
++    criteria.party,
++    criteria.sel,
++    smartSearch,
++  );
++  const clamped = clampSelection(criteria.sel, hotel.rooms, availability);
++  const { selection, lowered } = best.preselect
++    ? { selection: best.preselect, lowered: [] }
++    : clamped;
+   // The room-ran-out alert already names its Room types; the live region
+   // announces only the other lowered lines.
+   const named = new Set(ranOutFor(hotel, criteria, availability).map((line) => line.roomTypeId));
+@@ -169,6 +191,8 @@ export async function AvailabilityResults({
+       initialSelection={selection}
+       loweredNotice={loweredMessage(unnamed)}
+       selectionLowered={lowered.length > 0}
++      bestFitRoomTypeId={best.chipRoomTypeId}
++      preselected={best.preselect !== null}
+     />
+   );
+ }
+diff --git a/src/app/hotels/[hotelId]/hotel-details.tsx b/src/app/hotels/[hotelId]/hotel-details.tsx
+index a17c4f3..7b9bafd 100644
+--- a/src/app/hotels/[hotelId]/hotel-details.tsx
++++ b/src/app/hotels/[hotelId]/hotel-details.tsx
+@@ -13,6 +13,7 @@ import { nowIso, todayIn } from "@/domain/clock";
+ import { hotelHref, parseCriteria } from "@/domain/criteria";
+ import type { HotelPage } from "@/domain/types";
+ import { getHotelPage } from "@/features/hotels/queries";
++import { getSmartSearchConfig } from "@/features/search/queries";
+ 
+ export type HotelRouteParams = Promise<{ hotelId: string }>;
+ export type HotelSearchParams = Promise<Record<string, string | string[] | undefined>>;
+@@ -37,7 +38,7 @@ const PHOTO = "h-[240px] w-full md:h-[420px]";
+ /**
+  * Reads the URL and today at request time, inside the Suspense boundary
+  * (AD-2), and renders the Hotel page, or the not-found page for an unknown
+- * id. The search criteria are kept for Share.
++ * id. The search criteria, and the URL's `bestFit`, are kept for Share.
+  */
+ export async function HotelContent({
+   params,
+@@ -54,11 +55,16 @@ export async function HotelContent({
+   const { criteria, problems } = parseCriteria(query, today, { defaultStay: false });
+   const hotel = await getHotelPage(hotelId);
+   if (!hotel) notFound();
++  // Whether a Provider is configured, read at request time (AD-2, AD-29): the
++  // URL's bestFit counts only then (AD-26).
++  const smartSearch = await getSmartSearchConfig();
+ 
++  // Share keeps bestFit, so a shared link reproduces the Best-fit chip (AD-21).
+   const sharePath = hotelHref(hotel.hotelId, {
+     q: criteria.q,
+     stay: criteria.stay,
+     party: criteria.party,
++    bestFit: criteria.bestFit,
+   });
+   // A stale link: the URL had dates or a Party the codec rejected.
+   const stale = criteria.stay === null && problems.some((problem) => problem !== "sel-invalid");
+@@ -66,7 +72,7 @@ export async function HotelContent({
+     <HotelDetails
+       hotel={hotel}
+       sharePath={sharePath}
+-      availability={{ today, now, criteria, stale }}
++      availability={{ today, now, criteria, stale, smartSearch }}
+     />
+   );
+ }
+diff --git a/src/app/hotels/[hotelId]/page.test.tsx b/src/app/hotels/[hotelId]/page.test.tsx
+index 1de02e0..a2aad9c 100644
+--- a/src/app/hotels/[hotelId]/page.test.tsx
++++ b/src/app/hotels/[hotelId]/page.test.tsx
+@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
+   calls: [] as string[],
+   getHotelPage: vi.fn(),
+   getAvailability: vi.fn(),
++  getSmartSearchConfig: vi.fn(),
+   io: vi.fn(),
+   notFound: vi.fn(() => {
+     throw new Error("NEXT_NOT_FOUND");
+@@ -36,6 +37,9 @@ vi.mock("@/features/hotels/queries", () => ({
+   getHotelPage: mocks.getHotelPage,
+   getAvailability: mocks.getAvailability,
+ }));
++vi.mock("@/features/search/queries", () => ({
++  getSmartSearchConfig: mocks.getSmartSearchConfig,
++}));
+ 
+ const harbourlight: HotelPage = {
+   hotelId: "hotel-001",
+@@ -94,6 +98,7 @@ const NO_DATES = {
+   today: "2026-11-10",
+   now: "2026-11-10T08:00:00.000Z",
+   stale: false,
++  smartSearch: false,
+   criteria: {
+     q: "",
+     stay: null,
+@@ -117,6 +122,10 @@ beforeEach(() => {
+   mocks.io.mockImplementation(async () => {
+     mocks.calls.push("io");
+   });
++  mocks.getSmartSearchConfig.mockReset().mockImplementation(async () => {
++    mocks.calls.push("getSmartSearchConfig");
++    return false;
++  });
+ });
+ 
+ describe("HotelRoute", () => {
+@@ -176,7 +185,7 @@ describe("HotelContent", () => {
+       }),
+     );
+ 
+-    expect(mocks.calls).toEqual(["io", "todayIn", "nowIso"]);
++    expect(mocks.calls).toEqual(["io", "todayIn", "nowIso", "getSmartSearchConfig"]);
+     expect(mocks.getHotelPage).toHaveBeenCalledWith("hotel-001");
+     expect(
+       screen.getByRole("heading", { level: 1, name: "Harbourlight Retreat" }),
+@@ -227,6 +236,30 @@ describe("HotelContent", () => {
+     expect(screen.getByText("4 900 rand")).toBeInTheDocument();
+   });
+ 
++  it("passes the Provider flag and keeps bestFit, but no Smart parameter, for Share", async () => {
++    mocks.getHotelPage.mockResolvedValue(harbourlight);
++    mocks.getSmartSearchConfig.mockResolvedValue(true);
++
++    const page = await HotelContent({
++      params: Promise.resolve({ hotelId: "hotel-001" }),
++      searchParams: Promise.resolve({
++        adults: "4",
++        children: "0",
++        rooms: "1",
++        sq: "family place",
++        smart: "1",
++        bestFit: "hotel-001-family",
++      }),
++    });
++    const { availability, sharePath } = (
++      page as ReactElement<{ availability: AvailabilityContext; sharePath: string }>
++    ).props;
++
++    expect(availability.smartSearch).toBe(true);
++    expect(availability.criteria.bestFit).toBe("hotel-001-family");
++    expect(sharePath).toBe("/hotels/hotel-001?adults=4&children=0&rooms=1&bestFit=hotel-001-family");
++  });
++
+   it("calls notFound for an unknown id", async () => {
+     mocks.getHotelPage.mockResolvedValue(null);
+ 
+diff --git a/src/app/hotels/[hotelId]/room-selection.test.tsx b/src/app/hotels/[hotelId]/room-selection.test.tsx
+index 11e7ff0..b9662b0 100644
+--- a/src/app/hotels/[hotelId]/room-selection.test.tsx
++++ b/src/app/hotels/[hotelId]/room-selection.test.tsx
+@@ -18,3 +18,35 @@ it("writes the selection into the URL and drops sq and smart (AD-21)", () => {
+       "&sel=hotel-001-standard%3A1",
+   );
+ });
++
++it("keeps bestFit when it writes the selection (AD-21)", () => {
++  window.history.replaceState(
++    null,
++    "",
++    "/hotels/hotel-010?checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1" +
++      "&bestFit=hotel-010-family",
++  );
++
++  replaceSelectionInUrl([{ roomTypeId: "hotel-010-family", quantity: 2 }], "2026-11-10");
++
++  expect(`${window.location.pathname}${window.location.search}`).toBe(
++    "/hotels/hotel-010?checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1" +
++      "&sel=hotel-010-family%3A2&bestFit=hotel-010-family",
++  );
++});
++
++it("keeps an empty selection under bestFit as sel=<bestFit>:0, and writes no sel without it", () => {
++  const base =
++    "/hotels/hotel-010?checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1";
++  window.history.replaceState(null, "", `${base}&bestFit=hotel-010-family`);
++
++  replaceSelectionInUrl([], "2026-11-10");
++
++  expect(`${window.location.pathname}${window.location.search}`).toBe(
++    `${base}&sel=hotel-010-family%3A0&bestFit=hotel-010-family`,
++  );
++
++  window.history.replaceState(null, "", `${base}&sel=hotel-010-standard%3A1`);
++  replaceSelectionInUrl([], "2026-11-10");
++  expect(`${window.location.pathname}${window.location.search}`).toBe(base);
++});
+diff --git a/src/app/hotels/[hotelId]/room-selection.tsx b/src/app/hotels/[hotelId]/room-selection.tsx
+index 2ac6ef1..d5be1fb 100644
+--- a/src/app/hotels/[hotelId]/room-selection.tsx
++++ b/src/app/hotels/[hotelId]/room-selection.tsx
+@@ -8,7 +8,7 @@ import { BookingSummary } from "@/components/booking-summary";
+ import { Icon } from "@/components/icons/icons";
+ import { MobileSummaryBar } from "@/components/mobile-summary-bar";
+ import { cancellationLine } from "@/domain/cancellation";
+-import { parseCriteria, serializeCriteria } from "@/domain/criteria";
++import { hotelQuery, parseCriteria } from "@/domain/criteria";
+ import { nightsBetween } from "@/domain/dates";
+ import { availabilitySectionId } from "@/domain/hotel";
+ import {
+@@ -50,6 +50,13 @@ type RoomSelectionProps = {
+   loweredNotice: string;
+   /** The server lowered the URL's selection, so the address bar follows it. */
+   selectionLowered: boolean;
++  /** The Room type whose row carries the Best-fit chip (AD-26), or null. */
++  bestFitRoomTypeId?: string | null;
++  /**
++   * The selection is the server's Best-fit pre-selection, not the URL's `sel`:
++   * the booking summary explains it until the Guest changes a quantity.
++   */
++  preselected?: boolean;
+ };
+ 
+ function selectionKey(selection: readonly RoomSelection[]): string {
+@@ -59,17 +66,14 @@ function selectionKey(selection: readonly RoomSelection[]): string {
+ /**
+  * Writes the selection into the address bar: replace, never push (EXPERIENCE.md
+  * Navigation). Smart search parameters are dropped: the Hotel page never
+- * carries them (AD-21).
++ * carries them. `bestFit` is kept, so a reload still shows the chip, and an
++ * empty selection under it is kept as an explicit empty `sel` (AD-21, AD-26).
+  */
+ export function replaceSelectionInUrl(selection: RoomSelection[], today: IsoDate) {
+   const { criteria } = parseCriteria(new URLSearchParams(window.location.search), today, {
+     defaultStay: false,
+   });
+-  const query = serializeCriteria({
+-    ...criteria,
+-    sel: selection.length > 0 ? selection : null,
+-    smart: null,
+-  });
++  const query = hotelQuery({ ...criteria, sel: selection });
+   window.history.replaceState(null, "", `${window.location.pathname}?${query}`);
+ }
+ 
+@@ -93,9 +97,13 @@ export function RoomSelectionPanel({
+   initialSelection,
+   loweredNotice,
+   selectionLowered,
++  bestFitRoomTypeId = null,
++  preselected = false,
+ }: RoomSelectionProps) {
+   const [selection, setSelection] = useState(initialSelection);
+   const [seenKey, setSeenKey] = useState(selectionKey(initialSelection));
++  // The Guest has changed a quantity since the Best-fit pre-selection.
++  const [touched, setTouched] = useState(false);
+   const liveRef = useRef<HTMLParagraphElement>(null);
+   const [error, setError] = useState<string | null>(null);
+   const [pending, startTransition] = useTransition();
+@@ -106,6 +114,7 @@ export function RoomSelectionPanel({
+   if (incomingKey !== seenKey) {
+     setSeenKey(incomingKey);
+     setSelection(initialSelection);
++    setTouched(false);
+   }
+ 
+   // A live region announces only changes made after it is in the page.
+@@ -125,6 +134,7 @@ export function RoomSelectionPanel({
+   function onQuantityChange(roomTypeId: string, quantity: number) {
+     const next = withQuantity(selection, rooms, roomTypeId, quantity);
+     setSelection(next);
++    setTouched(true);
+     setError(null);
+     replaceSelectionInUrl(next, today);
+   }
+@@ -143,6 +153,13 @@ export function RoomSelectionPanel({
+     onReserve: reserve,
+     error,
+   };
++  // EXPERIENCE.md Booking summary (changed): explains the pre-selection until
++  // the first quantity change.
++  const bestFitName = rooms.find((room) => room.id === bestFitRoomTypeId)?.name;
++  const note =
++    preselected && !touched && bestFitName
++      ? `${bestFitName} picked for your search. Change it in the table.`
++      : undefined;
+   const summary = (
+     <BookingSummary
+       hotelName={hotelName}
+@@ -152,6 +169,7 @@ export function RoomSelectionPanel({
+       roomCount={count}
+       totalRand={totalRand}
+       cancellation={cancellationLine(cancellationPolicy, stay.checkIn, checkInTime, now)}
++      note={note}
+       action={allSoldOut ? null : <ReserveButton {...reserveProps} />}
+     />
+   );
+@@ -184,6 +202,7 @@ export function RoomSelectionPanel({
+           availability={availability}
+           selection={selection}
+           onQuantityChange={onQuantityChange}
++          bestFitRoomTypeId={bestFitRoomTypeId}
+         />
+         {/* From 768px the summary is a panel (sticky from 1024px); below it, the bar and sheet. */}
+         <aside
+diff --git a/src/app/hotels/[hotelId]/room-table.test.tsx b/src/app/hotels/[hotelId]/room-table.test.tsx
+index 519c885..b0f0902 100644
+--- a/src/app/hotels/[hotelId]/room-table.test.tsx
++++ b/src/app/hotels/[hotelId]/room-table.test.tsx
+@@ -36,6 +36,7 @@ function renderTable(
+   availability: Record<string, number> | null,
+   selection = [] as { roomTypeId: string; quantity: number }[],
+   onQuantityChange = vi.fn(),
++  bestFitRoomTypeId: string | null = null,
+ ) {
+   render(
+     <RoomTable
+@@ -44,6 +45,7 @@ function renderTable(
+       availability={availability}
+       selection={selection}
+       onQuantityChange={onQuantityChange}
++      bestFitRoomTypeId={bestFitRoomTypeId}
+     />,
+   );
+   return onQuantityChange;
+@@ -119,3 +121,43 @@ describe("RoomTable without dates", () => {
+     expect(openDates).toHaveBeenCalledTimes(1);
+   });
+ });
++
++describe("RoomTable row headers and the Best-fit chip", () => {
++  it("makes each Room type name its row's header", () => {
++    renderTable({ std: 10, fam: 4 });
++
++    const headers = screen.getAllByRole("rowheader");
++    expect(headers).toHaveLength(2);
++    expect(headers[0]).toHaveAttribute("scope", "row");
++    expect(
++      within(headers[0]).getByRole("heading", { level: 3, name: "Standard Double" }),
++    ).toBeInTheDocument();
++    expect(
++      within(headers[1]).getByRole("heading", { level: 3, name: "Family Room" }),
++    ).toBeInTheDocument();
++    expect(screen.queryByText("Best fit for your search")).toBeNull();
++  });
++
++  it("puts the chip in the Best-fit row's header and describes its Rooms select by it", () => {
++    renderTable({ std: 10, fam: 4 }, [], vi.fn(), "fam");
++
++    const [standard, family] = screen.getAllByRole("rowheader");
++    const chip = within(family).getByText("Best fit for your search");
++    expect(chip).toHaveAttribute("id", "best-fit-chip-fam");
++    expect(within(standard).queryByText("Best fit for your search")).toBeNull();
++    expect(screen.getByRole("combobox", { name: "Rooms of Family Room" })).toHaveAccessibleDescription(
++      "Best fit for your search",
++    );
++    expect(
++      screen.getByRole("combobox", { name: "Rooms of Standard Double" }),
++    ).not.toHaveAttribute("aria-describedby");
++  });
++
++  it("keeps the chip on its row when the selection is elsewhere", () => {
++    renderTable({ std: 10, fam: 4 }, [{ roomTypeId: "std", quantity: 2 }], vi.fn(), "fam");
++
++    expect(
++      within(screen.getAllByRole("rowheader")[1]).getByText("Best fit for your search"),
++    ).toBeInTheDocument();
++  });
++});
+diff --git a/src/app/hotels/[hotelId]/room-table.tsx b/src/app/hotels/[hotelId]/room-table.tsx
+index 77c998e..13a5512 100644
+--- a/src/app/hotels/[hotelId]/room-table.tsx
++++ b/src/app/hotels/[hotelId]/room-table.tsx
+@@ -16,6 +16,11 @@ const AMENITY_ICONS: Record<string, IconName> = {
+ /** The most Rooms left that the table flags ("Only N left"). */
+ const FEW_LEFT = 3;
+ 
++/** The Best-fit chip's id, which that row's Rooms select points at (EXPERIENCE.md Room table). */
++export function bestFitChipId(roomTypeId: string): string {
++  return `best-fit-chip-${roomTypeId}`;
++}
++
+ /** A whole-rand amount, shown with `formatZar` and spoken as "4 900 rand". */
+ function Price({ rand, suffix = "" }: { rand: number; suffix?: string }) {
+   return (
+@@ -56,11 +61,15 @@ type RoomTableProps = {
+   selection: RoomSelection[];
+   /** Left out without dates: there are no selects. */
+   onQuantityChange?: (roomTypeId: string, quantity: number) => void;
++  /** The Room type whose row carries the Best-fit chip (AD-26), or null. */
++  bestFitRoomTypeId?: string | null;
+ };
+ 
+ /**
+  * The room table (FR-17): a real table from 768px, one card per Room type
+  * below it. Without dates it lists the Room types and offers "Show prices".
++ * The Room type name is each row's header; the Best-fit row adds the
++ * display-only Best-fit chip, which describes that row's Rooms select.
+  */
+ export function RoomTable({
+   rooms,
+@@ -68,6 +77,7 @@ export function RoomTable({
+   availability,
+   selection,
+   onQuantityChange,
++  bestFitRoomTypeId = null,
+ }: RoomTableProps) {
+   const datesField = useDatesField();
+   const priced = nights !== null && availability !== null;
+@@ -102,14 +112,25 @@ export function RoomTable({
+             const left = priced ? (availability[room.id] ?? 0) : 0;
+             const soldOut = priced && left === 0;
+             const quantity = quantityOf(selection, room.id);
++            const bestFit = room.id === bestFitRoomTypeId;
+             return (
+               <tr
+                 key={room.id}
+                 role="row"
+                 className="border-b border-outline last:border-b-0 max-md:block max-md:rounded-md max-md:border max-md:border-primary max-md:p-space-md max-md:last:border-b"
+               >
+-                <td role="cell" className={td}>
+-                  <h3 className="text-headline-sm">{room.name}</h3>
++                <th role="rowheader" scope="row" className={`${td} text-left font-normal`}>
++                  <div className="flex flex-wrap items-center gap-space-sm">
++                    <h3 className="text-headline-sm">{room.name}</h3>
++                    {bestFit && (
++                      <span
++                        id={bestFitChipId(room.id)}
++                        className="inline-block max-w-full rounded-full border border-primary bg-surface px-space-md py-space-xs text-label-md text-on-surface uppercase"
++                      >
++                        Best fit for your search
++                      </span>
++                    )}
++                  </div>
+                   <ul className="mt-space-sm flex flex-col gap-space-xs text-body-sm">
+                     <li className="flex items-center gap-space-sm">
+                       <Icon name="bed" className="shrink-0" />
+@@ -122,7 +143,7 @@ export function RoomTable({
+                       </li>
+                     ))}
+                   </ul>
+-                </td>
++                </th>
+                 <td role="cell" className={td}>
+                   <Sleeps maxGuests={room.maxGuests} />
+                 </td>
+@@ -167,6 +188,7 @@ export function RoomTable({
+                           </span>
+                           <select
+                             aria-label={`Rooms of ${room.name}`}
++                            aria-describedby={bestFit ? bestFitChipId(room.id) : undefined}
+                             value={quantity}
+                             onChange={(event) =>
+                               onQuantityChange?.(room.id, Number(event.target.value))
+diff --git a/src/app/hotels/[hotelId]/stay-party-picker.test.tsx b/src/app/hotels/[hotelId]/stay-party-picker.test.tsx
+index 9134137..73a5836 100644
+--- a/src/app/hotels/[hotelId]/stay-party-picker.test.tsx
++++ b/src/app/hotels/[hotelId]/stay-party-picker.test.tsx
+@@ -53,6 +53,19 @@ describe("StayPartyPicker", () => {
+     expect(options).toEqual({ scroll: false });
+   });
+ 
++  it("keeps bestFit from the URL when it pushes, so the server re-checks it (AD-21, AD-26)", () => {
++    window.history.replaceState(null, "", "/hotels/hotel-001?bestFit=hotel-001-family");
++    renderPicker();
++
++    fireEvent.click(screen.getByRole("button", { name: /Occupancy/ }));
++    fireEvent.click(screen.getByRole("button", { name: "Increase adults" }));
++    fireEvent.click(screen.getByRole("button", { name: "Done" }));
++
++    const [url] = push.mock.calls[0];
++    expect(new URL(url, "http://localhost").searchParams.get("bestFit")).toBe("hotel-001-family");
++    expect(url).not.toContain("sel=");
++  });
++
+   it("pushes nothing when it closes unchanged", () => {
+     renderPicker();
+ 
+diff --git a/src/app/hotels/[hotelId]/stay-party-picker.tsx b/src/app/hotels/[hotelId]/stay-party-picker.tsx
+index 676de10..0f9ad9e 100644
+--- a/src/app/hotels/[hotelId]/stay-party-picker.tsx
++++ b/src/app/hotels/[hotelId]/stay-party-picker.tsx
+@@ -103,12 +103,19 @@ export function StayPartyPicker({
+ 
+   function commit(nextStay: Stay | null, nextParty: Party) {
+     // The selection lives in the URL (replaced as it changes); the server
+-    // clamps it to the new Availability.
++    // clamps it to the new Availability. bestFit is kept, and the server
++    // re-checks it against the new Stay and Party (AD-21, AD-26).
+     const { criteria } = parseCriteria(new URLSearchParams(window.location.search), today, {
+       defaultStay: false,
+     });
+     router.push(
+-      hotelHref(hotelId, { q, stay: nextStay, party: nextParty, sel: criteria.sel }),
++      hotelHref(hotelId, {
++        q,
++        stay: nextStay,
++        party: nextParty,
++        sel: criteria.sel,
++        bestFit: criteria.bestFit,
++      }),
+       { scroll: false },
+     );
+   }
+diff --git a/src/components/booking-summary.test.tsx b/src/components/booking-summary.test.tsx
+index 864d07e..43db6cb 100644
+--- a/src/components/booking-summary.test.tsx
++++ b/src/components/booking-summary.test.tsx
+@@ -24,6 +24,7 @@ function renderSummary({
+   cancellation = free,
+   guestName = undefined as string | undefined,
+   action = null as ReactNode,
++  note = undefined as string | undefined,
+ } = {}) {
+   const roomCount = lines.reduce((sum, line) => sum + line.quantity, 0);
+   render(
+@@ -37,6 +38,7 @@ function renderSummary({
+       cancellation={cancellation}
+       guestName={guestName}
+       action={action}
++      note={note}
+     />,
+   );
+ }
+@@ -108,6 +110,21 @@ describe("BookingSummary", () => {
+     expect(screen.getByRole("button", { name: "Confirm booking" })).toBeInTheDocument();
+   });
+ 
++  it("shows a note before the total, and none without one", () => {
++    const text = "Family Room picked for your search. Change it in the table.";
++    renderSummary({ note: text });
++
++    const note = screen.getByText(text);
++    const total = screen.getByText("Total");
++    expect(note.compareDocumentPosition(total) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
++    expect(note).toHaveClass("text-body-sm", "text-on-surface-muted");
++  });
++
++  it("has no note by default", () => {
++    renderSummary();
++    expect(screen.queryByText(/picked for your search/)).toBeNull();
++  });
++
+   it("has no button without an action", () => {
+     renderSummary();
+     expect(screen.queryByRole("button")).toBeNull();
+diff --git a/src/components/booking-summary.tsx b/src/components/booking-summary.tsx
+index 2d1bb42..30d4fc9 100644
+--- a/src/components/booking-summary.tsx
++++ b/src/components/booking-summary.tsx
+@@ -22,6 +22,11 @@ type BookingSummaryProps = {
+   guestName?: string;
+   /** The step's primary button (Reserve, Confirm booking), or null for none. */
+   action: ReactNode;
++  /**
++   * One muted line before the total: on the Hotel page, why the Best-fit
++   * room is already selected (EXPERIENCE.md Booking summary (changed)).
++   */
++  note?: string;
+ };
+ 
+ /**
+@@ -40,6 +45,7 @@ export function BookingSummary({
+   cancellation,
+   guestName,
+   action,
++  note,
+ }: BookingSummaryProps) {
+   const nights = nightsLabel(nightsBetween(stay.checkIn, stay.checkOut));
+   const people = [countLabel("adults", party.adults)];
+@@ -69,6 +75,7 @@ export function BookingSummary({
+           </li>
+         ))}
+       </ul>
++      {note && <p className="mt-space-sm text-body-sm text-on-surface-muted">{note}</p>}
+       <hr className="my-space-md border-outline" />
+       <p aria-live="polite" className="flex items-baseline justify-between gap-space-md">
+         <span className="text-headline-sm">Total</span>
+diff --git a/src/domain/best-fit.test.ts b/src/domain/best-fit.test.ts
+index 03e1c27..bcf051c 100644
+--- a/src/domain/best-fit.test.ts
++++ b/src/domain/best-fit.test.ts
+@@ -1,6 +1,6 @@
+ // @vitest-environment node
+ import { describe, expect, it } from "vitest";
+-import { bestFit, type BestFitRoomType } from "./best-fit";
++import { bestFit, hotelBestFit, type BestFitRoomType } from "./best-fit";
+ 
+ const standard: BestFitRoomType = {
+   id: "hotel-010-standard",
+@@ -78,3 +78,77 @@ describe("bestFit", () => {
+     expect(bestFit([], none, 1, 2)).toBeNull();
+   });
+ });
++
++describe("hotelBestFit (AD-26)", () => {
++  // Winelands Family Lodge: Standard 1 450, sleeps 2; Family 2 000, sleeps 4.
++  const rooms = [standard, family];
++  const open = new Map([
++    [standard.id, 5],
++    [family.id, 3],
++  ]);
++  const fourAdults = { adults: 4, children: 0, rooms: 1 };
++
++  it("UJ-1 arrival: chips and pre-selects the Family Room × 1", () => {
++    expect(hotelBestFit(family.id, rooms, open, fourAdults, null, true)).toEqual({
++      chipRoomTypeId: family.id,
++      preselect: [{ roomTypeId: family.id, quantity: 1 }],
++    });
++  });
++
++  it("pre-selects at the URL's Rooms", () => {
++    expect(
++      hotelBestFit(standard.id, rooms, open, { adults: 4, children: 0, rooms: 2 }, null, true),
++    ).toEqual({
++      chipRoomTypeId: standard.id,
++      preselect: [{ roomTypeId: standard.id, quantity: 2 }],
++    });
++  });
++
++  it("with sel present, only places the chip", () => {
++    const sel = [{ roomTypeId: standard.id, quantity: 2 }];
++    expect(hotelBestFit(family.id, rooms, open, fourAdults, sel, true)).toEqual({
++      chipRoomTypeId: family.id,
++      preselect: null,
++    });
++  });
++
++  it("with an explicit empty sel, places the chip and pre-selects nothing", () => {
++    expect(hotelBestFit(family.id, rooms, open, fourAdults, [], true)).toEqual({
++      chipRoomTypeId: family.id,
++      preselect: null,
++    });
++  });
++
++  it("does nothing with no Provider", () => {
++    expect(hotelBestFit(family.id, rooms, open, fourAdults, null, false)).toEqual({
++      chipRoomTypeId: null,
++      preselect: null,
++    });
++  });
++
++  it("does nothing for an unknown or absent id", () => {
++    const nothing = { chipRoomTypeId: null, preselect: null };
++    expect(hotelBestFit("nope", rooms, open, fourAdults, null, true)).toEqual(nothing);
++    expect(hotelBestFit(null, rooms, open, fourAdults, null, true)).toEqual(nothing);
++  });
++
++  it("does nothing when the Room type no longer qualifies", () => {
++    const nothing = { chipRoomTypeId: null, preselect: null };
++    // Too small: sleeps 2 < 4 adults in 1 Room.
++    expect(hotelBestFit(standard.id, rooms, open, fourAdults, null, true)).toEqual(nothing);
++    // Availability below the Rooms.
++    const scarce = new Map([[family.id, 1]]);
++    expect(
++      hotelBestFit(family.id, rooms, scarce, { adults: 4, children: 0, rooms: 2 }, null, true),
++    ).toEqual(nothing);
++    // Sold out.
++    expect(hotelBestFit(family.id, rooms, new Map(), fourAdults, null, true)).toEqual(nothing);
++  });
++
++  it("ignores Max price: a dear Room type still qualifies", () => {
++    const dear = { ...family, nightlyRand: 9000 };
++    expect(hotelBestFit(dear.id, [standard, dear], open, fourAdults, null, true).preselect).toEqual(
++      [{ roomTypeId: dear.id, quantity: 1 }],
++    );
++  });
++});
+diff --git a/src/domain/best-fit.ts b/src/domain/best-fit.ts
+index 807c708..92209e4 100644
+--- a/src/domain/best-fit.ts
++++ b/src/domain/best-fit.ts
+@@ -3,8 +3,9 @@
+  * priced from and the Hotel page pre-selects. Pure: the qualifying Room types
+  * come from `qualifyingRoomTypes` (AD-23) and prices from `pricing.ts` (AD-9).
+  */
++import { qualifyingRoomTypes, type HardCriteriaRoomType } from "@/domain/hard-criteria";
+ import { stayTotalRand } from "@/domain/pricing";
+-import type { BestFitRoom } from "@/domain/types";
++import type { BestFitRoom, Party, RoomSelection } from "@/domain/types";
+ 
+ /** What the pick needs to know about a qualifying Room type. */
+ export type BestFitRoomType = {
+@@ -53,3 +54,42 @@ export function bestFit(
+     totalRand: stayTotalRand(best.nightlyRand, nights, rooms),
+   };
+ }
++
++/** What the Hotel page does with the URL's `bestFit` (AD-26, FR-14). */
++export type HotelBestFit = {
++  /** The Room type whose row carries the Best-fit chip, or null for no chip. */
++  chipRoomTypeId: string | null;
++  /** The selection to start from when the URL has no `sel`, or null. */
++  preselect: RoomSelection[] | null;
++};
++
++const NO_BEST_FIT: HotelBestFit = { chipRoomTypeId: null, preselect: null };
++
++/**
++ * The Hotel page's Best-fit decision (AD-26), made on the server once
++ * Availability is read, so reload, Back and a shared link agree. The URL's
++ * `bestFit` counts only when a Provider is configured and the Room type still
++ * qualifies for the page's Stay and Party: `qualifyingRoomTypes` without Max
++ * price, which the Hotel page never enforces. Then its row carries the chip,
++ * and, when the URL has no `sel`, it is pre-selected at the Party's Rooms.
++ * With `sel` present, `sel` wins and `bestFit` only places the chip. An
++ * unknown, sold-out or too-small Room type gives neither.
++ */
++export function hotelBestFit(
++  bestFitId: string | null,
++  rooms: readonly HardCriteriaRoomType[],
++  availability: ReadonlyMap<string, number>,
++  party: Party,
++  sel: readonly RoomSelection[] | null,
++  providerOn: boolean,
++): HotelBestFit {
++  if (!providerOn || !bestFitId) return NO_BEST_FIT;
++  const qualifies = qualifyingRoomTypes(rooms, availability, party, null).some(
++    (type) => type.id === bestFitId,
++  );
++  if (!qualifies) return NO_BEST_FIT;
++  return {
++    chipRoomTypeId: bestFitId,
++    preselect: sel === null ? [{ roomTypeId: bestFitId, quantity: party.rooms }] : null,
++  };
++}
+diff --git a/src/domain/criteria.test.ts b/src/domain/criteria.test.ts
+index bc26995..28f2c7e 100644
+--- a/src/domain/criteria.test.ts
++++ b/src/domain/criteria.test.ts
+@@ -4,6 +4,7 @@ import type { SearchCriteria } from "@/domain/types";
+ import {
+   defaultCriteria,
+   hotelHref,
++  hotelQuery,
+   parseCriteria,
+   parseNotice,
+   parseSelection,
+@@ -167,8 +168,9 @@ describe("sel", () => {
+   });
+ 
+   it.each([
+-    ["rt-1:2,rt-2:0"],
+     ["rt-1:1.5"],
++    ["rt-1:00"],
++    ["rt-1:0,rt-1:1"],
+     ["rt-1:-1"],
+     ["rt-1:01"],
+     ["rt-1"],
+@@ -180,8 +182,16 @@ describe("sel", () => {
+     expect(parseSelection(value)).toBeNull();
+   });
+ 
++  it("leaves 0 lines out: an explicit empty selection, not an invalid one (AD-26)", () => {
++    expect(parseSelection("hotel-010-family:0")).toEqual([]);
++    expect(parseSelection("rt-1:2,rt-2:0")).toEqual([{ roomTypeId: "rt-1", quantity: 2 }]);
++    const { criteria, problems } = parse({ sel: "hotel-010-family:0" });
++    expect(criteria.sel).toEqual([]);
++    expect(problems).toEqual([]);
++  });
++
+   it("reports an invalid sel without touching the Stay", () => {
+-    const { criteria, problems } = parse({ hotel: "hotel-001", sel: "rt-1:0" });
++    const { criteria, problems } = parse({ hotel: "hotel-001", sel: "rt-1:-1" });
+     expect(criteria.sel).toBeNull();
+     expect(criteria.stay).not.toBeNull();
+     expect(problems).toEqual(["sel-invalid"]);
+@@ -310,6 +320,52 @@ describe("hotelHref", () => {
+   });
+ });
+ 
++describe("hotelQuery (AD-21)", () => {
++  it("is the Hotel page query: the MVP criteria with sel, then bestFit last", () => {
++    expect(
++      hotelQuery({
++        stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
++        party: { adults: 4, children: 0, rooms: 1 },
++        sel: [{ roomTypeId: "hotel-010-family", quantity: 1 }],
++        bestFit: "hotel-010-family",
++      }),
++    ).toBe(
++      "checkIn=2026-11-13&checkOut=2026-11-15&adults=4&children=0&rooms=1&sel=hotel-010-family%3A1&bestFit=hotel-010-family",
++    );
++  });
++
++  it("drops every Smart parameter and leaves out an empty bestFit", () => {
++    const query = hotelQuery({
++      q: "Stellenbosch",
++      smart: smartCriteria("pet friendly place", true, {
++        preferences: "pet friendly",
++        maxPriceRand: 2000,
++        policies: ["pets"],
++      }),
++      bestFit: "  ",
++    });
++    expect(query).toBe("q=Stellenbosch&adults=2&children=0&rooms=1");
++  });
++
++  it("writes an empty selection under bestFit as sel=<bestFit>:0, and never without it", () => {
++    const empty = { party: { adults: 4, children: 0, rooms: 1 }, sel: [] };
++    expect(hotelQuery({ ...empty, bestFit: "hotel-010-family" })).toBe(
++      "adults=4&children=0&rooms=1&sel=hotel-010-family%3A0&bestFit=hotel-010-family",
++    );
++    expect(hotelQuery(empty)).toBe("adults=4&children=0&rooms=1");
++    expect(hotelQuery({ ...empty, sel: null, bestFit: "hotel-010-family" })).not.toContain("sel=");
++    expect(serializeCriteria({ ...empty, bestFit: "hotel-010-family" })).not.toContain("sel=");
++    // The marker round-trips to an empty selection.
++    const query = hotelQuery({ ...empty, bestFit: "hotel-010-family" });
++    expect(parse(Object.fromEntries(new URLSearchParams(query))).criteria.sel).toEqual([]);
++  });
++
++  it("is what hotelHref puts after the path", () => {
++    const criteria = { q: "Stellenbosch", bestFit: "hotel-010-family" };
++    expect(hotelHref("hotel-010", criteria)).toBe(`/hotels/hotel-010?${hotelQuery(criteria)}`);
++  });
++});
++
+ describe("bestFit (AD-21)", () => {
+   it("parses as trimmed non-empty text, or null", () => {
+     expect(parse({ bestFit: " hotel-010-family " }).criteria.bestFit).toBe("hotel-010-family");
+diff --git a/src/domain/criteria.ts b/src/domain/criteria.ts
+index d0b0ff9..ee8ff26 100644
+--- a/src/domain/criteria.ts
++++ b/src/domain/criteria.ts
+@@ -194,20 +194,27 @@ function parseParty(params: CriteriaParams): { party: Party; valid: boolean } {
+ 
+ const QUANTITY = /^[1-9]\d*$/;
+ 
++/** A selection line's quantity: a positive integer, or exactly 0. */
++const LINE_QUANTITY = /^(0|[1-9]\d*)$/;
++
+ /**
+- * `roomTypeId:qty,…`. Every quantity must be a positive integer and every
+- * Room type listed once. Whether the Room types belong to `hotel` is checked
+- * against the catalog by the caller (AD-8).
++ * `roomTypeId:qty,…`. Every quantity must be a whole number and every Room
++ * type listed once. A 0 line is left out of the result, so `sel=x:0` is an
++ * empty selection: the Hotel page writes it when the Guest has cleared a
++ * Best-fit pre-selection (AD-26). Whether the Room types belong to `hotel` is
++ * checked against the catalog by the caller (AD-8).
+  */
+ export function parseSelection(value: string): RoomSelection[] | null {
+   const lines: RoomSelection[] = [];
++  const seen = new Set<string>();
+   for (const entry of value.split(",")) {
+     const parts = entry.split(":");
+     if (parts.length !== 2) return null;
+     const [roomTypeId, quantity] = parts.map((part) => part.trim());
+-    if (!roomTypeId || !QUANTITY.test(quantity)) return null;
+-    if (lines.some((line) => line.roomTypeId === roomTypeId)) return null;
+-    lines.push({ roomTypeId, quantity: Number(quantity) });
++    if (!roomTypeId || !LINE_QUANTITY.test(quantity)) return null;
++    if (seen.has(roomTypeId)) return null;
++    seen.add(roomTypeId);
++    if (quantity !== "0") lines.push({ roomTypeId, quantity: Number(quantity) });
+   }
+   return lines;
+ }
+@@ -406,10 +413,27 @@ export function searchHref(criteria: Partial<SearchCriteria>): string {
+  * Best-fit Room type, appended last when set (FR-14).
+  */
+ export function hotelHref(hotelId: string, criteria: Partial<SearchCriteria>): string {
++  return `/hotels/${encodeURIComponent(hotelId)}?${hotelQuery(criteria)}`;
++}
++
++/**
++ * The Hotel page query string, without the leading `?`: `serializeCriteria`
++ * with no Smart search parameters, plus `bestFit` last when set (AD-21). The
++ * Hotel page's own URL rewrites use it so `bestFit` survives them; `/book`
++ * builders keep `serializeCriteria`, which never writes it.
++ *
++ * With `bestFit` set, an empty selection (`[]`, not null) is written as
++ * `sel=<bestFit>:0`, so a reload keeps the Guest's empty choice instead of
++ * pre-selecting again (AD-26).
++ */
++export function hotelQuery(criteria: Partial<SearchCriteria>): string {
+   const params = new URLSearchParams(serializeCriteria({ ...criteria, smart: null }));
+   const bestFit = criteria.bestFit?.trim();
+-  if (bestFit) params.set("bestFit", bestFit);
+-  return `/hotels/${encodeURIComponent(hotelId)}?${params.toString()}`;
++  if (bestFit) {
++    if (criteria.sel && criteria.sel.length === 0) params.set("sel", `${bestFit}:0`);
++    params.set("bestFit", bestFit);
++  }
++  return params.toString();
+ }
+ 
+ /** The criteria a Search results URL is built from: the Search bar's and the Smart search state. */
+diff --git a/src/domain/hotel.test.ts b/src/domain/hotel.test.ts
+index 3e05a1f..ee659ac 100644
+--- a/src/domain/hotel.test.ts
++++ b/src/domain/hotel.test.ts
+@@ -72,4 +72,14 @@ describe("roomTableHref", () => {
+       "/hotels/hotel-001?q=Cape+Town&checkIn=2026-11-13&checkOut=2026-11-15&adults=2&children=0&rooms=1&sel=hotel-001-standard%3A1#availability-hotel-001",
+     );
+   });
++
++  it("carries no bestFit when the criteria have none, as /book passes them (AD-21)", () => {
++    const href = roomTableHref("hotel-010", {
++      stay: { checkIn: "2026-11-13", checkOut: "2026-11-15" },
++      party: { adults: 4, children: 0, rooms: 1 },
++      sel: [{ roomTypeId: "hotel-010-family", quantity: 1 }],
++    });
++    expect(href).not.toContain("bestFit");
++    expect(roomTableHref("hotel-010", { bestFit: null })).not.toContain("bestFit");
++  });
+ });

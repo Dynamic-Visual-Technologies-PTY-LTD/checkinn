@@ -3,7 +3,7 @@ title: 'App shell, design tokens and error pages'
 type: 'feature'
 ticket: '1'
 created: '2026-10-12'
-status: 'built'
+status: done
 baseline_revision: 'f58cebc9e7dc7e2b93ea21a767641c1e8db13a49'
 route: 'full'
 route_source: 'pinned'

@@ -6,14 +6,19 @@
  * Nothing here reads the clock: callers pass `today` (AD-9).
  */
 import { addDays, MAX_NIGHTS, nightsBetween } from "@/domain/dates";
-import type {
-  CriteriaNotice,
-  CriteriaProblem,
-  IsoDate,
-  Party,
-  RoomSelection,
-  SearchCriteria,
-  Stay,
+import { isPreferenceKey, type PreferenceKey, withoutPreference } from "@/domain/keyword-relevance";
+import {
+  POLICY_CRITERIA,
+  type CriteriaNotice,
+  type CriteriaProblem,
+  type IgnoredKind,
+  type IsoDate,
+  type Party,
+  type PolicyCriterion,
+  type RoomSelection,
+  type SearchCriteria,
+  type SmartCriteria,
+  type Stay,
 } from "@/domain/types";
 
 /** Party limits (EXPERIENCE.md Occupancy picker). Rooms never exceed adults. */
@@ -24,6 +29,51 @@ export const PARTY_LIMITS = {
 } as const satisfies Record<keyof Party, { min: number; max: number }>;
 
 export const DEFAULT_PARTY: Party = { adults: 2, children: 0, rooms: 1 };
+
+/** The longest Query the Smart search box takes and `sq` keeps (FR-1, AD-21). */
+export const MAX_QUERY_LENGTH = 300;
+
+/** The longest Preferences text `prefs` keeps (AD-21). */
+export const MAX_PREFERENCES_LENGTH = 300;
+
+/**
+ * `place` and `ignored` (AD-21): at most 60 letters, digits, spaces and
+ * `' - , .`, so a shared link cannot put arbitrary text in a notice.
+ */
+const NOTICE_TEXT = /^[\p{L}\p{N} ',.-]{1,60}$/u;
+
+/** Whether text may go in a `place` or `ignored` notice (AD-21). */
+export function isNoticeText(value: string): boolean {
+  return NOTICE_TEXT.test(value);
+}
+
+/** Whether a value is a usable Max price: a positive whole number of rand. */
+export function isMaxPrice(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+
+/**
+ * Smart search criteria with every optional value empty: no Preferences, Max
+ * price, Policy criteria, place or ignored value.
+ */
+export function smartCriteria(
+  query: string,
+  interpreted: boolean,
+  values: Partial<Omit<SmartCriteria, "query" | "interpreted">> = {},
+): SmartCriteria {
+  return {
+    query,
+    interpreted,
+    preferences: null,
+    maxPriceRand: null,
+    policies: [],
+    fallback: false,
+    place: null,
+    ignored: null,
+    ignoredKind: "dates",
+    ...values,
+  };
+}
 
 /** Shown when a link's dates or Party were rejected (EXPERIENCE.md stale link). */
 export const STALE_LINK_MESSAGE = "Those dates have passed. Pick new ones.";
@@ -98,6 +148,8 @@ export function defaultCriteria(today: IsoDate): SearchCriteria {
     sel: null,
     k: null,
     notice: null,
+    smart: null,
+    bestFit: null,
   };
 }
 
@@ -180,6 +232,51 @@ export function parseNotice(params: CriteriaParams): CriteriaNotice | null {
   return null;
 }
 
+/** A comma list of Policy criteria, unknown entries dropped, in chip order. */
+function parsePolicies(value: string | undefined): PolicyCriterion[] {
+  const entries = new Set((value ?? "").split(",").map((entry) => entry.trim()));
+  return POLICY_CRITERIA.filter((policy) => entries.has(policy));
+}
+
+function parseMaxPrice(value: string | undefined): number | null {
+  if (value === undefined || !QUANTITY.test(value)) return null;
+  const price = Number(value);
+  return isMaxPrice(price) ? price : null;
+}
+
+function noticeText(value: string | undefined): string | null {
+  return value !== undefined && isNoticeText(value) ? value : null;
+}
+
+/**
+ * The Smart search state in URL parameters (AD-21), or null. `sq` is the
+ * trimmed Query and is required: over 300 characters it is dropped, and so is
+ * every other Smart parameter. `smart` and `fallback` count only as exactly
+ * `1`. Every other invalid value is dropped silently: `prefs` over 300
+ * characters, a `maxPrice` that is not a positive whole number, unknown
+ * `policy` entries, and a `place` or `ignored` that is not short, plain
+ * notice text.
+ * `ignoredKind` is `party` only when it says so.
+ */
+export function parseSmart(params: CriteriaParams): SmartCriteria | null {
+  const query = readText(params, "sq");
+  if (query === undefined || query.length > MAX_QUERY_LENGTH) return null;
+  const preferences = readText(params, "prefs");
+  const ignoredKind: IgnoredKind = readText(params, "ignoredKind") === "party" ? "party" : "dates";
+  return smartCriteria(query, readText(params, "smart") === "1", {
+    preferences:
+      preferences !== undefined && preferences.length <= MAX_PREFERENCES_LENGTH
+        ? preferences
+        : null,
+    maxPriceRand: parseMaxPrice(readText(params, "maxPrice")),
+    policies: parsePolicies(readText(params, "policy")),
+    fallback: readText(params, "fallback") === "1",
+    place: noticeText(readText(params, "place")),
+    ignored: noticeText(readText(params, "ignored")),
+    ignoredKind,
+  });
+}
+
 /** Turns URL parameters into criteria. Never throws. */
 export function parseCriteria(
   params: CriteriaParams,
@@ -221,6 +318,8 @@ export function parseCriteria(
       sel,
       k: readText(params, "k") ?? null,
       notice: parseNotice(params),
+      smart: parseSmart(params),
+      bestFit: readText(params, "bestFit") ?? null,
     },
     problems,
   };
@@ -229,7 +328,9 @@ export function parseCriteria(
 /**
  * Turns criteria into a query string, without the leading `?`. The order is
  * fixed and empty optional values are left out. The Party is always written,
- * so a shared link never shifts with "today".
+ * so a shared link never shifts with "today". It never writes `bestFit`, so
+ * no `/book` URL built from spread criteria carries it (AD-21); `hotelQuery`
+ * is its one writer, used by `hotelHref` and the Hotel page's own rewrites.
  */
 export function serializeCriteria(criteria: Partial<SearchCriteria>): string {
   const params = new URLSearchParams();
@@ -249,7 +350,34 @@ export function serializeCriteria(criteria: Partial<SearchCriteria>): string {
   }
   if (criteria.k) params.set("k", criteria.k);
   if (criteria.notice) setNotice(params, criteria.notice);
+  if (criteria.smart) setSmart(params, criteria.smart);
   return params.toString();
+}
+
+/**
+ * The Smart search parameters, after the MVP ones, in AD-21 order. A value
+ * that parsing would drop is not written.
+ */
+function setSmart(params: URLSearchParams, smart: SmartCriteria) {
+  const query = smart.query.trim();
+  if (!query || query.length > MAX_QUERY_LENGTH) return;
+  params.set("sq", query);
+  if (smart.interpreted) params.set("smart", "1");
+  const preferences = smart.preferences?.trim();
+  if (preferences && preferences.length <= MAX_PREFERENCES_LENGTH) {
+    params.set("prefs", preferences);
+  }
+  if (isMaxPrice(smart.maxPriceRand)) params.set("maxPrice", String(smart.maxPriceRand));
+  const policies = POLICY_CRITERIA.filter((policy) => smart.policies.includes(policy));
+  if (policies.length > 0) params.set("policy", policies.join(","));
+  if (smart.fallback) params.set("fallback", "1");
+  const place = smart.place?.trim();
+  if (place && isNoticeText(place)) params.set("place", place);
+  const ignored = smart.ignored?.trim();
+  if (ignored && isNoticeText(ignored)) {
+    params.set("ignored", ignored);
+    if (smart.ignoredKind === "party") params.set("ignoredKind", "party");
+  }
 }
 
 function setNotice(params: URLSearchParams, notice: CriteriaNotice) {
@@ -269,12 +397,93 @@ export function serializeNotice(notice: CriteriaNotice): string {
   return params.toString();
 }
 
-/** The Search results URL for criteria. */
+/**
+ * The Search results URL for criteria. The only builder that writes Smart
+ * search parameters (AD-21).
+ */
 export function searchHref(criteria: Partial<SearchCriteria>): string {
   return `/search?${serializeCriteria(criteria)}`;
 }
 
-/** A Hotel page URL that keeps the search criteria (FR-6). */
+/**
+ * A Hotel page URL that keeps the search criteria (FR-6). It never carries
+ * Smart search parameters (AD-21). Its query is `hotelQuery`'s, which appends
+ * `bestFit`, the Best-fit Room type, last when set (FR-14).
+ */
 export function hotelHref(hotelId: string, criteria: Partial<SearchCriteria>): string {
-  return `/hotels/${encodeURIComponent(hotelId)}?${serializeCriteria(criteria)}`;
+  return `/hotels/${encodeURIComponent(hotelId)}?${hotelQuery(criteria)}`;
+}
+
+/**
+ * The Hotel page query string, without the leading `?`: `serializeCriteria`
+ * with no Smart search parameters, plus `bestFit` last when set (AD-21). The
+ * Hotel page's own URL rewrites use it so `bestFit` survives them; `/book`
+ * builders keep `serializeCriteria`, which never writes it. It is the one
+ * writer of `bestFit`.
+ */
+export function hotelQuery(criteria: Partial<SearchCriteria>): string {
+  const params = new URLSearchParams(serializeCriteria({ ...criteria, smart: null }));
+  const bestFit = criteria.bestFit?.trim();
+  if (bestFit) params.set("bestFit", bestFit);
+  return params.toString();
+}
+
+/** The criteria a Search results URL is built from: the Search bar's and the Smart search state. */
+export type ResultsCriteria = Pick<SearchCriteria, "q" | "stay" | "party" | "smart">;
+
+/**
+ * The Search results URL with one Criteria chip removed (AD-21, FR-5): a Hard
+ * criterion, or a Preference concept's words. Every other Smart search
+ * parameter is kept, so the search re-runs with no new Query interpretation.
+ */
+export function withoutCriterion(
+  criteria: ResultsCriteria,
+  key: "maxPrice" | PolicyCriterion | PreferenceKey,
+): string {
+  const { q, stay, party, smart } = criteria;
+  if (!smart) return searchHref({ q, stay, party });
+  const next: SmartCriteria =
+    key === "maxPrice"
+      ? { ...smart, maxPriceRand: null }
+      : isPreferenceKey(key)
+        ? { ...smart, preferences: withoutPreference(smart.preferences, key) }
+        : { ...smart, policies: smart.policies.filter((policy) => policy !== key) };
+  return searchHref({ q, stay, party, smart: next });
+}
+
+/**
+ * The URL a Search bar Search pushes (AD-21, AD-33, FR-5). Under a Query it
+ * keeps `sq`, `smart`, `prefs`, `maxPrice` and `policy`, and drops
+ * `fallback`, `place` and `ignored`, so the Search re-runs without a new
+ * Query interpretation; on a fallback URL that is the MVP search with the
+ * Query still in the box.
+ * With the Smart search box empty at Search time, or no Query, it is the MVP
+ * search URL.
+ */
+export function searchBarSearch(
+  criteria: ResultsCriteria,
+  { boxIsEmpty }: { boxIsEmpty: boolean },
+): string {
+  const { q, stay, party, smart } = criteria;
+  if (!smart || boxIsEmpty) return searchHref({ q, stay, party });
+  return searchHref({
+    q,
+    stay,
+    party,
+    smart: { ...smart, fallback: false, place: null, ignored: null, ignoredKind: "dates" },
+  });
+}
+
+/**
+ * The fallback URL (AD-22, EXPERIENCE.md Fallback URL): the Search bar's
+ * Destination, Stay and Party from before the submit, the Query for the box
+ * and `fallback=1`. No Preferences, Max price, Policy criteria or notices, so
+ * those of a previous Query are dropped.
+ */
+export function fallbackHref(
+  current: Pick<SearchCriteria, "q" | "stay" | "party">,
+  query: string,
+): string {
+  const { q, stay, party } = current;
+  return searchHref({ q, stay, party, smart: smartCriteria(query, false, { fallback: true }) });
 }

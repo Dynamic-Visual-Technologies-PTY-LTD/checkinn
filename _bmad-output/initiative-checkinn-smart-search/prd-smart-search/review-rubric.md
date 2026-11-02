@@ -1,0 +1,67 @@
+# PRD Quality Review — CheckInn Smart Search
+
+Reviewed: `prd-smart-search.md` and `addendum.md`, against the MVP PRD glossary. Stakes: internal workshop demo, Fast path, `[ASSUMPTION]` tags expected.
+
+## Overall verdict
+A clear, well-scoped PRD. The Vision is specific, the Hard-criteria/Preferences split is clean, and most FRs have consequences you can test. The main risk is the catalog. Every City has exactly 2 Hotels, so once a Destination is set, Retrieval and Ranking modes choose between two candidates. That makes SM-1's "top 3 for all of them" trivially true and leaves the RAG thesis barely exercised. Separately, FR-10's weak-match threshold contradicts the addendum's min-max normalised Relevance, and a few real tensions (pets as a Preference, network at the expo, unapproved ask-first items) go unflagged while §9 reads "None blocking".
+
+## Decision-readiness — adequate
+Decisions are stated as decisions and often attributed: "The user chose to hide the box instead" (§7.2), "The user chose per-card Match reasons only" (§7.2), "No local or bundled AI model. The user ruled this out" (§6), and Provider = Azure AI Foundry (§3, addendum). The trade-off against the MVP's offline rule is named outright in §5 Network: "This overrides the MVP's works-offline rule *for Smart search only*." That is honest.
+
+What is missing is any `[NOTE FOR PM]` at the real tensions. There are zero in the document. §9 says "None blocking", but the addendum itself lists unresolved items that gate the build. The PRD also keeps "pet friendly" as a Preference even though UJ-1's whole premise is a Guest travelling with a dog.
+
+### Findings
+- **high** Pets as a Preference is an unflagged tension with UJ-1 (§4.2 FR-4 Out of Scope, §2.3 UJ-1, FR-8) — Only one seed Hotel allows pets (Winelands Family Lodge). Under FR-4 "pet friendly" is a Preference, so Thandi's results will also list the Stellenbosch Hotel that bans pets, possibly with a Match reason. The PRD defers "must have a pool" as a rule with a bare `[ASSUMPTION]`, but pets is the case that matters for the flagship journey and is not discussed. *Fix:* add a `[NOTE FOR PM]` at FR-4 Out of Scope. Either make pet policy a Hard criterion, or state that non-pet Hotels may appear and that their Match reason must not imply pets are allowed (and add that as a FR-16 consequence).
+- **medium** §9 "None blocking" understates open items (§9, addendum "Provider decision", "Embedding model choice", RAG pattern 9) — The addendum says the deployment name "gpt-6-luna" "needs confirming", that `text-embedding-3-large` availability in the region is "To verify", and that the `openai` SDK is "an ask-first dependency". The new Enrichment and committed vectors file arguably touch "schema or seed data" (AGENTS.md ask-first). None of these appear as Open Questions. *Fix:* list them in §9 as pre-build confirmations with an owner.
+- **medium** Demo-day network risk not surfaced (§5 Network, FR-2, addendum "Inherited constraints") — The MVP constraint exists "because it runs on a presenter laptop at AI Expo Africa 2026" with the network possibly blocked. FR-2 hides the box when offline, so the feature this workshop demonstrates silently disappears in exactly that setting. *Fix:* add a `[NOTE FOR PM]` naming the risk and the fallback plan (tethering, recorded run, or accepting it).
+
+## Substance over theater — strong
+Little furniture. The Vision (§1) names a concrete gap ("knows *what kind* of stay they want") and a concrete mechanism (fill the Search bar visibly, rank, explain). It could not be swapped into another PRD. The JTBD are short and each maps to a feature: "feel understood" to FR-4/FR-5 and "trust the result" to FR-16. The three UJs each carry an edge case that drives a specific FR: UJ-1 to FR-5, UJ-2 to FR-16, UJ-3 to FR-10. The NFRs are product-specific (Privacy, Untrusted Query, Cost with named calls) rather than boilerplate.
+
+### Findings
+- **low** "Contextual (workshop)" JTBD has no journey (§2.1, FR-17 to FR-20) — "let an audience watch a RAG pipeline work end to end" justifies four FRs, but the presenter is not in §2 as a user and has no UJ. Not theater, just under-anchored. See Shape fit.
+
+## Strategic coherence — thin
+The thesis is explicit (§1): a Guest who is understood and sees why results are there "will reach a booking faster and trust the result more". The feature arc follows from it: interpret → filter → retrieve → rank → explain → evaluate. MVP scope kind is experience/demonstration, and §7 matches that.
+
+The weakness is that the Success Metrics cannot discriminate on this catalog. With 2 Hotels per City (seed: every City has exactly 2), any Golden query with a Destination leaves at most 2 candidates after FR-6. SM-1's "top 3 for all of them" is then automatic, and "top-1 for 80%" is against a 50% coin-flip baseline. SM-5 ("Ranking modes differ") is decided by just two items, and in the addendum's within-candidate-set normalisation each signal comes out 0 or 1. So the evals mostly measure interpretation and grounding, not Retrieval quality. The §1 thesis about booking faster and trusting more is also not measured at all. §8 acknowledges this ("a workshop build"), which is fine, but then the metrics should at least validate the retrieval story.
+
+### Findings
+- **high** Retrieval metrics are near-trivial on a 2-Hotels-per-City catalog (§8 SM-1, SM-5; FR-6; FR-9; addendum "Corpus") — The PRD never states the candidate-set size after Hard criteria. A reader of SM-1 would assume a meaningful ranking test. *Fix:* require that a stated share of Golden queries have no Destination, or a Destination-free Preferences part, so they rank across all 12 Hotels. Report SM-1 separately for Destination-less queries, and state the random baseline. Alternatively, note the limitation explicitly and lean on the addendum's retrieval-only ablation over all 12 Hotels.
+- **medium** Counter-metrics are unmeasurable or garbled (§8 SM-C1, SM-C2) — SM-C1 reads "Do not tune weights, prompts or Enrichment until the Golden set passes", which literally forbids tuning until it passes; the intent is presumably "do not tune *only* until…". It names held-out Queries but sets no bar for them. SM-C2 "should not always pick the most expensive Hotel" has no measure. *Fix:* SM-C1, the held-out hit rate is within N points of the tuned set. SM-C2, in Best match, the top Hotel is the most expensive candidate in no more than X% of Golden queries.
+
+## Done-ness clarity — adequate
+Most FRs have crisp, testable consequences: FR-1 (empty Query cannot be submitted), FR-6 (four explicit filter rules, "never left to the Provider"), FR-12 ("makes no new Provider call"), FR-13 (explicit tie-break chain), FR-18 (named metrics). Deterministic parts are called out for plain unit tests (FR-18). A few FRs fall back on judgment words or carry an internal contradiction, as listed below.
+
+### Findings
+- **high** FR-10 threshold cannot fire under the planned Relevance (FR-10, §3 Relevance, addendum RAG pattern 4) — FR-10 triggers when "the best Relevance is below a set threshold". The addendum normalises Relevance "min-max … to 0–1" within the candidate set, so the top candidate always scores 1 and UJ-3 never happens. The glossary's "0-to-1 scale" does not say whether the scale is absolute or relative. *Fix:* define in FR-9/FR-10 that the weak-match test uses an absolute, un-normalised retrieval score (e.g. raw cosine of the best chunk), with Relevance normalisation applied only for ranking.
+- **medium** "Party of 4 Guests" and "next weekend" are ambiguous (FR-4 first consequence, UJ-1) — FR-4 expects "a Party of 4 Guests" without saying adults versus children, while UJ-1's main path shows "2 adults and 2 children" and its edge case shows "4 adults". "next weekend" is equated with "the coming weekend", which differs by locale and weekday (said on a Saturday?). *Fix:* state the expected split (e.g. "4 adults, 0 children unless children are mentioned") and a rule for "this/next weekend" relative to the weekday, fixed in the Golden set.
+- **medium** Price signal is undefined per Hotel (FR-11 Best value, FR-14) — "weights a lower Nightly price most" does not say which Room type's price: the Best-fit room, the cheapest qualifying room, or the Stay total. Since the Best-fit room depends on Preferences, the choice changes the order. *Fix:* state that the price signal is the Best-fit room's Nightly price.
+- **low** Judgment words in consequences (FR-15 "at most about 120 characters"; FR-16 "say what does fit rather than stretching the Query"; FR-14 "best matches the Preferences" for room choice) — "about" is untestable, and room-level matching is not defined anywhere in FR-9. *Fix:* give a hard character cap, and make FR-16's third consequence a judged item in FR-19.
+- **low** Clearing the Query: Party filtering is unclear (FR-5 fourth consequence, FR-6) — after clearing, "returns the MVP order (MVP FR-7)" but does not say whether the Smart-only Party-capacity filter also drops. *Fix:* say "MVP order and MVP filtering".
+
+## Scope honesty — adequate
+Non-Goals (§6) do real work (no chat, no local model, no personalisation, no real reviews), and §7.2 records deferrals with reasons. There are about 21 inline `[ASSUMPTION]` tags, 0 `[NOTE FOR PM]` and 0 Open Questions. That density is fine for workshop stakes. The problem is the mix: the tags sit mostly on tunable numbers, while the material tensions (pets, offline expo, ask-first approvals, catalog size) carry neither a tag nor a note. See Decision-readiness.
+
+### Findings
+- **medium** MVP constraint overrides are partly implicit (§5 Speed vs MVP §5 Responsiveness) — The MVP requires render "within 1 second"; §5 sets 3 s + 3 s without saying it relaxes the MVP bound, unlike the explicit offline override. FR-2's per-render Provider availability check also adds latency and is a Provider call not counted in §5 Cost's "bounded number". *Fix:* state the 1 s override explicitly and include the availability check in the Cost list, or make it cached.
+
+## Downstream usability — adequate
+FR-1 to FR-20 and SM-1 to SM-5 are contiguous and unique, MVP references use "MVP FR-n" consistently, and each FR names the UJ it realises. The glossary is good, and the addendum maps each RAG pattern back to FR IDs, which architecture will use directly. The risk is a Destination meaning that drifts from the MVP.
+
+### Findings
+- **medium** Destination narrowed from the MVP meaning (§0 "keeps its MVP meaning"; FR-4 "not one of the 6 Cities … leaves Destination empty"; FR-9 "Winelands") — The MVP glossary defines Destination as text matched against City name, aliases, province, **area and Hotel name**. FR-4 treats it as a City only. "Winelands" is the seed area of Winelands Family Lodge, so under MVP rules it is a valid Destination, which makes it a Hard criterion. FR-9 instead treats it as a Preference matched by exact word. Interpretation, architecture and the Golden set will disagree on this. *Fix:* state in §3 that in Smart search the extracted Destination is a City only, and that areas and Hotel names go to Preferences.
+- **low** Undefined term "Smart ranking" (§3 Smart search, FR-5, §4.4 heading, FR-2 "smart ranking is unavailable") — It is used as a term but not defined. *Fix:* add it to the glossary as the blend in §4.4, or replace it with "Ranking mode".
+
+## Shape fit — adequate
+This is a consumer-facing feature with meaningful UX, so named-protagonist UJs are load-bearing and they are present. It is also brownfield: the seam (AD-7, `searchHotels`), the seed path and MVP FR references are accurate, and new behaviour is distinguished from MVP behaviour ("Unlike MVP FR-5, Smart search filters by Party"). It is chain-top (feeds UX, architecture and tickets), so traceability matters, and it is mostly there.
+
+### Findings
+- **low** Presenter is an unacknowledged second user (§0 Readers, §2, FR-17 to FR-20) — Four FRs serve the presenter or developer, but §2 lists only Guests, and there is no capability-style journey for running evals or using the debug switch. *Fix:* add the presenter as a secondary user in §2 with a one-line UJ ("runs `npm run eval`, changes a weight, re-runs, compares"), or note that FR-17 to FR-20 are a capability spec for an operator.
+
+## Mechanical notes
+- **Assumptions Index roundtrip.** All inline tags are indexed, but not 1:1. SM-4's "90%" target has no inline tag even though §10 lists it. SM-5's "at least half" is neither tagged nor indexed. FR-4's bare `[ASSUMPTION]` on Out of Scope is indexed. §10 is out of order (FR-11, FR-13 to FR-15 come after FR-20), which makes lookup harder.
+- **Glossary.** §3 says "New terms only" but redefines **Search bar**, which §0 lists as an MVP term. That is harmless but inconsistent; mark it as a "clarified" entry. "Home page" and "Cities" are used but are not MVP glossary terms (the MVP has City and §4.8 Home); they are fine as plain English.
+- **ID continuity.** FR-1 to FR-20, UJ-1 to UJ-3, SM-1 to SM-5 and SM-C1/SM-C2 have no gaps or duplicates. "Architecture AD-7" (§5) and "AD-8" (addendum) resolve to the MVP architecture document, which is not linked by path. Add the path.
+- **UJ protagonists.** Thandi and Sipho carry context inline. UJ-3's Lerato has none (no trip, no device). Add one clause.
+- **Required sections.** All are present for the stakes. §9 is effectively empty; see the Decision-readiness finding.

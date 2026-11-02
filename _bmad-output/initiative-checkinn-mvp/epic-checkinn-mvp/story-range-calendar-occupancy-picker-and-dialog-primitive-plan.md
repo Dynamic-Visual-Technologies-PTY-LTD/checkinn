@@ -3,7 +3,7 @@ title: 'Range calendar, occupancy picker and dialog primitive'
 type: 'feature'
 ticket: '4'
 created: '2026-10-13'
-status: 'built'
+status: done
 baseline_revision: 'c4d2c8a82810b5657d7fc3210fa9c37a18a3d399'
 route: 'full'
 route_source: 'auto'

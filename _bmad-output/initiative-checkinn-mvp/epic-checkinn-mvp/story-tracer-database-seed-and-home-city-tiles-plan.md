@@ -3,7 +3,7 @@ title: 'Tracer: database, seed and Home City tiles'
 type: 'feature'
 ticket: '2'
 created: '2026-10-13'
-status: 'built'
+status: done
 baseline_revision: 'ee59b2a08688c4ff35f5a8d5bd4fc55a53edb87c'
 route: 'full'
 route_source: 'auto'

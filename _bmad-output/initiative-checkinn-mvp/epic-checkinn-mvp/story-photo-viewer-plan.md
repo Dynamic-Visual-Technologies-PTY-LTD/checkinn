@@ -3,7 +3,7 @@ title: 'Photo viewer'
 type: 'feature'
 ticket: '9'
 created: '2026-10-13'
-status: 'built'
+status: done
 baseline_revision: '2a31aadcb8743ec0922813df1ab349f4d028ea6c'
 route: 'full'
 route_source: 'auto'

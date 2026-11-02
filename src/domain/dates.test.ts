@@ -12,6 +12,7 @@ import {
   monthLabel,
   nightsBetween,
   pickDate,
+  relativeStay,
   rangeLabel,
   shortDayLabel,
   startOfMonth,
@@ -147,5 +148,39 @@ describe("compactStayLabel", () => {
     expect(compactStayLabel({ checkIn: "2026-12-31", checkOut: "2027-01-02" })).toBe(
       "31 Dec – 2 Jan",
     );
+  });
+});
+
+describe("relativeStay", () => {
+  // Mon 12 to Sun 18 Oct 2026; Thu 15 Oct is the PRD's "today".
+  const stay = (checkIn: string, checkOut: string) => ({ checkIn, checkOut });
+
+  it("resolves tonight to today until tomorrow", () => {
+    expect(relativeStay("tonight", "2026-10-15")).toEqual(stay("2026-10-15", "2026-10-16"));
+    expect(relativeStay("tonight", "2026-12-31")).toEqual(stay("2026-12-31", "2027-01-01"));
+  });
+
+  it("resolves this weekend to the coming Friday to Sunday on a weekday", () => {
+    for (const today of ["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15"]) {
+      expect(relativeStay("this-weekend", today)).toEqual(stay("2026-10-16", "2026-10-18"));
+    }
+  });
+
+  it("starts this weekend today on a Friday or a Saturday", () => {
+    expect(relativeStay("this-weekend", "2026-10-16")).toEqual(stay("2026-10-16", "2026-10-18"));
+    expect(relativeStay("this-weekend", "2026-10-17")).toEqual(stay("2026-10-17", "2026-10-18"));
+  });
+
+  it("makes this weekend Sunday to Monday on a Sunday (user decision)", () => {
+    expect(relativeStay("this-weekend", "2026-10-18")).toEqual(stay("2026-10-18", "2026-10-19"));
+  });
+
+  it("resolves next weekend to the Friday to Sunday after this weekend's Friday", () => {
+    expect(relativeStay("next-weekend", "2026-10-15")).toEqual(stay("2026-10-23", "2026-10-25"));
+    expect(relativeStay("next-weekend", "2026-10-12")).toEqual(stay("2026-10-23", "2026-10-25"));
+    expect(relativeStay("next-weekend", "2026-10-16")).toEqual(stay("2026-10-23", "2026-10-25"));
+    expect(relativeStay("next-weekend", "2026-10-17")).toEqual(stay("2026-10-23", "2026-10-25"));
+    expect(relativeStay("next-weekend", "2026-10-18")).toEqual(stay("2026-10-23", "2026-10-25"));
+    expect(relativeStay("next-weekend", "2026-10-19")).toEqual(stay("2026-10-30", "2026-11-01"));
   });
 });

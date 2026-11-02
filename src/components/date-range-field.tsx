@@ -21,6 +21,11 @@ type DateRangeFieldProps = {
   onOpenChange?: (open: boolean) => void;
   /** The visible field label, which also names the popover. */
   label?: string;
+  /**
+   * While Smart search interprets a Query (AD-33): the trigger is
+   * `aria-disabled`, ignores presses and is described by this status id.
+   */
+  busyStatusId?: string;
   /** The trigger, so a form can move focus to an invalid field. */
   triggerRef?: RefObject<HTMLButtonElement | null>;
   /** Id of the error message under the field, which describes the trigger. */
@@ -47,6 +52,7 @@ export function DateRangeField({
   triggerRef: triggerRefProp,
   errorId,
   popoverPlacement,
+  busyStatusId,
 }: DateRangeFieldProps) {
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
@@ -82,7 +88,7 @@ export function DateRangeField({
   }
 
   function onTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
-    if (event.key === "ArrowDown" && !open) {
+    if (event.key === "ArrowDown" && !open && !busyStatusId) {
       event.preventDefault();
       setOpen(true);
     }
@@ -106,8 +112,13 @@ export function DateRangeField({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        aria-describedby={errorId}
-        onClick={() => (open ? close() : setOpen(true))}
+        aria-describedby={[errorId, busyStatusId].filter(Boolean).join(" ") || undefined}
+        aria-disabled={busyStatusId ? true : undefined}
+        onClick={() => {
+          if (busyStatusId) return;
+          if (open) close();
+          else setOpen(true);
+        }}
         onKeyDown={onTriggerKeyDown}
         className="relative flex min-h-11 w-full items-center gap-space-sm text-left"
       >

@@ -141,6 +141,76 @@ describe("ListingCard", () => {
     expect(screen.getByText("1 night, 1 adult: from")).toBeInTheDocument();
   });
 
+  it("has no Best-fit room line and no Score breakdown on an MVP card", () => {
+    renderCard();
+
+    expect(screen.queryByText(/ · sleeps /)).toBeNull();
+    expect(screen.queryByRole("table")).toBeNull();
+  });
+
+  it("shows the Best-fit room line above the stay line, with no from", () => {
+    renderCard({
+      adults: 4,
+      totalRand: 4000,
+      nightlyRand: 2000,
+      bestFit: {
+        roomTypeId: "hotel-010-family",
+        name: "Family Room",
+        rooms: 1,
+        sleeps: 4,
+        nightlyRand: 2000,
+        totalRand: 4000,
+      },
+    });
+
+    const line = screen.getByText("Family Room · 1 room · sleeps 4");
+    const stay = screen.getByText("2 nights, 4 adults");
+    expect(line).toHaveClass("text-body-sm", "text-on-surface-muted");
+    expect(line.compareDocumentPosition(stay) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByText(/: from/)).toBeNull();
+    expect(screen.getByText("R 4 000")).toBeInTheDocument();
+    expect(within(screen.getByText("a night")).getByText("R 2 000")).toBeInTheDocument();
+    expect(screen.getByRole("link")).toHaveAccessibleName("Harbourlight Retreat");
+  });
+
+  it("says rooms in the plural, sleeping maxGuests × rooms", () => {
+    renderCard({
+      bestFit: {
+        roomTypeId: "hotel-010-standard",
+        name: "Standard Room",
+        rooms: 2,
+        sleeps: 4,
+        nightlyRand: 1450,
+        totalRand: 5800,
+      },
+    });
+
+    expect(screen.getByText("Standard Room · 2 rooms · sleeps 4")).toBeInTheDocument();
+  });
+
+  it("shows the Score breakdown as a captioned table outside the link, when set", () => {
+    renderCard({
+      breakdown: { meaning: 0, exact: 0, reviewSignal: 0.75, priceSignal: 0.5, score: 0.1875 },
+    });
+
+    const table = screen.getByRole("table", { name: "Score breakdown, Harbourlight Retreat" });
+    expect(within(table).getByRole("columnheader", { name: "Score" })).toBeInTheDocument();
+    const rows = within(table)
+      .getAllByRole("rowheader")
+      .map((header) => [header.textContent, header.nextElementSibling?.textContent]);
+    expect(rows).toEqual([
+      ["Relevance, meaning", "0.00"],
+      ["Relevance, exact words", "0.00"],
+      ["Review score signal", "0.75"],
+      ["Price signal", "0.50"],
+      ["Ranking blend score", "0.19"],
+    ]);
+    const link = screen.getByRole("link");
+    expect(link).toHaveAccessibleName("Harbourlight Retreat");
+    expect(link.contains(table)).toBe(false);
+    expect(table.querySelector("[tabindex], a, button, input")).toBeNull();
+  });
+
   it("shows a placeholder with the name when the Hotel has no photo", () => {
     renderCard({ firstImage: null });
 

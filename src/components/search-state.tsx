@@ -15,6 +15,12 @@ const SearchStateContext = createContext<SearchState | null>(null);
 type SearchStateProviderProps = {
   initialStay: Stay | null;
   initialParty: Party;
+  /**
+   * When it changes, Stay and Party start again from the initial values, as
+   * a new search or Back does on Search results. Used instead of a `key`, so
+   * what the provider wraps is not re-mounted.
+   */
+  resetKey?: string;
   children: ReactNode;
 };
 
@@ -25,10 +31,17 @@ type SearchStateProviderProps = {
 export function SearchStateProvider({
   initialStay,
   initialParty,
+  resetKey,
   children,
 }: SearchStateProviderProps) {
   const [stay, setStay] = useState<Stay | null>(initialStay);
   const [party, setParty] = useState<Party>(initialParty);
+  const [seenKey, setSeenKey] = useState(resetKey);
+  if (seenKey !== resetKey) {
+    setSeenKey(resetKey);
+    setStay(initialStay);
+    setParty(initialParty);
+  }
   const value = useMemo(() => ({ stay, party, setStay, setParty }), [stay, party]);
   return <SearchStateContext value={value}>{children}</SearchStateContext>;
 }

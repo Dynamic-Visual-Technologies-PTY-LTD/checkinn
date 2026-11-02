@@ -3,7 +3,7 @@ title: 'Booking details and confirmation pages'
 type: 'feature'
 ticket: '12'
 created: '2026-10-14'
-status: 'built'
+status: done
 baseline_revision: '3bcc3217e00a93adfbd7f2d83457ed7b9ab7646a'
 route: 'full'
 route_source: 'auto'
