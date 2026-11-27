@@ -8,7 +8,11 @@ import Home from "./page";
 // covers what renders once they resolve.
 const todayIn = vi.hoisted(() => vi.fn(() => "2026-11-10"));
 vi.mock("next/cache", () => ({ io: () => new Promise(() => {}) }));
-vi.mock("@/features/search/queries", () => ({ getCityTiles: () => new Promise(() => {}) }));
+vi.mock("@/features/search/queries", () => ({
+  getCityTiles: () => new Promise(() => {}),
+  getSmartSearchConfig: () => new Promise(() => {}),
+}));
+vi.mock("@/features/search/actions", () => ({ submitQuery: vi.fn() }));
 vi.mock("@/domain/clock", () => ({ todayIn }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 

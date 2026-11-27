@@ -3,7 +3,7 @@ title: 'Cross-cutting e2e and expo dry-run'
 type: 'chore'
 ticket: '15'
 created: '2026-10-14'
-status: 'built'
+status: done
 baseline_revision: '6c12c4d6726ae7f68523518ce66fb43f6b86304f'
 route: 'full'
 route_source: 'auto'

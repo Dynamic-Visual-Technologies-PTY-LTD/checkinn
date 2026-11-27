@@ -3,7 +3,7 @@ title: 'Booking engine: confirm transaction and access'
 type: 'feature'
 ticket: '11'
 created: '2026-10-14'
-status: 'built'
+status: done
 baseline_revision: 'a77808102a144cff687db94fb5488c799fea0f95'
 route: 'full'
 route_source: 'auto'

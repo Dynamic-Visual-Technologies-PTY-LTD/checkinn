@@ -103,12 +103,19 @@ export function StayPartyPicker({
 
   function commit(nextStay: Stay | null, nextParty: Party) {
     // The selection lives in the URL (replaced as it changes); the server
-    // clamps it to the new Availability.
+    // clamps it to the new Availability. bestFit is kept, and the server
+    // re-checks it against the new Stay and Party (AD-21, AD-26).
     const { criteria } = parseCriteria(new URLSearchParams(window.location.search), today, {
       defaultStay: false,
     });
     router.push(
-      hotelHref(hotelId, { q, stay: nextStay, party: nextParty, sel: criteria.sel }),
+      hotelHref(hotelId, {
+        q,
+        stay: nextStay,
+        party: nextParty,
+        sel: criteria.sel,
+        bestFit: criteria.bestFit,
+      }),
       { scroll: false },
     );
   }

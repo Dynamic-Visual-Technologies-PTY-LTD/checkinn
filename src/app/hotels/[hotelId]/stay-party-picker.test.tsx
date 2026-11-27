@@ -53,6 +53,19 @@ describe("StayPartyPicker", () => {
     expect(options).toEqual({ scroll: false });
   });
 
+  it("keeps bestFit from the URL when it pushes, so the server re-checks it (AD-21, AD-26)", () => {
+    window.history.replaceState(null, "", "/hotels/hotel-001?bestFit=hotel-001-family");
+    renderPicker();
+
+    fireEvent.click(screen.getByRole("button", { name: /Occupancy/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Increase adults" }));
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+
+    const [url] = push.mock.calls[0];
+    expect(new URL(url, "http://localhost").searchParams.get("bestFit")).toBe("hotel-001-family");
+    expect(url).not.toContain("sel=");
+  });
+
   it("pushes nothing when it closes unchanged", () => {
     renderPicker();
 

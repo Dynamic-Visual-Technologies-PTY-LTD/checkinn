@@ -2,10 +2,11 @@ import "server-only";
 import { io } from "next/cache";
 import { getDb } from "@/db/client";
 import type { CityTile, SearchCriteria, SearchResult } from "@/domain/types";
-import { nowIso } from "@/domain/clock";
+import { nowIso, todayIn } from "@/domain/clock";
 import { cityNamed } from "@/domain/search";
 import { listCityNames, listCityTiles } from "@/features/hotels/catalog.repo";
-import { searchCatalog } from "@/features/search/search.repo";
+import { getProvider, searchDebug } from "@/features/search/provider/config";
+import { runSmartSearch } from "@/features/search/smart-search";
 
 /** Home's City tiles, read at request time (AD-2). */
 export async function getCityTiles(): Promise<CityTile[]> {
@@ -32,10 +33,29 @@ export async function getCityNamed(query: string): Promise<string | null> {
  * signature, taking `SearchCriteria` and returning `SearchResult` with
  * `ListingCard`s (all in `src/domain/types.ts`), needs no change in any
  * caller.
+ *
+ * It goes through `runSmartSearch` (AD-20), which decides the mode: `smart`
+ * for an interpreted Query, filtered by the Hard criteria; `fallback` for a
+ * fallback URL, filtered by the URL's Hard criteria in MVP order; otherwise
+ * `mvp`, the MVP search unchanged. Notices come in the order fallback, place,
+ * ignored, at most 2. The Score breakdown is added only when the
+ * server sets `CHECKINN_SEARCH_DEBUG=1` (AD-29).
  */
 export async function searchHotels(
   criteria: SearchCriteria,
 ): Promise<SearchResult> {
   await io();
-  return searchCatalog(getDb(), criteria, nowIso());
+  return runSmartSearch(getDb(), getProvider(), criteria, todayIn(), nowIso(), {
+    debug: searchDebug(),
+  });
+}
+
+/**
+ * Whether Smart search is configured (AD-29), read at request time (AD-2).
+ * Pages pass it down as a boolean: without a Provider the Smart search box
+ * is not rendered and the page is the MVP page (FR-2).
+ */
+export async function getSmartSearchConfig(): Promise<boolean> {
+  await io();
+  return getProvider() !== null;
 }

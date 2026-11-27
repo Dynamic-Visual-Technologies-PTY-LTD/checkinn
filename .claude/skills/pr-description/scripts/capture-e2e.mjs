@@ -67,9 +67,10 @@ const slug = (text) =>
     .replace(/^-|-$/g, "")
     .slice(0, 70);
 
-// Read-only pages run in the desktop and phone projects, never the booking ones.
+// Pages run on desktop and on a phone. The suite itself is desktop only, so
+// the phone project exists only in the temporary config below.
 const pageSpec = path.join(repoRoot, "e2e", "pr-capture.tmp.spec.ts");
-const pageProjects = ["chromium", "mobile"];
+const pageProjects = ["chromium", "pr-phone"];
 if (pages.length > 0) {
   writeFileSync(
     pageSpec,
@@ -101,13 +102,18 @@ for (const [target, name] of ${JSON.stringify(pages.map((p) => [p, slug(p) || "h
 const tempConfig = path.join(repoRoot, "playwright.pr-capture.config.ts");
 writeFileSync(
   tempConfig,
-  `import base from "./playwright.config";
+  `import { devices } from "@playwright/test";
+import base from "./playwright.config";
 
 export default {
   ...base,
   outputDir: ${JSON.stringify(resultsDir)},
   reporter: [["list"], ["json", { outputFile: ${JSON.stringify(reportFile)} }]],
   use: { ...base.use, screenshot: "on" },
+  projects: [
+    ...(base.projects ?? []),
+    { name: "pr-phone", testMatch: "pr-capture.tmp.spec.ts", use: { ...devices["Pixel 7"] } },
+  ],
 };
 `,
 );
@@ -117,14 +123,18 @@ try {
   const files = pages.length > 0 ? [...specs, "e2e/pr-capture.tmp.spec.ts"] : specs;
   // Only the projects the chosen files belong to, without their dependencies,
   // which would otherwise run the whole read-only suite first.
-  const isBooking = (file) => file.replaceAll("\\", "/").includes("e2e/booking/");
+  const inDir = (dir) => (file) => file.replaceAll("\\", "/").includes(`e2e/${dir}/`);
+  const isBooking = inDir("booking");
+  const isSmart = inDir("smart");
   const chosen =
     projects.length > 0
       ? projects
-      : [
-          ...(pages.length > 0 || specs.some((s) => !isBooking(s)) ? pageProjects : []),
-          ...(specs.some(isBooking) ? ["booking-desktop", "booking-mobile"] : []),
-        ];
+      : [...new Set([
+          ...(pages.length > 0 ? pageProjects : []),
+          ...(specs.some((s) => !isBooking(s) && !isSmart(s)) ? ["chromium"] : []),
+          ...(specs.some(isSmart) ? ["smart"] : []),
+          ...(specs.some(isBooking) ? ["booking"] : []),
+        ])];
   const cli = ["playwright", "test", "--config", tempConfig, ...files, ...chosen.flatMap((p) => ["--project", p]), ...extra];
   if (!extra.includes("--no-deps")) cli.push("--no-deps");
   console.log(`> npx ${cli.join(" ")}`);

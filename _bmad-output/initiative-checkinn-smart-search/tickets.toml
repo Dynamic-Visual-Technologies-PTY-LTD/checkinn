@@ -1,0 +1,14 @@
+# The epics of initiative-checkinn-smart-search in build order.
+
+[[epic]]
+id = 1
+slug = "epic-smart-search"
+title = "Guests describe their stay and get filtered, best-fit results"
+covers = ["FR-1", "FR-2", "FR-3", "FR-4", "FR-5", "FR-6", "FR-10", "FR-11", "FR-12", "FR-13", "FR-14", "FR-20"]
+
+[[epic]]
+id = 2
+slug = "epic-smart-search-quality"
+title = "Results rank by meaning, with grounded Match reasons, measured by evals"
+covers = ["FR-1", "FR-2", "FR-3", "FR-4", "FR-5", "FR-6", "FR-7", "FR-8", "FR-9", "FR-10", "FR-11", "FR-12", "FR-13", "FR-14", "FR-15", "FR-16", "FR-17", "FR-18", "FR-19", "FR-20"]
+after = [{ epic = 1, needs = "the tracer's types and normaliseText (1.1), the Azure adapter's embed, reasons and judge (1.2), and the smart pipeline with fallback, Ranking blend and Best-fit (1.7)" }]

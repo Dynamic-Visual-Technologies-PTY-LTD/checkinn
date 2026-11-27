@@ -16,6 +16,11 @@ const AMENITY_ICONS: Record<string, IconName> = {
 /** The most Rooms left that the table flags ("Only N left"). */
 const FEW_LEFT = 3;
 
+/** The Best-fit chip's id, which that row's Rooms select points at (EXPERIENCE.md Room table). */
+export function bestFitChipId(roomTypeId: string): string {
+  return `best-fit-chip-${roomTypeId}`;
+}
+
 /** A whole-rand amount, shown with `formatZar` and spoken as "4 900 rand". */
 function Price({ rand, suffix = "" }: { rand: number; suffix?: string }) {
   return (
@@ -56,11 +61,15 @@ type RoomTableProps = {
   selection: RoomSelection[];
   /** Left out without dates: there are no selects. */
   onQuantityChange?: (roomTypeId: string, quantity: number) => void;
+  /** The Room type whose row carries the Best-fit chip (AD-26), or null. */
+  bestFitRoomTypeId?: string | null;
 };
 
 /**
  * The room table (FR-17): a real table from 768px, one card per Room type
  * below it. Without dates it lists the Room types and offers "Show prices".
+ * The Room type name is each row's header; the Best-fit row adds the
+ * display-only Best-fit chip, which describes that row's Rooms select.
  */
 export function RoomTable({
   rooms,
@@ -68,6 +77,7 @@ export function RoomTable({
   availability,
   selection,
   onQuantityChange,
+  bestFitRoomTypeId = null,
 }: RoomTableProps) {
   const datesField = useDatesField();
   const priced = nights !== null && availability !== null;
@@ -102,14 +112,25 @@ export function RoomTable({
             const left = priced ? (availability[room.id] ?? 0) : 0;
             const soldOut = priced && left === 0;
             const quantity = quantityOf(selection, room.id);
+            const bestFit = room.id === bestFitRoomTypeId;
             return (
               <tr
                 key={room.id}
                 role="row"
                 className="border-b border-outline last:border-b-0 max-md:block max-md:rounded-md max-md:border max-md:border-primary max-md:p-space-md max-md:last:border-b"
               >
-                <td role="cell" className={td}>
-                  <h3 className="text-headline-sm">{room.name}</h3>
+                <th role="rowheader" scope="row" className={`${td} text-left font-normal`}>
+                  <div className="flex flex-wrap items-center gap-space-sm">
+                    <h3 className="text-headline-sm">{room.name}</h3>
+                    {bestFit && (
+                      <span
+                        id={bestFitChipId(room.id)}
+                        className="inline-block max-w-full rounded-full border border-primary bg-surface px-space-md py-space-xs text-label-md text-on-surface uppercase"
+                      >
+                        Best fit for your search
+                      </span>
+                    )}
+                  </div>
                   <ul className="mt-space-sm flex flex-col gap-space-xs text-body-sm">
                     <li className="flex items-center gap-space-sm">
                       <Icon name="bed" className="shrink-0" />
@@ -122,7 +143,7 @@ export function RoomTable({
                       </li>
                     ))}
                   </ul>
-                </td>
+                </th>
                 <td role="cell" className={td}>
                   <Sleeps maxGuests={room.maxGuests} />
                 </td>
@@ -167,6 +188,7 @@ export function RoomTable({
                           </span>
                           <select
                             aria-label={`Rooms of ${room.name}`}
+                            aria-describedby={bestFit ? bestFitChipId(room.id) : undefined}
                             value={quantity}
                             onChange={(event) =>
                               onQuantityChange?.(room.id, Number(event.target.value))

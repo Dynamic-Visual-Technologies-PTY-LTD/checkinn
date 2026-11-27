@@ -13,6 +13,7 @@ import { nowIso, todayIn } from "@/domain/clock";
 import { hotelHref, parseCriteria } from "@/domain/criteria";
 import type { HotelPage } from "@/domain/types";
 import { getHotelPage } from "@/features/hotels/queries";
+import { getSmartSearchConfig } from "@/features/search/queries";
 
 export type HotelRouteParams = Promise<{ hotelId: string }>;
 export type HotelSearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -37,7 +38,7 @@ const PHOTO = "h-[240px] w-full md:h-[420px]";
 /**
  * Reads the URL and today at request time, inside the Suspense boundary
  * (AD-2), and renders the Hotel page, or the not-found page for an unknown
- * id. The search criteria are kept for Share.
+ * id. The search criteria, and the URL's `bestFit`, are kept for Share.
  */
 export async function HotelContent({
   params,
@@ -54,19 +55,26 @@ export async function HotelContent({
   const { criteria, problems } = parseCriteria(query, today, { defaultStay: false });
   const hotel = await getHotelPage(hotelId);
   if (!hotel) notFound();
+  // Whether a Provider is configured, read at request time (AD-2, AD-29): the
+  // URL's bestFit counts only then (AD-26).
+  const smartSearch = await getSmartSearchConfig();
 
+  // Share keeps bestFit, so a shared link reproduces the Best-fit chip (AD-21).
   const sharePath = hotelHref(hotel.hotelId, {
     q: criteria.q,
     stay: criteria.stay,
     party: criteria.party,
+    bestFit: criteria.bestFit,
   });
   // A stale link: the URL had dates or a Party the codec rejected.
   const stale = criteria.stay === null && problems.some((problem) => problem !== "sel-invalid");
+  // An invalid sel is still a sel: it stops the Best-fit pre-selection (AD-26).
+  const selInvalid = problems.includes("sel-invalid");
   return (
     <HotelDetails
       hotel={hotel}
       sharePath={sharePath}
-      availability={{ today, now, criteria, stale }}
+      availability={{ today, now, criteria, stale, smartSearch, selInvalid }}
     />
   );
 }

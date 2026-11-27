@@ -24,6 +24,7 @@ function renderSummary({
   cancellation = free,
   guestName = undefined as string | undefined,
   action = null as ReactNode,
+  note = undefined as string | undefined,
 } = {}) {
   const roomCount = lines.reduce((sum, line) => sum + line.quantity, 0);
   render(
@@ -37,6 +38,7 @@ function renderSummary({
       cancellation={cancellation}
       guestName={guestName}
       action={action}
+      note={note}
     />,
   );
 }
@@ -106,6 +108,21 @@ describe("BookingSummary", () => {
   it("holds the step's primary action, or none", () => {
     renderSummary({ action: <button type="button">Confirm booking</button> });
     expect(screen.getByRole("button", { name: "Confirm booking" })).toBeInTheDocument();
+  });
+
+  it("shows a note before the total, and none without one", () => {
+    const text = "Family Room picked for your search. Change it in the table.";
+    renderSummary({ note: text });
+
+    const note = screen.getByText(text);
+    const total = screen.getByText("Total");
+    expect(note.compareDocumentPosition(total) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(note).toHaveClass("text-body-sm", "text-on-surface-muted");
+  });
+
+  it("has no note by default", () => {
+    renderSummary();
+    expect(screen.queryByText(/picked for your search/)).toBeNull();
   });
 
   it("has no button without an action", () => {

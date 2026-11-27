@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/icons/icons";
-import { parseCriteria, serializeCriteria } from "@/domain/criteria";
+import { hotelQuery, parseCriteria } from "@/domain/criteria";
 import type { IsoDate } from "@/domain/types";
 
 /** True while the address bar still carries a notice. Read only after commit. */
@@ -13,12 +13,14 @@ function noticeInUrl(): boolean {
 /**
  * Removes `notice` and `rt` from the address bar, replacing the history entry
  * rather than pushing one, so a reload or Back does not show the alert again.
+ * Smart search parameters are dropped too: the Hotel page never carries them.
+ * `bestFit` is kept (AD-21).
  */
 function clearNoticeFromUrl(today: IsoDate) {
   const { criteria } = parseCriteria(new URLSearchParams(window.location.search), today, {
     defaultStay: false,
   });
-  const query = serializeCriteria({ ...criteria, notice: null });
+  const query = hotelQuery({ ...criteria, notice: null });
   window.history.replaceState(null, "", `${window.location.pathname}?${query}`);
 }
 
