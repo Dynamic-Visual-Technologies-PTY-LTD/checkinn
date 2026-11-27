@@ -36,6 +36,7 @@ function renderTable(
   availability: Record<string, number> | null,
   selection = [] as { roomTypeId: string; quantity: number }[],
   onQuantityChange = vi.fn(),
+  bestFitRoomTypeId: string | null = null,
 ) {
   render(
     <RoomTable
@@ -44,6 +45,7 @@ function renderTable(
       availability={availability}
       selection={selection}
       onQuantityChange={onQuantityChange}
+      bestFitRoomTypeId={bestFitRoomTypeId}
     />,
   );
   return onQuantityChange;
@@ -117,5 +119,45 @@ describe("RoomTable without dates", () => {
     expect(buttons).toHaveLength(2);
     fireEvent.click(buttons[0]);
     expect(openDates).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("RoomTable row headers and the Best-fit chip", () => {
+  it("makes each Room type name its row's header", () => {
+    renderTable({ std: 10, fam: 4 });
+
+    const headers = screen.getAllByRole("rowheader");
+    expect(headers).toHaveLength(2);
+    expect(headers[0]).toHaveAttribute("scope", "row");
+    expect(
+      within(headers[0]).getByRole("heading", { level: 3, name: "Standard Double" }),
+    ).toBeInTheDocument();
+    expect(
+      within(headers[1]).getByRole("heading", { level: 3, name: "Family Room" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Best fit for your search")).toBeNull();
+  });
+
+  it("puts the chip in the Best-fit row's header and describes its Rooms select by it", () => {
+    renderTable({ std: 10, fam: 4 }, [], vi.fn(), "fam");
+
+    const [standard, family] = screen.getAllByRole("rowheader");
+    const chip = within(family).getByText("Best fit for your search");
+    expect(chip).toHaveAttribute("id", "best-fit-chip-fam");
+    expect(within(standard).queryByText("Best fit for your search")).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Rooms of Family Room" })).toHaveAccessibleDescription(
+      "Best fit for your search",
+    );
+    expect(
+      screen.getByRole("combobox", { name: "Rooms of Standard Double" }),
+    ).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("keeps the chip on its row when the selection is elsewhere", () => {
+    renderTable({ std: 10, fam: 4 }, [{ roomTypeId: "std", quantity: 2 }], vi.fn(), "fam");
+
+    expect(
+      within(screen.getAllByRole("rowheader")[1]).getByText("Best fit for your search"),
+    ).toBeInTheDocument();
   });
 });

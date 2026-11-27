@@ -3,7 +3,7 @@ title: 'Search results page and photo credits'
 type: 'feature'
 ticket: '7'
 created: '2026-10-13'
-status: 'built'
+status: done
 baseline_revision: 'a5f38d7ff98a13768176fc8ec25b86b879cbbe5d'
 route: 'full'
 route_source: 'auto'

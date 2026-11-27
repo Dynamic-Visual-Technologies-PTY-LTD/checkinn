@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CheckInn key screen: Hotel page with Best-fit room</title>
+<style>
+/*
+  CheckInn Smart search key-screen mock. Illustrates the spines; the spines win on conflict with this mock.
+  Spines: ux-smart-search/DESIGN.md and EXPERIENCE.md (the Smart search delta, wins on conflict),
+  on top of the root DESIGN.md and the MVP ux-checkinn/EXPERIENCE.md.
+  Governing spine sections:
+   - delta EXPERIENCE.md Information Architecture (Hotel page change), Component Patterns > Best-fit chip, Room table (changed: Best-fit room and its Rooms pre-selected, row header, select described by the chip, Reserve enabled), Booking summary (changed); IA > Hotel page URL (bestFit)
+   - delta DESIGN.md Components > Best-fit chip (root display-only chip on the pre-selected row, wraps, no new token), Booking summary (changed)
+   - delta EXPERIENCE.md Key Flows > Flow 1 step 6 (bottom bar '1 room · R 4 000,00 · Reserve'); PRD FR-14
+   - root DESIGN.md Room table, Booking summary; MVP EXPERIENCE.md Responsive (< 768px: room rows become cards, summary becomes the fixed bottom bar)
+   - Seed: Winelands Family Lodge, Standard Double R 1 450 and Family Room R 2 000 a night, pets allowed, non-refundable
+  Markup and CSS reuse the MVP mocks (ux-checkinn/mockups) so the screens read as one product.
+  Tokens: root DESIGN.md front matter; Smart search components from the delta DESIGN.md.
+  Offline: no web font load (Poppins falls back to system-ui), no JS, no network.
+  Photos are rendered as the Image placeholder component (FR-11 fallback).
+*/
+*{box-sizing:border-box}
+body{margin:0;padding:40px;background:#2B3038;font-family:Poppins,system-ui,sans-serif;color:#FFFFFF}
+.mock-label{font-size:14px;font-weight:600;color:#E5E7E8;margin:0 0 12px;letter-spacing:.5px}
+.mock-section{margin-bottom:60px}
+.row{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap}
+/* device frames (mock chrome, not product) */
+.browser{width:1280px;background:#070C14;border:1px solid #4A505A;border-radius:10px;overflow:hidden}
+.chrome{height:40px;background:#1E232B;display:flex;align-items:center;gap:8px;padding:0 14px}
+.chrome i{width:12px;height:12px;border-radius:50%;background:#4A505A;display:block}
+.url{margin-left:14px;flex:1;height:26px;border-radius:13px;background:#2B3038;color:#E5E7E8;font-size:13px;line-height:26px;padding:0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phone{width:399px;border:12px solid #1E232B;border-radius:44px;overflow:hidden;background:#070C14;flex:none}
+.screen{width:375px;position:relative;background:#070C14}
+.screen.fixed{height:812px;overflow:hidden}
+/* page */
+.page{background:#070C14;color:#FFFFFF;font-size:15px;line-height:1.56;font-weight:400}
+.wrap{max-width:1320px;margin:0 auto;padding:0 15px}
+a{color:inherit}
+.hdr{height:100px;background:rgba(7,12,20,.8);box-shadow:0 0 4px rgba(0,0,0,.1)}
+.hdr-in{height:100%;display:flex;align-items:center;justify-content:space-between}
+.logo{height:40px;width:auto;display:block}
+.nav{font-size:14px;color:#FFFFFF;text-decoration:none}
+.ftr{border-top:1px solid #CED4DA;margin-top:100px;padding:25px 0 50px;font-size:14px;color:#E5E7E8}
+.ftr a{color:#FFFFFF;text-decoration:underline}
+main{padding-top:50px}
+.section{margin-top:100px}
+/* type */
+.display{font-size:48px;font-weight:500;line-height:1.2;color:#007FBA;margin:0}
+.grad{background:linear-gradient(to right,#007FBA,#00D2D6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.h-lg{font-size:36px;font-weight:600;line-height:42px;margin:0}
+.h-md{font-size:24px;font-weight:500;line-height:30px;margin:0}
+.h-sm{font-size:20px;font-weight:600;line-height:26px;margin:0}
+.lead{font-size:24px;font-weight:300;line-height:32px;margin:0}
+.sm{font-size:14px;line-height:1.56}
+.muted{color:#E5E7E8}
+.eyebrow{font-size:14px;font-weight:600;line-height:1.56;text-transform:uppercase;color:#E5E7E8;margin:0}
+.price{font-size:24px;font-weight:600;line-height:30px;white-space:nowrap}
+.inline-link{color:#FFFFFF;text-decoration:underline}
+p{margin:0}
+.stack>*+*{margin-top:15px}
+.stack-sm>*+*{margin-top:4px}
+.ico{display:flex;align-items:center;gap:8px}
+/* buttons */
+.btn{height:56px;padding:0 25px;border-radius:32px;border:2px solid #007FBA;font:inherit;font-size:16px;font-weight:500;line-height:30px;letter-spacing:1.5px;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:#FFFFFF;background:transparent;text-decoration:none;white-space:nowrap;cursor:pointer}
+.btn-primary{background:#005A9E}
+.btn-disabled{background:#0B2A44;color:#E5E7E8;border-color:#0B2A44;cursor:default}
+.btn-block{width:100%}
+.btn-round{width:44px;height:44px;padding:0;border-radius:9999px}
+/* card, chip, badges */
+.card{border:1px solid #007FBA;border-radius:12px;padding:25px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-block;border:1px solid #007FBA;border-radius:9999px;padding:4px 15px;font-size:14px;font-weight:600;line-height:1.56;text-transform:uppercase;white-space:nowrap}
+.score-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.score{background:#005A9E;color:#FFFFFF;border-radius:4px;padding:8px;font-size:14px;font-weight:600;line-height:1}
+.badge-ok{display:inline-block;background:#3DDC97;color:#070C14;border-radius:9999px;padding:4px 12px;font-size:14px;font-weight:600;line-height:1.56;white-space:nowrap}
+.cancel-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
+.stars{display:inline-flex;gap:2px;vertical-align:middle}
+/* image placeholder */
+.ph{background:#0B2A44;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;color:#E5E7E8;font-size:20px;font-weight:600;line-height:26px;padding:15px}
+/* search bar */
+.sb{display:flex;align-items:center;height:72px;padding:8px;border:1px solid #007FBA;border-radius:12px}
+.sb-f{flex:1;display:flex;align-items:center;gap:12px;height:100%;padding:0 15px;border-right:1px solid #007FBA;min-width:0}
+.sb-f:last-of-type{border-right:0}
+.sb-f svg{flex:none;color:#E5E7E8}
+.sb-l{display:block;font-size:14px;line-height:1.3;color:#E5E7E8}
+.sb-v{display:block;font-size:15px;line-height:1.4;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-v.ph-text{color:#E5E7E8}
+.sb .btn{margin-left:8px}
+.sb.stacked{flex-direction:column;align-items:stretch;height:auto}
+.sb.stacked .sb-f{height:64px;border-right:0;border-bottom:1px solid #007FBA}
+.sb.stacked .sb-f:last-of-type{border-bottom:0}
+.sb.stacked .sb-v{font-size:16px}
+.sb.stacked .btn{margin:8px 0 0}
+/* city tiles */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.tile-img{position:relative;height:220px;border-radius:12px;background:#0B2A44;overflow:hidden}
+.tile-cap{position:absolute;left:0;right:0;bottom:0;padding:50px 15px 15px;background:linear-gradient(to top,#070C14,rgba(7,12,20,0))}
+.tile{display:block;text-decoration:none;color:#FFFFFF}
+.credit{font-size:14px;color:#E5E7E8;margin-top:4px}
+/* listing card */
+.lc{display:grid;grid-template-columns:33% 1fr 230px;gap:25px;text-decoration:none;color:#FFFFFF}
+.lc .ph{height:230px}
+.lc-price{display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;text-align:right;gap:4px}
+.lc-price .btn{margin-top:15px}
+/* booking summary */
+.sum{background:#0B2A44;border-radius:12px;padding:25px}
+.sum-line{display:flex;justify-content:space-between;gap:15px}
+.sum-line span:last-child{white-space:nowrap}
+.divider{border:0;height:1px;background:#CED4DA;margin:15px 0}
+/* room table */
+.rt{border:1px solid #007FBA;border-radius:12px;overflow:hidden}
+.rt table{width:100%;border-collapse:collapse}
+.rt th{text-align:left;font-size:14px;font-weight:600;line-height:1.56;text-transform:uppercase;color:#E5E7E8;padding:15px 25px}
+.rt td{padding:25px;border-top:1px solid #CED4DA;vertical-align:top}
+.rt .feat{font-size:14px;margin-top:8px}
+.rt .feat .ico{margin-top:4px}
+.sleeps{display:inline-flex;gap:2px}
+.sold{color:#FF6B6B;font-size:14px}
+select.input{height:38px;min-width:90px;padding:0 8px;border:1px solid #007FBA;border-radius:4px;background:#070C14;color:#FFFFFF;font:inherit;font-size:15px}
+/* forms */
+.field{display:block}
+.field label{display:block;font-size:14px;line-height:1.56;margin-bottom:4px}
+.input{display:block;width:100%;height:38px;padding:8px;border:1px solid #007FBA;border-radius:4px;background:transparent;color:#FFFFFF;font:inherit;font-size:15px}
+textarea.input{height:96px;resize:vertical}
+select.input{width:auto}
+.input.invalid{border-color:#FF6B6B}
+.field-err{display:flex;align-items:center;gap:6px;color:#FF6B6B;font-size:14px;margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+/* step indicator */
+.steps{display:flex;gap:50px;list-style:none;margin:0;padding:0}
+.steps li{font-size:14px;line-height:1.56;text-transform:uppercase;color:#E5E7E8;padding-bottom:8px}
+.steps li.on{color:#FFFFFF;font-weight:600;border-bottom:2px solid #00D2D6}
+/* alerts */
+.alert{display:flex;gap:15px;align-items:flex-start;border:1px solid;border-radius:12px;padding:15px;color:#FFFFFF}
+.alert.err{border-color:#FF6B6B}
+.alert.err>svg{color:#FF6B6B;flex:none}
+.alert ul{margin:8px 0 0;padding-left:20px}
+/* two-column flows */
+.cols{display:grid;grid-template-columns:1fr 420px;gap:50px;align-items:start}
+.sticky{position:sticky;top:115px}
+/* mobile overrides (<768px) */
+.m .hdr{height:64px}
+.m .page{font-size:13px}
+.m .display{font-size:26px;line-height:1.2}
+.m .h-lg{font-size:26px;line-height:1.2}
+.m .tiles{grid-template-columns:1fr}
+.m .bar{position:absolute;left:0;right:0;bottom:0;background:#0B2A44;padding:15px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.m select.input{height:44px}
+
+/* ---- Smart search additions (ux-smart-search/DESIGN.md delta) ---- */
+.ss-label{display:block;font-size:14px;line-height:1.56;color:#E5E7E8;margin-bottom:4px}
+.ss{display:flex;align-items:center;gap:8px;min-height:56px;padding:4px 4px 4px 15px;border:2px solid transparent;border-radius:12px;background:linear-gradient(#070C14,#070C14) padding-box,linear-gradient(to right,#007FBA,#00D2D6) border-box}
+.ss>svg{flex:none;color:#E5E7E8}
+.ss-t{flex:1;min-width:0;font-size:15px;line-height:1.56;color:#FFFFFF;max-height:3.12em;overflow:hidden;padding:4px 0}
+.ss-t.ph-text{color:#E5E7E8}
+.ss-t.ro{cursor:default}
+.ss-btn{flex:none;width:44px;height:44px;border-radius:9999px;border:2px solid #007FBA;background:#070C14;color:#FFFFFF;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.ss-status{font-size:14px;line-height:1.56;color:#E5E7E8;margin-top:4px}
+.ss-area>.ss-area-bar{margin-top:15px}
+.crit-row{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.crit{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 15px;border:1px solid #007FBA;border-radius:9999px;background:#070C14;color:#FFFFFF;font:inherit;font-size:14px;font-weight:600;line-height:1.56;text-transform:uppercase;white-space:nowrap;cursor:pointer}
+.crit:hover{border-color:#FFC300}
+.notice{display:flex;gap:15px;align-items:flex-start;border:1px solid #007FBA;border-radius:12px;padding:15px;color:#FFFFFF}
+.notice>svg{flex:none}
+.mr-block{padding-top:4px}
+.mr-l{font-size:14px;font-weight:400;line-height:1.56;text-transform:uppercase;color:#E5E7E8;margin:0}
+.mr{font-size:15px;line-height:1.56;color:#E5E7E8;margin:0}
+.mr-sk{height:24px;border-radius:4px;background:#0B2A44;width:85%;margin-top:0}
+.bestfit{font-size:14px;line-height:1.56;color:#E5E7E8}
+.summ{display:flex;align-items:center;gap:8px;width:100%;min-height:56px;padding:8px 15px;border:1px solid #007FBA;border-radius:12px;background:#070C14;color:#FFFFFF;font:inherit;font-size:15px;line-height:1.56;text-align:left}
+.summ svg{flex:none;color:#E5E7E8}
+.rt-name{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+/* review fixes 2026-10-19: native textarea, wrapping chips, notices after the heading, two-line skeleton */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.ss{padding:6px 6px 6px 15px}
+.ss:has(.ss-t:focus-visible){outline:2px solid #FFC300;outline-offset:2px}
+.ss-t{flex:1;min-width:0;display:block;font:inherit;font-size:15px;line-height:1.56;color:#FFFFFF;background:transparent;border:0;margin:0;padding:4px 0;resize:none;field-sizing:content;min-height:1.56em;max-height:3.12em;overflow-y:auto}
+.ss-t:focus{outline:none}
+.ss-t::placeholder{color:#E5E7E8;opacity:1}
+.ss-t[readonly]{cursor:default}
+.ss-btn[aria-disabled="true"]{border-color:#7A828C;color:#7A828C;cursor:default}
+.ss-btn.busy[aria-disabled="true"]{color:#FFFFFF}
+.ss-counter{font-size:14px;line-height:1.56;color:#E5E7E8;text-align:right;margin:0}
+.ss-counter:empty,.ss-status:empty{display:none}
+.crit{white-space:normal;text-align:start;max-width:100%;min-width:0;padding:8px 15px;font-size:.875rem}
+.crit svg{flex:none}
+.rt-name .chip{white-space:normal}
+.ex{margin-top:8px}
+.ex-lead{font-size:14px;line-height:1.56;color:#E5E7E8;margin:0}
+.ex-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;column-gap:15px}
+.ex-q{min-height:44px;padding:0;border:0;background:none;font:inherit;font-size:14px;line-height:1.56;color:#FFFFFF;text-decoration:underline;text-align:start;cursor:pointer}
+.ex-q:hover{color:#FFC300}
+.ex-q[aria-disabled="true"]{color:#E5E7E8;cursor:default}
+.notice-b{flex:1;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.notice-b .btn{flex:none}
+.hint{font-size:24px;font-weight:300;line-height:32px;margin-top:8px}
+.lc{position:relative}
+.stretch{color:inherit;text-decoration:none}
+.stretch::after{content:"";position:absolute;inset:0;border-radius:12px}
+p.mr-block{margin:0}
+.mr-block .mr-l,.mr-block .mr{display:block}
+.mr-sk+.mr-sk{margin-top:4px}
+.mr-sk-2{width:60%}
+.rt tbody th{text-align:left;font-size:inherit;font-weight:inherit;text-transform:none;color:#FFFFFF;padding:25px;border-top:1px solid #CED4DA;vertical-align:top}
+/* phone additions */
+.m .ss-t{font-size:16px;line-height:1.5;min-height:1.5em;max-height:3em}
+.m .notice-b{flex-direction:column;align-items:flex-start}
+.m .notice-b .btn{width:100%}
+.m .hint{font-size:20px;line-height:28px}
+
+.m .lc{grid-template-columns:1fr;gap:15px;padding:15px}
+.m .lc .ph{height:190px}
+.m .lc-price{align-items:flex-start;text-align:left}
+.m .lc-price .btn{width:100%}
+</style>
+</head>
+<body>
+<section class="mock-section"><p class="mock-label">HOTEL PAGE · Desktop 1280 · opened from the UJ-1 card · Winelands Family Lodge, Fri 23 – Sun 25 Oct 2026, 4 adults · Family Room ×1 pre-selected with the Best-fit chip · bestFit in the URL so reload, Back and share keep it · room name is the row header, the Rooms select is described by the chip, the summary explains the pick</p>
+<div class="browser"><div class="chrome"><i></i><i></i><i></i><div class="url">localhost:3000/hotels/winelands-family-lodge?checkIn=2026-10-23&amp;checkOut=2026-10-25&amp;adults=4&amp;children=0&amp;rooms=1&amp;bestFit=hotel-010-family</div></div><div class="page"><header class="hdr"><div class="wrap hdr-in"><a href="#"><img class="logo" src="../../../../public/logo/checkinn-logo-on-dark.webp" alt="CheckInn" height="40"></a><nav><a class="nav" href="#">Manage booking</a></nav></div></header><main class="wrap">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:25px">
+    <div class="stack-sm">
+      <p class="eyebrow">family · Stellenbosch</p>
+      <h1 class="h-lg" tabindex="-1">Winelands Family Lodge</h1>
+      <p><span class="stars" role="img" aria-label="4-star hotel"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></span></p>
+      <p class="ico muted"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Winelands, Stellenbosch, Western Cape</span></p>
+    </div>
+    <div style="display:flex;align-items:center;gap:15px">
+      <button class="btn btn-round" type="button" aria-pressed="false" aria-label="Save"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-9-9.5A4.8 4.8 0 0 1 12 6.3a4.8 4.8 0 0 1 9 4.2C19.5 15.4 12 20 12 20z"/></svg></button>
+      <button class="btn btn-round" type="button" aria-label="Share"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></svg></button>
+      <button class="chip" type="button" style="background:transparent;color:#FFFFFF;font-family:inherit;cursor:pointer">We Price Match</button>
+      <a class="btn" href="#availability">See rooms</a>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:15px;margin-top:25px">
+    <div class="ph" style="height:420px" role="img" aria-label="Hotel accommodation" tabindex="0">Winelands Family Lodge</div>
+    <div class="ph" style="height:420px" role="img" aria-label="Hotel bedroom" tabindex="0">Winelands Family Lodge</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:25px;margin-top:50px">
+    <section class="card" aria-labelledby="rev-h">
+      <h2 class="h-sm" id="rev-h">Guest reviews</h2>
+      <p class="score-row" style="margin-top:25px"><span class="score">4.5</span><span>/ 5</span></p>
+      <p class="h-sm" style="margin-top:15px">Superb</p>
+      <p class="sm muted">118 reviews</p>
+    </section>
+    <section class="card" aria-labelledby="fac-h">
+      <h2 class="h-sm" id="fac-h">Most popular facilities</h2>
+      <ul style="list-style:none;margin:25px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:15px">
+        <li class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></li><li class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 17c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5M2 21c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5M8 14V5a2 2 0 0 1 4 0M16 14V5a2 2 0 0 0-4 0M8 9h8"/></svg><span>Swimming pool</span></li><li class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span>Free parking</span></li><li class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M4 9h16"/><circle cx="8" cy="6.25" r=".75"/><circle cx="12" cy="6.25" r=".75"/><rect x="7.5" y="12" width="9" height="5.5" rx="1"/></svg><span>Kitchenette</span></li><li class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21 8.5 4h7L20 21"/><path d="M8.5 4v9M15.5 4v9M9 13h6"/><path d="M10 13v3.5a2 2 0 0 0 4 0V13"/></svg><span>Children’s play area</span></li>
+      </ul>
+    </section>
+  </div>
+  <section class="section" style="display:grid;grid-template-columns:1fr 1fr;gap:50px" aria-label="About and house rules">
+    <div>
+      <h2 class="h-md">About this property</h2>
+      <p class="lead" style="margin-top:25px">A fictional lodge offering spacious family rooms and outdoor play areas.</p>
+    </div>
+    <div>
+      <h2 class="h-md">House rules</h2>
+      <dl style="margin:25px 0 0">
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:15px;padding:15px 0;"><dt class="sm muted">Check-in</dt><dd style="margin:0">From 14:00</dd></div><div style="display:grid;grid-template-columns:140px 1fr;gap:15px;padding:15px 0;border-top:1px solid #CED4DA"><dt class="sm muted">Check-out</dt><dd style="margin:0">Until 10:00</dd></div><div style="display:grid;grid-template-columns:140px 1fr;gap:15px;padding:15px 0;border-top:1px solid #CED4DA"><dt class="sm muted">Children</dt><dd style="margin:0">Children are welcome</dd></div><div style="display:grid;grid-template-columns:140px 1fr;gap:15px;padding:15px 0;border-top:1px solid #CED4DA"><dt class="sm muted">Pets</dt><dd style="margin:0">Pets are allowed</dd></div><div style="display:grid;grid-template-columns:140px 1fr;gap:15px;padding:15px 0;border-top:1px solid #CED4DA"><dt class="sm muted">Smoking</dt><dd style="margin:0">Smoking is not allowed</dd></div><div style="display:grid;grid-template-columns:140px 1fr;gap:15px;padding:15px 0;border-top:1px solid #CED4DA"><dt class="sm muted">Cancellation</dt><dd style="margin:0">Non-refundable. This booking can't be cancelled.</dd></div>
+      </dl>
+    </div>
+  </section>
+  <section class="section" id="availability" aria-labelledby="avail-h">
+    <ol class="steps" aria-label="Booking steps"><li class="on" aria-current="step">Your selection</li><li>Your details</li><li>Confirmation</li></ol>
+    <h2 class="h-lg" id="avail-h" tabindex="-1" style="margin-top:25px">Availability</h2>
+    <div style="max-width:760px;margin-top:25px"><form class="sb" role="search" aria-label="Search hotels"><div class="sb-f"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span><span class="sb-l">Dates</span><span class="sb-v">Fri 23 Oct – Sun 25 Oct 2026</span></span></div><div class="sb-f"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2A5 5 0 0 1 21.5 19"/></svg><span><span class="sb-l">Occupancy</span><span class="sb-v">4 adults · 0 children · 1 room</span></span></div></form></div>
+    <div style="margin-top:25px"><p class="cancel-line ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg><span>Non-refundable. This booking can't be cancelled.</span></p></div>
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:25px;margin-top:25px;align-items:start">
+      <div class="rt"><table><thead><tr><th scope="col">Room type</th><th scope="col">Sleeps</th><th scope="col">Price for 2 nights</th><th scope="col">Rooms</th></tr></thead><tbody><tr>
+  <th scope="row"><div class="rt-name"><h3 class="h-sm">Standard Double</h3></div>
+    <div class="feat"><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.5"/></svg><span>1 double bed</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/></svg><span>Private bathroom</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></p></div></th>
+  <td><span class="sleeps" role="img" aria-label="Sleeps 2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span><p class="sm muted">Sleeps 2</p></td>
+  <td><p class="price">R 2 900</p><p class="sm muted">R 1 450 a night</p></td>
+  <td><select class="input" aria-label="Standard Double rooms"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></td>
+</tr><tr>
+  <th scope="row"><div class="rt-name"><h3 class="h-sm">Family Room</h3><span class="chip" id="bestfit-chip-1">Best fit for your search</span></div>
+    <div class="feat"><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.5"/></svg><span>1 double bed, 2 single beds</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/></svg><span>Private bathroom</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></p></div></th>
+  <td><span class="sleeps" role="img" aria-label="Sleeps 4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span><p class="sm muted">Sleeps 4</p></td>
+  <td><p class="price">R 4 000</p><p class="sm muted">R 2 000 a night</p></td>
+  <td><select class="input" aria-label="Family Room rooms" aria-describedby="bestfit-chip-1"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></td>
+</tr></tbody></table></div>
+      <div class="sticky"><aside class="sum" aria-label="Booking summary">
+  <h2 class="h-sm">Winelands Family Lodge</h2>
+  <div class="stack-sm" style="margin-top:15px">
+    <p class="sm">Fri 23 Oct – Sun 25 Oct 2026</p>
+    <p class="sm muted">2 nights, 4 adults</p>
+  </div>
+  <hr class="divider">
+  <p class="sm muted">1 room selected</p>
+  <div class="stack-sm" style="margin-top:4px">
+    <p class="sum-line"><span>1 × Family Room</span><span>R 4 000,00</span></p>
+  </div>
+  <p class="sm muted" style="margin-top:8px">Family Room picked for your search. Change it in the table.</p>
+  <hr class="divider">
+  <p class="sum-line" aria-live="polite"><span class="h-sm">Total</span><span class="price">R 4 000,00</span></p>
+  <p class="sm muted" style="margin-top:4px">Includes taxes. No extra fees.</p>
+  <div style="margin-top:15px"><p class="cancel-line ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg><span>Non-refundable. This booking can't be cancelled.</span></p></div>
+  <button class="btn btn-block btn-primary" style="margin-top:25px" type="button">Reserve</button>
+</aside></div>
+    </div>
+  </section>
+</main><footer class="ftr"><div class="wrap"><p>CheckInn is a demo. Hotels, prices and reviews are fictional. Photos are illustrative. No payment is taken.</p><p><a href="#">Photo credits</a></p></div></footer></div></div></section>
+<section class="mock-section"><p class="mock-label">PHONE 375 · Availability · room table as stacked cards, Family Room card carries the chip and Rooms = 1, Rooms select described by the chip · fixed bottom summary bar ready to Reserve; its full summary carries the 'picked for your search' line</p>
+<div class="phone m"><div class="screen page fixed"><header class="hdr"><div class="wrap hdr-in"><a href="#"><img class="logo" src="../../../../public/logo/checkinn-icon.png" alt="CheckInn" height="40"></a><nav><a class="nav" href="#">Manage booking</a></nav></div></header><main class="wrap" style="padding-top:25px;padding-bottom:110px">
+  <ol class="steps" style="gap:15px" aria-label="Booking steps"><li class="on" aria-current="step">Your selection</li><li>Your details</li><li>Confirmation</li></ol>
+  <h2 class="h-lg" style="margin-top:25px">Availability</h2>
+  <p class="sm muted" style="margin-top:8px">Winelands Family Lodge · Fri 23 – Sun 25 Oct · 4 adults</p>
+  <div style="margin-top:15px"><p class="cancel-line ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg><span>Non-refundable. This booking can't be cancelled.</span></p></div>
+  <div class="stack" style="margin-top:15px"><div class="card" style="padding:15px">
+  <div class="rt-name"><h3 class="h-sm">Standard Double</h3></div>
+  <div class="feat sm" style="margin-top:8px">
+    <p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.5"/></svg><span>1 double bed</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/></svg><span>Private bathroom</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></p>
+    <p class="ico"><span class="sleeps" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span><span>Sleeps 2</span></p>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:15px">
+    <div><p class="eyebrow">Price for 2 nights</p><p class="price">R 2 900</p><p class="sm muted">R 1 450 a night</p></div>
+    <label class="sm" style="display:block">Rooms<br><select class="input" aria-label="Standard Double rooms"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label>
+  </div>
+</div><div class="card" style="padding:15px">
+  <div class="rt-name"><h3 class="h-sm">Family Room</h3><span class="chip" id="bestfit-chip-2">Best fit for your search</span></div>
+  <div class="feat sm" style="margin-top:8px">
+    <p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.5"/></svg><span>1 double bed, 2 single beds</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/></svg><span>Private bathroom</span></p><p class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>Free Wi-Fi</span></p>
+    <p class="ico"><span class="sleeps" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span><span>Sleeps 4</span></p>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:15px">
+    <div><p class="eyebrow">Price for 2 nights</p><p class="price">R 4 000</p><p class="sm muted">R 2 000 a night</p></div>
+    <label class="sm" style="display:block">Rooms<br><select class="input" aria-label="Family Room rooms" aria-describedby="bestfit-chip-2"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></label>
+  </div>
+</div></div>
+</main>
+<div class="bar" role="region" aria-label="Booking summary">
+  <a href="#" style="text-decoration:none" aria-label="1 room, 4 000 rand. Show full summary"><span class="sm muted" style="display:block">1 room</span><span class="price">R 4 000,00</span></a>
+  <button class="btn btn-primary" type="button">Reserve</button>
+</div></div></div></section>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\Basso\\source\\repos\\DVT\\checkinn\\.archify\\architecture-checkinn-runtime-20261020-141141\\candidate.json",
+    "sha256": "e13acab759406f138725e1b11b68125d8431399587d927f7801aaca9db50fcad",
+    "bytes": 7516
+  },
+  "artifact": {
+    "path": "C:\\Users\\Basso\\source\\repos\\DVT\\checkinn\\.archify\\architecture-checkinn-runtime-20261020-141141\\checkinn-runtime.html",
+    "sha256": "d604cf7e3072a225b28516b67ca2a2191ee0a73f2134b1eb1eed31a11c2e6c22",
+    "bytes": 837788
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\Basso\\source\\repos\\DVT\\checkinn\\.archify\\architecture-checkinn-runtime-20261020-141141\\checkinn-runtime.finalize.json",
+    "summaryReceipt": "C:\\Users\\Basso\\source\\repos\\DVT\\checkinn\\.archify\\architecture-checkinn-runtime-20261020-141141\\checkinn-runtime.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\Basso\\source\\repos\\DVT\\checkinn\\.archify\\architecture-checkinn-runtime-20261020-141141\\checkinn-runtime.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-20T12:11:42.381Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 6558,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

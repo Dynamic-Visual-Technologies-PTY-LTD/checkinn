@@ -42,6 +42,8 @@ const paths = {
     </>
   ),
   close: <path d="M6 6l12 12M18 6 6 18" />,
+  // A three-quarter circle; it rotates while Smart search runs.
+  spinner: <path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5" />,
   "chevron-left": <path d="m15 5-7 7 7 7" />,
   "chevron-right": <path d="m9 5 7 7-7 7" />,
   plus: <path d="M12 5v14M5 12h14" />,

@@ -3,7 +3,7 @@ title: 'Availability core, pricing and searchHotels'
 type: 'feature'
 ticket: '6'
 created: '2026-10-13'
-status: 'built'
+status: done
 baseline_revision: '392c341696639db42599545653da921a3395838a'
 route: 'full'
 route_source: 'auto'
