@@ -9,6 +9,12 @@ import { ResultsStatus, SmartSearchProvider } from "./smart-search-provider";
 const mocks = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("@/features/search/actions", () => ({ submitQuery: vi.fn() }));
+// Removing a chip re-reads the URL against today; pin it so the fixed Stay
+// below stays in the future.
+vi.mock("@/domain/clock", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/domain/clock")>()),
+  todayIn: () => "2026-11-10",
+}));
 
 const NBSP = " ";
 const MAX = `Max R${NBSP}2${NBSP}000 per night`;
