@@ -7,16 +7,10 @@ import { DateRangeField } from "@/components/date-range-field";
 import { Icon } from "@/components/icons/icons";
 import { countLabel, OccupancyField } from "@/components/occupancy-field";
 import { useRequiredSearchState } from "@/components/search-state";
-import { SMART_STATUS_ID, useSmartSearch } from "@/components/smart-search/smart-search-context";
 import { todayIn } from "@/domain/clock";
-import {
-  parseCriteria,
-  problemMessage,
-  searchBarSearch,
-  validateStay,
-} from "@/domain/criteria";
+import { problemMessage, searchHref, validateStay } from "@/domain/criteria";
 import { compactStayLabel } from "@/domain/dates";
-import type { IsoDate, Party, SmartCriteria, Stay } from "@/domain/types";
+import type { IsoDate, Party, Stay } from "@/domain/types";
 
 type SearchBarProps = {
   /** Today, read on the server; the calendar disables the days before it. */
@@ -31,12 +25,6 @@ type SearchBarProps = {
   collapsible?: boolean;
   /** A message to show under Dates from the start, e.g. for a stale link. */
   datesError?: string;
-  /**
-   * The Smart search criteria in the URL. Under a Query, Search keeps them
-   * and runs no new Query interpretation, unless the Smart search box is
-   * empty at Search time (FR-5, AD-33).
-   */
-  smart?: SmartCriteria | null;
 };
 
 /** The collapsed bar's summary: "Cape Town · 13–15 Nov · 2 adults". */
@@ -55,9 +43,7 @@ type OpenField = "dates" | "occupancy" | null;
 /**
  * The search bar (EXPERIENCE.md Search bar): Destination, Dates, Occupancy
  * and Search. It validates on submit and pushes the `/search` URL. Its Stay
- * and Party live in the surrounding `SearchStateProvider`. While Smart
- * search interprets a Query, it is read-only and `aria-disabled` (AD-33);
- * without Smart search it is the MVP bar.
+ * and Party live in the surrounding `SearchStateProvider`.
  */
 export function SearchBar({
   today,
@@ -65,12 +51,8 @@ export function SearchBar({
   getToday = todayIn,
   collapsible = false,
   datesError,
-  smart = null,
 }: SearchBarProps) {
   const { stay, party, setStay, setParty } = useRequiredSearchState();
-  const smartSearch = useSmartSearch();
-  const busy = smartSearch?.pending ?? false;
-  const busyStatusId = busy ? SMART_STATUS_ID : undefined;
 
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -104,7 +86,6 @@ export function SearchBar({
   }, [expanded]);
 
   function expand() {
-    if (busy) return;
     focusDestination.current = true;
     setExpanded(true);
   }
@@ -117,31 +98,16 @@ export function SearchBar({
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
     const problems = validateStay(stay, getToday());
     if (problems.length > 0) {
       focusInvalid.current = true;
       setDateErrors(problems.map(problemMessage));
       return;
     }
-    // Read at Search time (AD-33); unsubmitted box text is never used. The
-    // Smart criteria come from the newest URL, so a chip removed a moment ago
-    // stays removed (the newest action wins).
-    const boxIsEmpty = smartSearch?.boxIsEmpty ?? false;
-    const urlSmart =
-      smart && smartSearch
-        ? parseCriteria(smartSearch.currentParams(), getToday()).criteria.smart
-        : smart;
-    const href = searchBarSearch({ q: query, stay, party, smart: urlSmart }, { boxIsEmpty });
-    // This Search overtakes any chip removal.
-    smartSearch?.finishChipRemoval();
-    smartSearch?.announceResults("");
-    smartSearch?.recordPush(href);
-    router.push(href);
+    router.push(searchHref({ q: query, stay, party }));
   }
 
   function clearQuery() {
-    if (busy) return;
     setQuery("");
     inputRef.current?.focus();
   }
@@ -167,9 +133,6 @@ export function SearchBar({
             type="text"
             name="q"
             value={query}
-            readOnly={busy}
-            aria-disabled={busy || undefined}
-            aria-describedby={busyStatusId}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Where are you going?"
             autoComplete="off"
@@ -181,7 +144,6 @@ export function SearchBar({
           <button
             type="button"
             aria-label="Clear destination"
-            aria-disabled={busy || undefined}
             onClick={clearQuery}
             className={iconButton}
           >
@@ -209,7 +171,6 @@ export function SearchBar({
             // The two-month calendar is wider than the field: below 1280px the
             // field starts the row, from 1280px it sits right of Destination.
             popoverPlacement="left-0 xl:right-0 xl:left-auto"
-            busyStatusId={busyStatusId}
           />
         </div>
         {dateErrors.length > 0 && (
@@ -230,15 +191,12 @@ export function SearchBar({
           onChange={setParty}
           open={openField === "occupancy"}
           onOpenChange={openChange("occupancy")}
-          busyStatusId={busyStatusId}
         />
       </div>
 
       <button
         type="submit"
-        aria-disabled={busy || undefined}
-        aria-describedby={busyStatusId}
-        className={`${primaryButton} mt-space-sm w-full md:mt-0 md:ml-space-sm md:w-auto aria-disabled:cursor-default aria-disabled:border-2 aria-disabled:border-on-surface-disabled aria-disabled:bg-surface aria-disabled:text-on-surface-muted aria-disabled:hover:bg-surface aria-disabled:hover:text-on-surface-muted`}
+        className={`${primaryButton} mt-space-sm w-full md:mt-0 md:ml-space-sm md:w-auto`}
       >
         Search
       </button>
@@ -255,8 +213,6 @@ export function SearchBar({
         aria-expanded={false}
         aria-controls={formId}
         aria-label={`Change search: ${summary}`}
-        aria-disabled={busy || undefined}
-        aria-describedby={busyStatusId}
         onClick={expand}
         className="flex min-h-14 w-full items-center gap-space-sm rounded-md border border-primary bg-surface px-space-md py-space-sm text-left text-body-md text-on-surface hover:border-tertiary md:hidden"
       >

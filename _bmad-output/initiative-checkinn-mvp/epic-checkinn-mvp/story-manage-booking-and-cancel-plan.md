@@ -3,7 +3,7 @@ title: 'Manage booking and cancel'
 type: 'feature'
 ticket: '13'
 created: '2026-10-14'
-status: done
+status: 'built'
 baseline_revision: '37cf02f2f025404ae80bb170d4cbfc38be0ef993'
 route: 'full'
 route_source: 'auto'
